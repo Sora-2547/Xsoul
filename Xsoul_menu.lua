@@ -12,6 +12,11 @@ local tweeninfo = TweenInfo.new
 -- additional
 local utility = {}
 
+-- design (reference) size of the window in pixels. The whole window is scaled
+-- by a UIScale so it always fits the viewport, which keeps it readable on
+-- mobile instead of cramming the fixed-pixel layout into a tiny scaled frame.
+local DESIGN_WIDTH, DESIGN_HEIGHT = 540, 430
+
 -- themes
 local objects = {}
 local themes = {
@@ -233,12 +238,16 @@ do
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0.5, 0, 0.5, 0),
                 AnchorPoint = Vector2.new(0.5, 0.5),
-                Size = UDim2.new(0.3, 0, 0.45, 0),
+                Size = UDim2.new(0, DESIGN_WIDTH, 0, DESIGN_HEIGHT),
                 Image = "rbxassetid://4641149554",
                 ImageColor3 = themes.Background,
                 ScaleType = Enum.ScaleType.Slice,
                 SliceCenter = Rect.new(4, 4, 296, 296)
             }, {
+                utility:Create("UIScale", {
+                    Name = "Scaler",
+                    Scale = 1
+                }),
                 utility:Create("ImageLabel", {
                     Name = "Glow",
                     BackgroundTransparency = 1,
@@ -433,6 +442,32 @@ Position = UDim2.new(0, 0, 0, 100),
         -- Store maximize button reference
         lib.maximizeButton = container.Main.TopBar.MaximizeButton
         lib.maximizeButton.Visible = true
+
+        -- Responsive scaling: shrink the whole window (via UIScale) so it always
+        -- fits inside the viewport. On mobile this keeps the layout proportional
+        -- and readable instead of overlapping inside a tiny scaled frame.
+        lib.uiscale = container.Main:FindFirstChild("Scaler")
+        local function updateScale()
+            if lib.isMaximized or not lib.uiscale then
+                return
+            end
+            local camera = workspace.CurrentCamera
+            local viewport = camera and camera.ViewportSize
+            if not viewport or viewport.X <= 0 or viewport.Y <= 0 then
+                return
+            end
+            lib.uiscale.Scale = math.min(
+                (viewport.X * 0.95) / DESIGN_WIDTH,
+                (viewport.Y * 0.92) / DESIGN_HEIGHT,
+                1
+            )
+        end
+        lib.updateScale = updateScale
+        updateScale()
+        local camera = workspace.CurrentCamera
+        if camera then
+            camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
+        end
         
         -- Toggle button click event
         lib.toggleButton.Activated:Connect(function()
@@ -449,19 +484,23 @@ Position = UDim2.new(0, 0, 0, 100),
         lib.maximizeButton.Activated:Connect(function()
             if lib.isMaximized then
                 -- Return to normal size
+                lib.isMaximized = false
                 utility:Tween(container.Main, {
-                    Size = UDim2.new(0.3, 0, 0.45, 0),
+                    Size = UDim2.new(0, DESIGN_WIDTH, 0, DESIGN_HEIGHT),
                     Position = lib.normalPosition or UDim2.new(0.5, 0, 0.5, 0)
                 }, 0.3)
-                lib.isMaximized = false
+                lib.updateScale()
             else
-                -- Maximize
+                -- Maximize: fill the viewport at full scale
                 lib.normalPosition = container.Main.Position
+                lib.isMaximized = true
+                if lib.uiscale then
+                    lib.uiscale.Scale = 1
+                end
                 utility:Tween(container.Main, {
-                    Size = UDim2.new(0.95, 0, 0.9, 0),
+                    Size = UDim2.new(1, -40, 1, -40),
                     Position = UDim2.new(0.5, 0, 0.5, 0)
                 }, 0.3)
-                lib.isMaximized = true
             end
         end)
         
@@ -651,7 +690,7 @@ Position = UDim2.new(0, 0, 0, 100),
         if self.position then
             -- Opening menu
             utility:Tween(container, {
-                Size = UDim2.new(0.3, 0, 0.45, 0),
+                Size = UDim2.new(0, DESIGN_WIDTH, 0, DESIGN_HEIGHT),
                 Position = self.position
             }, 0.2)
             wait(0.2)
@@ -668,13 +707,14 @@ Position = UDim2.new(0, 0, 0, 100),
             
             -- Expand all sections in the focused page
             if self.focusedPage then
+                local scale = (self.uiscale and self.uiscale.Scale) or 1
                 for i, section in pairs(self.focusedPage.sections) do
-                    -- Calculate proper expanded size
+                    -- Calculate proper expanded size (AbsoluteSize is post-scale)
                     local padding = 4
-                    local size = (4 * padding) + section.container.Title.AbsoluteSize.Y
+                    local size = (4 * padding) + section.container.Title.AbsoluteSize.Y / scale
                     
                     for _, module in pairs(section.modules) do
-                        size = size + module.AbsoluteSize.Y + padding
+                        size = size + module.AbsoluteSize.Y / scale + padding
                     end
                     
                     utility:Tween(section.container.Parent, {Size = UDim2.new(1, -10, 0, size)}, 0.1)
@@ -690,8 +730,8 @@ Position = UDim2.new(0, 0, 0, 100),
             wait(0.2)
 
             utility:Tween(container, {
-                Size = UDim2.new(0.3, 0, 0, 0),
-                Position = self.position + UDim2.new(0, 0, 0.45, 0)
+                Size = UDim2.new(0, DESIGN_WIDTH, 0, 0),
+                Position = self.position + UDim2.new(0, 0, 0, DESIGN_HEIGHT)
             }, 0.2)
             wait(0.2)
             
@@ -2167,9 +2207,10 @@ Position = UDim2.new(0, 0, 0, 100),
     function page:Resize(scroll)
         local padding = 10
         local size = 0
+        local scale = (self.library.uiscale and self.library.uiscale.Scale) or 1
 
         for i, section in pairs(self.sections) do
-            size = size + section.container.Parent.AbsoluteSize.Y + padding
+            size = size + section.container.Parent.AbsoluteSize.Y / scale + padding
         end
 
         self.container.CanvasSize = UDim2.new(0, 0, 0, size)
@@ -2187,10 +2228,11 @@ Position = UDim2.new(0, 0, 0, 100),
         end
 
         local padding = 4
-        local size = (4 * padding) + self.container.Title.AbsoluteSize.Y -- offset
+        local scale = (self.page.library.uiscale and self.page.library.uiscale.Scale) or 1
+        local size = (4 * padding) + self.container.Title.AbsoluteSize.Y / scale -- offset
 
         for i, module in pairs(self.modules) do
-            size = size + module.AbsoluteSize.Y + padding
+            size = size + module.AbsoluteSize.Y / scale + padding
         end
 
         if smooth then
