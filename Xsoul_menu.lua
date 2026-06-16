@@ -1,4 +1,4 @@
--- Venyx Ui
+-- Xsoul Ui
 -- init
 local player = game.Players.LocalPlayer
 local mouse = player:GetMouse()
@@ -27,7 +27,6 @@ local themes = {
     SliderColor = Color3.fromRGB(255, 113, 51),
     TopBarColor = Color3.fromRGB(35,35,35),
 }
-
 do
     -- Dynamic Scroll
     function dynamicscroll(scrollingframe,uilis)
@@ -276,28 +275,28 @@ do
                     utility:Create("ImageLabel", {
                         Name = "HubLogo",
                         BackgroundTransparency = 1,
-                        AnchorPoint = Vector2.new(0.5,0),
+                        AnchorPoint = Vector2.new(0.5,-0.5),
                         Position = UDim2.new(0.5, 0, 0, 5),
-                        Size = UDim2.new(0,70,0,70),
+                        Size = UDim2.new(0,90,0,90),
                         ZIndex = 5,
                         ImageColor3 = Color3.new(1,1,1),
-                        Image = "http://www.roblox.com/asset/?id=8631982009"
+                        Image = "http://www.roblox.com/asset/?id=118141134715671"
                     }),
                     utility:Create("ScrollingFrame", {
                         Name = "Pages_Container",
                         Active = true,
                         BackgroundTransparency = 1,
-                        Position = UDim2.new(0, 0, 0, 80),
+Position = UDim2.new(0, 0, 0, 100),
                         Size = UDim2.new(1, 0, 1, -20),
                         CanvasSize = UDim2.new(0, 0, 0, 480),
                         ScrollBarThickness = 5,
                         ScrollBarImageTransparency = 0,
                         ScrollBarImageColor3 = themes.LightContrast
                     }, {
-                        utility:Create("UIListLayout", {
-                            SortOrder = Enum.SortOrder.LayoutOrder,
-                            Padding = UDim.new(0, 10)
-                        })
+                    utility:Create("UIListLayout", {
+                        SortOrder = Enum.SortOrder.LayoutOrder,
+                        Padding = UDim.new(0, 2)
+                    })
                     })
                 }
 
@@ -313,19 +312,20 @@ do
                     ScaleType = Enum.ScaleType.Slice,
                     SliceCenter = Rect.new(4, 4, 296, 296)
                 }, {
-                    utility:Create("TextLabel", { -- title
+                    utility:Create("TextLabel", {
                         Name = "Title",
-                        AnchorPoint = Vector2.new(0, 0.5),
+                        AnchorPoint = Vector2.new(0.5, 0.5),
                         BackgroundTransparency = 1,
-                        Position = UDim2.new(0, 12, 0, 19),
-                        Size = UDim2.new(1, -46, 0, 16),
+                        Position = UDim2.new(0.5, 0, 0.5, 0),
+                        Size = UDim2.new(1, 0, 1, 0),
                         ZIndex = 5,
                         Font = Enum.Font.GothamBlack,
                         Text = title,
-                        RichText = true , 
+                        RichText = true,
                         TextColor3 = themes.TextColor,
                         TextSize = 18,
-                        TextXAlignment = Enum.TextXAlignment.Center
+                        TextXAlignment = Enum.TextXAlignment.Center,
+                        TextYAlignment = Enum.TextYAlignment.Center
                     }),
                     utility:Create("TextButton", {
                         Name = "ToggleButton",
@@ -485,20 +485,20 @@ do
             Text = "",
             TextSize = 14
         }, {
-            utility:Create("TextLabel", {
-                Name = "Title",
-                AnchorPoint = Vector2.new(0, 0.5),
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 40, 0.5, 0),
-                Size = UDim2.new(0, 76, 1, 0),
-                ZIndex = 3,
-                Font = Enum.Font.Gotham,
-                Text = title,
-                TextColor3 = themes.TextColor,
-                TextSize = 12,
-                TextTransparency = 0.65,
-                TextXAlignment = Enum.TextXAlignment.Left
-            }),
+                utility:Create("TextLabel", {
+                    Name = "Title",
+                    AnchorPoint = Vector2.new(0, 0.5),
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 40, 0.5, 0),
+                    Size = UDim2.new(1, -40, 1, 0),
+                    ZIndex = 3,
+                    Font = Enum.Font.Gotham,
+                    Text = title,
+                    TextColor3 = themes.TextColor,
+                    TextSize = 14,
+                    TextTransparency = 0.10000000149012,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                }),
             icon and utility:Create("ImageLabel", {
                 Name = "Icon",
                 AnchorPoint = Vector2.new(0, 0.5),
@@ -508,7 +508,7 @@ do
                 ZIndex = 3,
                 Image = "rbxassetid://" .. tostring(icon),
                 ImageColor3 = themes.TextColor,
-                ImageTransparency = 0.64,
+                ImageTransparency = 0.10000000149012,
                 ScaleType = Enum.ScaleType.Fit
             }) or {}
         })
@@ -567,18 +567,18 @@ do
                 Position = UDim2.new(0, 8, 0, 8),
                 Size = UDim2.new(1, -16, 1, -16)
             }, {
-                utility:Create("TextLabel", {
-                    Name = "Title",
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 20),
-                    ZIndex = 2,
-                    Font = Enum.Font.Gotham,
-                    Text =  title,
-                    TextColor3 = themes.Accent,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Center,
-                    TextTransparency = 1
-                }),
+            utility:Create("TextLabel", {
+                Name = "Title",
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 20),
+                ZIndex = 2,
+                Font = Enum.Font.Gotham,
+                Text =  title,
+                TextColor3 = themes.Accent,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextTransparency = 0.10000000149012
+            }),
                 utility:Create("UIListLayout", {
                     SortOrder = Enum.SortOrder.LayoutOrder,
                     Padding = UDim.new(0, 4)
@@ -663,6 +663,22 @@ do
             self.toggleButton.Visible = true
             self.closeButton.Visible = true
             self.maximizeButton.Visible = true
+            
+            -- Expand all sections in the focused page
+            if self.focusedPage then
+                for i, section in pairs(self.focusedPage.sections) do
+                    -- Calculate proper expanded size
+                    local padding = 4
+                    local size = (4 * padding) + section.container.Title.AbsoluteSize.Y
+                    
+                    for _, module in pairs(section.modules) do
+                        size = size + module.AbsoluteSize.Y + padding
+                    end
+                    
+                    utility:Tween(section.container.Parent, {Size = UDim2.new(1, -10, 0, size)}, 0.1)
+                    utility:Tween(section.container.Title, {TextTransparency = 0}, 0.1)
+                end
+            end
         else
             -- Closing menu
             self.position = container.Position
@@ -681,6 +697,14 @@ do
             self.toggleButton.Visible = false
             self.closeButton.Visible = false
             self.maximizeButton.Visible = false
+            
+            -- Collapse all sections in the focused page
+            if self.focusedPage then
+                for i, section in pairs(self.focusedPage.sections) do
+                    utility:Tween(section.container.Parent, {Size = UDim2.new(1, -10, 0, 28)}, 0.1)
+                    utility:Tween(section.container.Title, {TextTransparency = 1}, 0.1)
+                end
+            end
         end
 
         self.toggling = false
@@ -869,7 +893,7 @@ do
                 Font = Enum.Font.Gotham,
                 Text = title,
                 TextColor3 = themes.TextColor,
-                TextSize = 12,
+                TextSize = 14,
                 TextTransparency = 0.10000000149012
             })
         })
@@ -891,10 +915,10 @@ do
 
             debounce = true
             text.TextSize = 0
-            utility:Tween(button.Title, {TextSize = 14}, 0.2)
+            utility:Tween(button.Title, {TextSize = 16}, 0.2)
 
             wait(0.2)
-            utility:Tween(button.Title, {TextSize = 12}, 0.2)
+            utility:Tween(button.Title, {TextSize = 14}, 0.2)
 
             if callback then
                 callback(function(...)
@@ -2431,7 +2455,7 @@ do
     end
 end
 
-local win = library.new("Xsoul")
+local win = library.new("Xsoul Hud")
 
 local page1 = win:NewPage("เมนูหลัก")
 local section1 = page1:NewSecction("Test1")
