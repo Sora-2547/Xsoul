@@ -176,7 +176,7 @@ do
         local dragInput, mousePos, framePos
 
         frame.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 dragging = true
                 mousePos = input.Position
                 framePos = parent.Position
@@ -190,7 +190,7 @@ do
         end)
 
         frame.InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement then
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
                 dragInput = input
             end
         end)
@@ -206,6 +206,46 @@ do
 
     function utility:DraggingEnded(callback)
         table.insert(self.ended, callback)
+    end
+
+    -- Scale a window down so it always fits inside the viewport (mobile friendly)
+    function utility:MakeResponsive(main, designWidth, designHeight)
+        designWidth = designWidth or 511
+        designHeight = designHeight or 428
+
+        local uiscale = utility:Create("UIScale", {
+            Parent = main,
+            Scale = 1
+        })
+
+        local function update()
+            local camera = workspace.CurrentCamera
+            local viewport = camera and camera.ViewportSize
+            if not viewport or viewport.X <= 0 or viewport.Y <= 0 then
+                return
+            end
+
+            uiscale.Scale = math.min(
+                (viewport.X * 0.95) / designWidth,
+                (viewport.Y * 0.95) / designHeight,
+                1
+            )
+        end
+
+        update()
+
+        local camera = workspace.CurrentCamera
+        if camera then
+            camera:GetPropertyChangedSignal("ViewportSize"):Connect(update)
+        end
+
+        -- center the window on touch devices so it never spawns off-screen
+        if input.TouchEnabled then
+            main.AnchorPoint = Vector2.new(0.5, 0.5)
+            main.Position = UDim2.new(0.5, 0, 0.5, 0)
+        end
+
+        return uiscale
     end
 
 end
@@ -373,6 +413,7 @@ Position = UDim2.new(0, 0, 0, 100),
 
         utility:InitializeKeybind()
         utility:DraggingEnabled(container.Main, container.Main)
+        utility:MakeResponsive(container.Main)
         
         -- Create Open Button (hidden by default)
         local openButton = utility:Create("ImageButton", {
@@ -447,17 +488,20 @@ Position = UDim2.new(0, 0, 0, 100),
         lib.maximizeButton.Activated:Connect(function()
             if lib.isMaximized then
                 -- Return to normal size
+                container.Main.AnchorPoint = lib.normalAnchor or Vector2.new(0, 0)
                 utility:Tween(container.Main, {
                     Size = UDim2.new(0, 511, 0, 428),
                     Position = lib.normalPosition or UDim2.new(0.25, 0, 0.052435593, 0)
                 }, 0.3)
                 lib.isMaximized = false
             else
-                -- Maximize
+                -- Maximize (centered so it fills the screen for any anchor)
                 lib.normalPosition = container.Main.Position
+                lib.normalAnchor = container.Main.AnchorPoint
+                container.Main.AnchorPoint = Vector2.new(0.5, 0.5)
                 utility:Tween(container.Main, {
                     Size = UDim2.new(1, -40, 1, -40),
-                    Position = UDim2.new(0, 20, 0, 20)
+                    Position = UDim2.new(0.5, 0, 0.5, 0)
                 }, 0.3)
                 lib.isMaximized = true
             end
