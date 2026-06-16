@@ -224,6 +224,12 @@ do
     -- new classes
 
     function library.new(title)
+        -- Responsive sizing: phones get a larger window so the fixed-pixel
+        -- sidebar/content stops overlapping and clipping on small screens.
+        local isMobile = input.TouchEnabled and not input.MouseEnabled
+        local windowSize = isMobile and UDim2.new(0.6, 0, 0.65, 0) or UDim2.new(0.3, 0, 0.45, 0)
+        local maxWindowSize = isMobile and UDim2.new(0.95, 0, 0.92, 0) or UDim2.new(0.95, 0, 0.9, 0)
+
         local container = utility:Create("ScreenGui", {
             Name = title,
             Parent = game.CoreGui
@@ -233,7 +239,7 @@ do
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0.5, 0, 0.5, 0),
                 AnchorPoint = Vector2.new(0.5, 0.5),
-                Size = UDim2.new(0.3, 0, 0.45, 0),
+                Size = windowSize,
                 Image = "rbxassetid://4641149554",
                 ImageColor3 = themes.Background,
                 ScaleType = Enum.ScaleType.Slice,
@@ -374,6 +380,14 @@ Position = UDim2.new(0, 0, 0, 100),
 
         utility:InitializeKeybind()
         utility:DraggingEnabled(container.Main, container.Main)
+
+        -- Guarantee a minimum usable width so the fixed-pixel sidebar and
+        -- content never overlap on small / high-density mobile screens.
+        -- Y is left at 0 so the minimize/collapse animation still works.
+        utility:Create("UISizeConstraint", {
+            Parent = container.Main,
+            MinSize = Vector2.new(isMobile and 460 or 360, 0)
+        })
         
         -- Create Open Button (hidden by default)
         local openButton = utility:Create("ImageButton", {
@@ -420,7 +434,10 @@ Position = UDim2.new(0, 0, 0, 100),
             toggleButton = container.Main.TopBar.ToggleButton,
             closeButton = container.Main.TopBar.CloseButton,
             position = container.Main.Position,
-            toggling = false
+            toggling = false,
+            isMobile = isMobile,
+            defaultSize = windowSize,
+            maxSize = maxWindowSize
         }, library)
         
         -- Set initial state: menu is open, show toggle/close buttons
@@ -450,7 +467,7 @@ Position = UDim2.new(0, 0, 0, 100),
             if lib.isMaximized then
                 -- Return to normal size
                 utility:Tween(container.Main, {
-                    Size = UDim2.new(0.3, 0, 0.45, 0),
+                    Size = lib.defaultSize,
                     Position = lib.normalPosition or UDim2.new(0.5, 0, 0.5, 0)
                 }, 0.3)
                 lib.isMaximized = false
@@ -458,7 +475,7 @@ Position = UDim2.new(0, 0, 0, 100),
                 -- Maximize
                 lib.normalPosition = container.Main.Position
                 utility:Tween(container.Main, {
-                    Size = UDim2.new(0.95, 0, 0.9, 0),
+                    Size = lib.maxSize,
                     Position = UDim2.new(0.5, 0, 0.5, 0)
                 }, 0.3)
                 lib.isMaximized = true
@@ -651,7 +668,7 @@ Position = UDim2.new(0, 0, 0, 100),
         if self.position then
             -- Opening menu
             utility:Tween(container, {
-                Size = UDim2.new(0.3, 0, 0.45, 0),
+                Size = self.defaultSize or UDim2.new(0.3, 0, 0.45, 0),
                 Position = self.position
             }, 0.2)
             wait(0.2)
@@ -689,9 +706,11 @@ Position = UDim2.new(0, 0, 0, 100),
             utility:Tween(topbar, {Size = UDim2.new(1, 0, 1, 0)}, 0.2)
             wait(0.2)
 
+            local widthScale = (self.defaultSize and self.defaultSize.X.Scale) or 0.3
+            local heightScale = (self.defaultSize and self.defaultSize.Y.Scale) or 0.45
             utility:Tween(container, {
-                Size = UDim2.new(0.3, 0, 0, 0),
-                Position = self.position + UDim2.new(0, 0, 0.45, 0)
+                Size = UDim2.new(widthScale, 0, 0, 0),
+                Position = self.position + UDim2.new(0, 0, heightScale, 0)
             }, 0.2)
             wait(0.2)
             
