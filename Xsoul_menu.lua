@@ -8,6 +8,49 @@ local input = game:GetService("UserInputService")
 local run = game:GetService("RunService")
 local tween = game:GetService("TweenService")
 local tweeninfo = TweenInfo.new
+local http = game:GetService("HttpService")
+
+-- Data persistence system
+local DataStoreService = game:GetService("DataStoreService")
+local userSettingsStore
+local dataStoreAvailable = false
+
+local success, store = pcall(function()
+    return DataStoreService:GetDataStore("XsoulUserSettings_" .. player.UserId)
+end)
+if success then
+    userSettingsStore = store
+    dataStoreAvailable = true
+end
+
+-- Get client ID for exploit compatibility
+local clientId = player.UserId
+
+local savedSettings = {
+    themes = {},
+    fontSize = 14,
+    font = "Gotham",
+    language = "English",
+    toggles = {},  -- Store toggle states
+    textboxes = {},  -- Store textbox values
+    sliders = {},  -- Store slider values
+    dropdowns = {},  -- Store dropdown selections
+    colorpickers = {},  -- Store color picker values
+    windowPosition = nil,  -- Store window position
+    isMaximized = false,  -- Store window maximized state
+    selectedPage = nil  -- Store selected page name
+}
+
+-- Use local file storage for exploit environments (more reliable)
+local settingsFile = "xsoul_settings_" .. player.UserId .. ".json"
+
+local function saveSettings()
+    -- Will be defined after themes table
+end
+
+local function loadSettings()
+    -- Will be defined after themes table
+end
 
 -- additional
 local utility = {}
@@ -15,18 +58,273 @@ local utility = {}
 -- themes
 local objects = {}
 local themes = {
-    NotToggledColor =  Color3.fromRGB(255, 100, 89),
-    Background = Color3.fromRGB(25,25,25),
-    Glow = Color3.fromRGB(0,0,0),
-    Accent = Color3.fromRGB(255, 113, 51),
-    LightContrast = Color3.fromRGB(40,40,40),
-    DarkContrast = Color3.fromRGB(30,30,30),
-    TextColor = Color3.fromRGB(255, 255, 255),
-    ButtonColor = Color3.fromRGB(255, 113, 51),
-    ToggledColor = Color3.fromRGB(255, 113, 51),
-    SliderColor = Color3.fromRGB(255, 113, 51),
-    TopBarColor = Color3.fromRGB(35,35,35),
+    NotToggledColor =  Color3.fromRGB(100, 80, 150),
+    Background = Color3.fromRGB(10, 5, 20),
+    Glow = Color3.fromRGB(80, 40, 160),
+    Accent = Color3.fromRGB(0, 255, 255),
+    LightContrast = Color3.fromRGB(30, 15, 50),
+    DarkContrast = Color3.fromRGB(20, 10, 35),
+    TextColor = Color3.fromRGB(0, 255, 255),
+    ButtonColor = Color3.fromRGB(100, 80, 150),
+    ToggledColor = Color3.fromRGB(0, 200, 255),
+    SliderColor = Color3.fromRGB(120, 60, 200),
+    TopBarColor = Color3.fromRGB(60, 20, 120),
 }
+
+-- Local file fallback using HttpService (exploit-compatible)
+local function saveToLocal()
+    local success, err = pcall(function()
+        local themeData = {}
+        for name, color in pairs(themes) do
+            if typeof(color) == "Color3" then
+                themeData[name] = {R = color.R, G = color.G, B = color.B}
+            end
+        end
+        savedSettings.themes = themeData
+        local json = http:JSONEncode(savedSettings)
+        -- Try simple file path first
+        local writeSuccess = pcall(function()
+            writefile(settingsFile, json)
+            print("Settings saved to: " .. settingsFile)
+        end)
+        if not writeSuccess then
+            -- Try PlayerGui storage (more persistent in exploits)
+            pcall(function()
+                local playerGui = player:FindFirstChild("PlayerGui")
+                if playerGui then
+                    local folder = playerGui:FindFirstChild("XsoulSettings")
+                    if not folder then
+                        folder = Instance.new("Folder")
+                        folder.Name = "XsoulSettings"
+                        folder.Parent = playerGui
+                    end
+                    local value = folder:FindFirstChild("Settings")
+                    if not value then
+                        value = Instance.new("StringValue")
+                        value.Name = "Settings"
+                        value.Parent = folder
+                    end
+                    value.Value = json
+                    print("Settings saved to PlayerGui")
+                end
+            end)
+        end
+        if not writeSuccess then
+            -- Try workspace storage as final fallback
+            pcall(function()
+                local folder = workspace:FindFirstChild("XsoulSettings")
+                if not folder then
+                    folder = Instance.new("Folder")
+                    folder.Name = "XsoulSettings"
+                    folder.Parent = workspace
+                end
+                local value = folder:FindFirstChild("Settings")
+                if not value then
+                    value = Instance.new("StringValue")
+                    value.Name = "Settings"
+                    value.Parent = folder
+                end
+                value.Value = json
+                print("Settings saved to workspace")
+            end)
+        end
+    end)
+    if not success then
+        warn("Failed to save settings: " .. tostring(err))
+    end
+end
+
+local function loadFromLocal()
+    local success, data = pcall(function()
+        -- Try simple file path first
+        local fileExists = pcall(function()
+            return isfile(settingsFile)
+        end)
+        if fileExists then
+            local json = readfile(settingsFile)
+            print("Settings loaded from: " .. settingsFile)
+            return http:JSONDecode(json)
+        end
+        -- Try PlayerGui storage
+        local playerGuiSuccess = pcall(function()
+            local playerGui = player:FindFirstChild("PlayerGui")
+            if playerGui then
+                local folder = playerGui:FindFirstChild("XsoulSettings")
+                if folder then
+                    local value = folder:FindFirstChild("Settings")
+                    if value and value.Value ~= "" then
+                        print("Settings loaded from PlayerGui")
+                        return http:JSONDecode(value.Value)
+                    end
+                end
+            end
+            return nil
+        end)
+        if playerGuiSuccess then
+            return playerGuiSuccess
+        end
+        -- Try workspace storage
+        local workspaceSuccess = pcall(function()
+            local folder = workspace:FindFirstChild("XsoulSettings")
+            if folder then
+                local value = folder:FindFirstChild("Settings")
+                if value and value.Value ~= "" then
+                    print("Settings loaded from workspace")
+                    return http:JSONDecode(value.Value)
+                end
+            end
+            return nil
+        end)
+        if workspaceSuccess then
+            return workspaceSuccess
+        end
+        return nil
+    end)
+    if success and data then
+        savedSettings = data
+        if savedSettings.themes then
+            for name, colorData in pairs(savedSettings.themes) do
+                if themes[name] then
+                    themes[name] = Color3.fromRGB(math.floor(colorData.R * 255), math.floor(colorData.G * 255), math.floor(colorData.B * 255))
+                end
+            end
+        end
+        return true
+    end
+    return false
+end
+
+-- Now define the actual saveSettings and loadSettings functions
+saveSettings = function()
+    -- Prioritize local file for exploit environments (more reliable)
+    saveToLocal()
+    
+    -- Also try DataStore as backup
+    if dataStoreAvailable then
+        local success, err = pcall(function()
+            local themeData = {}
+            for name, color in pairs(themes) do
+                if typeof(color) == "Color3" then
+                    themeData[name] = {R = color.R, G = color.G, B = color.B}
+                end
+            end
+            savedSettings.themes = themeData
+            userSettingsStore:SetAsync("settings", savedSettings)
+        end)
+        if not success then
+            warn("Failed to save to DataStore: " .. tostring(err))
+        end
+    end
+end
+
+loadSettings = function()
+    -- Prioritize local file for exploit environments (more reliable)
+    local localLoaded = loadFromLocal()
+    if localLoaded then
+        return true
+    end
+    
+    -- Try DataStore as backup
+    if dataStoreAvailable then
+        local success, data = pcall(function()
+            return userSettingsStore:GetAsync("settings")
+        end)
+        if success and data then
+            savedSettings = data
+            if savedSettings.themes then
+                for name, colorData in pairs(savedSettings.themes) do
+                    if themes[name] then
+                        themes[name] = Color3.fromRGB(math.floor(colorData.R * 255), math.floor(colorData.G * 255), math.floor(colorData.B * 255))
+                    end
+                end
+            end
+            return true
+        end
+    end
+    return false
+end
+
+-- Helper functions for saving/loading individual element values
+local function saveToggleValue(key, value)
+    if key and value ~= nil then
+        savedSettings.toggles[key] = value
+    end
+end
+
+local function loadToggleValue(key, default)
+    if key and savedSettings.toggles[key] ~= nil then
+        return savedSettings.toggles[key]
+    end
+    return default
+end
+
+local function saveTextboxValue(key, value)
+    if key and value ~= nil then
+        savedSettings.textboxes[key] = value
+    end
+end
+
+local function loadTextboxValue(key, default)
+    if key and savedSettings.textboxes[key] ~= nil then
+        return savedSettings.textboxes[key]
+    end
+    return default
+end
+
+local function saveSliderValue(key, value)
+    if key and value ~= nil then
+        savedSettings.sliders[key] = value
+    end
+end
+
+local function loadSliderValue(key, default)
+    if key and savedSettings.sliders[key] ~= nil then
+        return savedSettings.sliders[key]
+    end
+    return default
+end
+
+local function saveDropdownValue(key, value)
+    if key and value ~= nil then
+        savedSettings.dropdowns[key] = value
+    end
+end
+
+local function loadDropdownValue(key, default)
+    if key and savedSettings.dropdowns[key] ~= nil then
+        return savedSettings.dropdowns[key]
+    end
+    return default
+end
+
+local function saveColorPickerValue(key, value)
+    if key and value ~= nil then
+        savedSettings.colorpickers[key] = {R = value.R, G = value.G, B = value.B}
+    end
+end
+
+local function loadColorPickerValue(key, default)
+    if key and savedSettings.colorpickers[key] ~= nil then
+        return savedSettings.colorpickers[key]
+    end
+    return default
+end
+
+-- Load settings immediately after themes are defined
+loadSettings()
+
+-- Debounced save to avoid performance issues
+local saveDebounce = false
+local function debouncedSave()
+    if saveDebounce then return end
+    saveDebounce = true
+    spawn(function()
+        wait(0.5) -- Wait 0.5 second before saving
+        saveSettings()
+        saveDebounce = false
+    end)
+end
+
 do
     -- Dynamic Scroll
     function dynamicscroll(scrollingframe,uilis)
@@ -71,7 +369,11 @@ do
 
     function utility:Find(table, value) -- table.find doesn't work for dictionaries
         for i, v in  pairs(table) do
-            if v == value then
+            if typeof(v) == "Color3" and typeof(value) == "Color3" then
+                if v.R == value.R and v.G == value.G and v.B == value.B then
+                    return i
+                end
+            elseif v == value then
                 return i
             end
         end
@@ -134,6 +436,8 @@ do
                 for i, callback in pairs(self.ended) do
                     callback()
                 end
+                -- Save settings after dragging ends (window position is saved in callback)
+                saveSettings()
             end
         end)
     end
@@ -264,7 +568,7 @@ do
                     Size = UDim2.new(0, 126, 1, -38),
                     ZIndex = 3,
                     Image = "rbxassetid://5012534273",
-                    ImageColor3 = themes.DarkContrast,
+                    ImageColor3 = themes.Background,
                     ScaleType = Enum.ScaleType.Slice,
                     SliceCenter = Rect.new(4, 4, 296, 296)
                 },
@@ -337,39 +641,39 @@ Position = UDim2.new(0, 0, 0, 100),
                     utility:Create("TextButton", {
                         Name = "ToggleButton",
                         BackgroundTransparency = 1,
-                        Position = UDim2.new(1, -72, 0.56, -8),
-                        Size = UDim2.new(0, 16, 0, 16),
+                        Position = UDim2.new(1, -90, 0.5, -10),
+                        Size = UDim2.new(0, 24, 0, 24),
                         ZIndex = 5,
                         Font = Enum.Font.GothamBlack,
                         Text = "−",
-                        TextColor3 = themes.TextColor,
-                        TextSize = 17,
-                        AutoButtonColor = false,
-                        Visible = false
-                    }),
-                    utility:Create("TextButton", {
-                        Name = "MaximizeButton",
-                        BackgroundTransparency = 1,
-                        Position = UDim2.new(1, -48, 0.5, -8),
-                        Size = UDim2.new(0, 16, 0, 16),
-                        ZIndex = 5,
-                        Font = Enum.Font.GothamBlack,
-                        Text = "□",
                         TextColor3 = themes.TextColor,
                         TextSize = 20,
                         AutoButtonColor = false,
                         Visible = false
                     }),
                     utility:Create("TextButton", {
+                        Name = "MaximizeButton",
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(1, -60, 0.5, -10),
+                        Size = UDim2.new(0, 24, 0, 24),
+                        ZIndex = 5,
+                        Font = Enum.Font.GothamBlack,
+                        Text = "□",
+                        TextColor3 = themes.TextColor,
+                        TextSize = 18,
+                        AutoButtonColor = false,
+                        Visible = false
+                    }),
+                    utility:Create("TextButton", {
                         Name = "CloseButton",
                         BackgroundTransparency = 1,
-                        Position = UDim2.new(1, -24, 0.5, -8),
-                        Size = UDim2.new(0, 16, 0, 16),
+                        Position = UDim2.new(1, -30, 0.5, -10),
+                        Size = UDim2.new(0, 24, 0, 24),
                         ZIndex = 5,
                         Font = Enum.Font.GothamBlack,
                         Text = "x",
                         TextColor3 = themes.TextColor,
-                        TextSize = 15,
+                        TextSize = 18,
                         AutoButtonColor = false,
                         Visible = false
                     }),
@@ -436,19 +740,49 @@ Position = UDim2.new(0, 0, 0, 100),
         lib.closeButton.Visible = true
         lib.openButton.Visible = false
         lib.position = nil  -- nil = menu is open
-        lib.isMaximized = false
+        lib.isMaximized = savedSettings.isMaximized or false
+        
+        -- Apply saved window position if available
+        if savedSettings.windowPosition then
+            container.Main.Position = UDim2.new(
+                savedSettings.windowPosition.X.Scale,
+                savedSettings.windowPosition.X.Offset,
+                savedSettings.windowPosition.Y.Scale,
+                savedSettings.windowPosition.Y.Offset
+            )
+        end
+        
+        -- Apply saved maximized state if available
+        if lib.isMaximized then
+            lib.normalPosition = container.Main.Position
+            local margin = lib.isMobile and 5 or 20
+            container.Main.Size = UDim2.new(1, -margin * 2, 1, -margin * 2)
+            container.Main.Position = UDim2.new(0, margin, 0, margin)
+        end
         
         -- Store maximize button reference
         lib.maximizeButton = container.Main.TopBar.MaximizeButton
         lib.maximizeButton.Visible = true
         
+        -- Save window position when dragging ends
+        utility:DraggingEnded(function()
+            if container.Main then
+                savedSettings.windowPosition = {
+                    X = {Scale = container.Main.Position.X.Scale, Offset = container.Main.Position.X.Offset},
+                    Y = {Scale = container.Main.Position.Y.Scale, Offset = container.Main.Position.Y.Offset}
+                }
+            end
+        end)
+        
         -- Toggle button click event
         lib.toggleButton.Activated:Connect(function()
             lib:toggle()
+            saveSettings()
         end)
         
         -- Close button (exit) click event
         lib.closeButton.Activated:Connect(function()
+            saveSettings()
             utility:Pop(container.Main, 5)
             container:Destroy()
         end)
@@ -473,11 +807,14 @@ Position = UDim2.new(0, 0, 0, 100),
                 }, 0.3)
                 lib.isMaximized = true
             end
+            savedSettings.isMaximized = lib.isMaximized
+            saveSettings()
         end)
         
         -- Open button click event
         lib.openButton.Activated:Connect(function()
             lib:toggle()
+            saveSettings()
         end)
 
         return lib
@@ -501,13 +838,13 @@ Position = UDim2.new(0, 0, 0, 100),
                     Name = "Title",
                     AnchorPoint = Vector2.new(0, 0.5),
                     BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 40, 0.5, 0),
-                    Size = UDim2.new(1, -40, 1, 0),
+                    Position = UDim2.new(0, 25, 0.5, 0),
+                    Size = UDim2.new(1, -25, 1, 0),
                     ZIndex = 3,
-                    Font = Enum.Font.Gotham,
+                    Font = Enum.Font.GothamBold,
                     Text = title,
                     TextColor3 = themes.TextColor,
-                    TextSize = 14,
+                    TextSize = 18,
                     TextTransparency = 0.10000000149012,
                     TextXAlignment = Enum.TextXAlignment.Left
                 }),
@@ -587,7 +924,7 @@ Position = UDim2.new(0, 0, 0, 100),
                 ZIndex = 2,
                 Font = Enum.Font.Gotham,
                 Text =  title,
-                TextColor3 = themes.Accent,
+                TextColor3 = themes.TextColor,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 TextTransparency = 0.10000000149012
@@ -637,15 +974,30 @@ Position = UDim2.new(0, 0, 0, 100),
     function library:setTheme(theme, color3)
         themes[theme] = color3
 
-        for property, objects in pairs(objects[theme]) do
-            for i, object in pairs(objects) do
-                if not object.Parent or (object.Name == "Button" and object.Parent.Name == "ColorPicker") then
-                    objects[i] = nil -- i can do this because weak tables :D
-                else
-                    object[property] = color3
+        -- Update tracked objects
+        if objects[theme] then
+            for property, objs in pairs(objects[theme]) do
+                for i, object in pairs(objs) do
+                    if not object.Parent or (object.Name == "Button" and object.Parent.Name == "ColorPicker") then
+                        objs[i] = nil -- i can do this because weak tables :D
+                    else
+                        object[property] = color3
+                    end
                 end
             end
         end
+
+        -- Special handling for TextColor - update all text elements
+        if theme == "TextColor" then
+            for _, child in pairs(self.container:GetDescendants()) do
+                if child:IsA("TextLabel") or child:IsA("TextButton") then
+                    child.TextColor3 = color3
+                end
+            end
+        end
+
+        -- Save settings after theme change
+        saveSettings()
     end
 
     function library:toggle()
@@ -1009,7 +1361,7 @@ Position = UDim2.new(0, 0, 0, 100),
                 Size = UDim2.new(0, 40, 0, 16),
                 ZIndex = 2,
                 Image = "rbxassetid://5028857472",
-                ImageColor3 = themes.LightContrast,
+                ImageColor3 = themes.NotToggledColor,
                 ScaleType = Enum.ScaleType.Slice,
                 SliceCenter = Rect.new(2, 2, 298, 298)
             }, {
@@ -1033,9 +1385,27 @@ Position = UDim2.new(0, 0, 0, 100),
         local active = default
         self:updateToggle(toggle, nil, active)
 
+        -- Generate unique key and load saved value (with error handling)
+        local toggleKey
+        pcall(function()
+            if sec.page and sec.page.library and sec.page.library.container and sec.page.button then
+                toggleKey = sec.page.library.container.Name .. "_" .. sec.page.button.Name .. "_" .. title
+                local savedValue = loadToggleValue(toggleKey, default)
+                if savedValue ~= nil then
+                    active = savedValue
+                    self:updateToggle(toggle, nil, active)
+                end
+            end
+        end)
+
         toggle.MouseButton1Click:Connect(function()
             active = not active
             self:updateToggle(toggle, nil, active)
+            
+            if toggleKey then
+                saveToggleValue(toggleKey, active)
+                debouncedSave()
+            end
 
             if callback then
                 callback(active, function(...)
@@ -1047,6 +1417,10 @@ Position = UDim2.new(0, 0, 0, 100),
         function togglefunc:Set(bool)
             active =  bool
             sec:updateToggle(toggle,nil,active)
+            if toggleKey then
+                saveToggleValue(toggleKey, active)
+                debouncedSave()
+            end
             if callback then
                 callback(active, function(...)
                     sec:updateToggle(toggle, ...)
@@ -1119,6 +1493,18 @@ Position = UDim2.new(0, 0, 0, 100),
         local button = textbox.Button
         local input = button.Textbox
 
+        -- Generate unique key and load saved value (with error handling)
+        local textboxKey
+        pcall(function()
+            if self.page and self.page.library and self.page.library.container and self.page.button then
+                textboxKey = self.page.library.container.Name .. "_" .. self.page.button.Name .. "_" .. title
+                local savedValue = loadTextboxValue(textboxKey, default)
+                if savedValue ~= nil then
+                    input.Text = savedValue
+                end
+            end
+        end)
+
         textbox.MouseButton1Click:Connect(function()
 
             if textbox.Button.Size ~= UDim2.new(0, 100, 0, 16) then
@@ -1157,6 +1543,12 @@ Position = UDim2.new(0, 0, 0, 100),
                 Size = UDim2.new(0, 100, 0, 16),
                 Position = UDim2.new(1, -110, 0.5, -8)
             }, 0.2)
+
+            -- Save value when focus is lost
+            if textboxKey then
+                saveTextboxValue(textboxKey, input.Text)
+                debouncedSave()
+            end
 
             if callback then
                 callback(input.Text, true, function(...)
@@ -1313,6 +1705,18 @@ Position = UDim2.new(0, 0, 0, 100),
                 SliceCenter = Rect.new(2, 2, 298, 298)
             })
         })
+
+        -- Generate unique key and load saved value (with error handling)
+        local colorKey
+        pcall(function()
+            if self.page and self.page.library and self.page.library.container and self.page.button then
+                colorKey = self.page.library.container.Name .. "_" .. self.page.button.Name .. "_" .. title
+                local savedValue = loadColorPickerValue(colorKey, nil)
+                if savedValue then
+                    default = Color3.fromRGB(savedValue.R, savedValue.G, savedValue.B)
+                end
+            end
+        end)
 
         local tab = utility:Create("ImageLabel", {
             Name = "ColorPicker",
@@ -1580,6 +1984,13 @@ Position = UDim2.new(0, 0, 0, 100),
         table.insert(self.modules, colorpicker)
         --self:Resize()
 
+        -- Update button color with saved value after tab is created
+        if colorKey and savedSettings.colorpickers and savedSettings.colorpickers[colorKey] then
+            local savedValue = savedSettings.colorpickers[colorKey]
+            local color3 = Color3.fromRGB(savedValue.R, savedValue.G, savedValue.B)
+            colorpicker.Button.ImageColor3 = color3
+        end
+
         local allowed = {
             [""] = true
         }
@@ -1660,7 +2071,6 @@ Position = UDim2.new(0, 0, 0, 100),
                         hue, sat, brightness = Color3.toHSV(color3)
 
                         self:updateColorPicker(colorpicker, nil, color3)
-                        callback(color3)
                     end
                 end)
             end
@@ -1669,7 +2079,7 @@ Position = UDim2.new(0, 0, 0, 100),
         canvas.MouseButton1Down:Connect(function()
             draggingCanvas = true
 
-            while draggingCanvas do
+            while draggingCanvas and input:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
 
                 local x, y = mouse.X, mouse.Y
 
@@ -1685,15 +2095,15 @@ Position = UDim2.new(0, 0, 0, 100),
                 self:updateColorPicker(colorpicker, nil, {hue, sat, brightness}) -- roblox is literally retarded
                 utility:Tween(canvas.Cursor, {Position = UDim2.new(sat, 0, 1 - brightness, 0)}, 0.1) -- overwrite
 
-                callback(color3)
                 utility:Wait()
             end
+            draggingCanvas = false
         end)
 
         color.MouseButton1Down:Connect(function()
             draggingColor = true
 
-            while draggingColor do
+            while draggingColor and input:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
 
                 hue = 1 - math.clamp(1 - ((mouse.X - colorPosition.X) / colorSize.X), 0, 1)
                 color3 = Color3.fromHSV(hue, sat, brightness)
@@ -1706,9 +2116,9 @@ Position = UDim2.new(0, 0, 0, 100),
                 self:updateColorPicker(colorpicker, nil, {hue, sat, brightness}) -- roblox is literally retarded
                 utility:Tween(tab.Container.Color.Select, {Position = UDim2.new(x, 0, 0, 0)}, 0.1) -- overwrite
 
-                callback(color3)
                 utility:Wait()
             end
+            draggingColor = false
         end)
 
         -- click events
@@ -1786,12 +2196,32 @@ Position = UDim2.new(0, 0, 0, 100),
         colorpicker.MouseButton1Click:Connect(toggleTab)
 
         tab.Container.Button.MouseButton1Click:Connect(function()
+            callback(color3)
+            if colorKey then
+                saveColorPickerValue(colorKey, color3)
+                debouncedSave()
+            end
             animate()
         end)
 
         tab.Close.MouseButton1Click:Connect(function()
             self:updateColorPicker(colorpicker, nil, lastColor)
             animate()
+        end)
+
+        -- Click outside to cancel
+        input.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 and toggle then
+                local mousePos = input.Position
+                local tabPos = tab.AbsolutePosition
+                local tabSize = tab.AbsoluteSize
+                
+                if mousePos.X < tabPos.X or mousePos.X > tabPos.X + tabSize.X or
+                   mousePos.Y < tabPos.Y or mousePos.Y > tabPos.Y + tabSize.Y then
+                    self:updateColorPicker(colorpicker, nil, lastColor)
+                    animate()
+                end
+            end
         end)
 
         return colorpicker
@@ -1864,7 +2294,7 @@ Position = UDim2.new(0, 0, 0, 100),
                         Size = UDim2.new(0.8, 0, 1, 0),
                         ZIndex = 3,
                         Image = "rbxassetid://5028857472",
-                        ImageColor3 = themes.TextColor,
+                        ImageColor3 = themes.SliderColor,
                         ScaleType = Enum.ScaleType.Slice,
                         SliceCenter = Rect.new(2, 2, 298, 298)
                     }, {
@@ -1873,7 +2303,7 @@ Position = UDim2.new(0, 0, 0, 100),
                             AnchorPoint = Vector2.new(0.5, 0.5),
                             BackgroundTransparency = 1,
                             ImageTransparency = 1.000,
-                            ImageColor3 = themes.TextColor,
+                            ImageColor3 = themes.SliderColor,
                             Position = UDim2.new(1, 0, 0.5, 0),
                             Size = UDim2.new(0, 10, 0, 10),
                             ZIndex = 3,
@@ -1895,7 +2325,19 @@ Position = UDim2.new(0, 0, 0, 100),
         local textbox = slider.TextBox
         local circle = slider.Slider.Bar.Fill.Circle
 
+        -- Generate unique key and load saved value (with error handling)
+        local sliderKey
         local value = default or min
+        pcall(function()
+            if self.page and self.page.library and self.page.library.container and self.page.button then
+                sliderKey = self.page.library.container.Name .. "_" .. self.page.button.Name .. "_" .. title
+                local savedValue = loadSliderValue(sliderKey, default)
+                if savedValue ~= nil then
+                    value = savedValue
+                end
+            end
+        end)
+        
         local dragging, last
 
         local callback = function(value)
@@ -1910,6 +2352,10 @@ Position = UDim2.new(0, 0, 0, 100),
 
         utility:DraggingEnded(function()
             dragging = false
+            if sliderKey then
+                saveSliderValue(sliderKey, value)
+                debouncedSave()
+            end
         end)
 
         slider.MouseButton1Down:Connect(function(input)
@@ -1926,12 +2372,20 @@ Position = UDim2.new(0, 0, 0, 100),
 
             wait(0.5)
             utility:Tween(circle, {ImageTransparency = 1}, 0.2)
+            if sliderKey then
+                saveSliderValue(sliderKey, value)
+                debouncedSave()
+            end
         end)
 
         textbox.FocusLost:Connect(function()
             if not tonumber(textbox.Text) then
                 value = self:updateSlider(slider, nil, default or min, min, max)
                 callback(value)
+            end
+            if sliderKey then
+                saveSliderValue(sliderKey, value)
+                debouncedSave()
             end
         end)
 
@@ -1943,6 +2397,10 @@ Position = UDim2.new(0, 0, 0, 100),
             elseif not allowed[text] then
                 value = self:updateSlider(slider, nil, tonumber(text) or value, min, max)
                 callback(value)
+                if sliderKey then
+                    saveSliderValue(sliderKey, value)
+                    debouncedSave()
+                end
             end
         end)
 
@@ -1955,6 +2413,10 @@ Position = UDim2.new(0, 0, 0, 100),
             elseif not allowed[text] then
                 value = sel:updateSlider(slider, nil, tonumber(text) or value, min, max)
                 callback(value)
+                if sliderKey then
+                    saveSliderValue(sliderKey, value)
+                    debouncedSave()
+                end
             end
         end 
 
@@ -2054,6 +2516,18 @@ Position = UDim2.new(0, 0, 0, 100),
         local search = dropdown.Search
         local focused
 
+        -- Generate unique key and load saved value (with error handling)
+        local dropdownKey
+        pcall(function()
+            if self.page and self.page.library and self.page.library.container and self.page.button then
+                dropdownKey = self.page.library.container.Name .. "_" .. self.page.button.Name .. "_" .. title
+                local savedValue = loadDropdownValue(dropdownKey, nil)
+                if savedValue then
+                    search.TextBox.Text = savedValue
+                end
+            end
+        end)
+        
         list = list or {}
 
         search.Button.MouseButton1Click:Connect(function()
@@ -2078,7 +2552,12 @@ Position = UDim2.new(0, 0, 0, 100),
             if search.TextBox.Text == ""  then
                 search.TextBox.Text = title
                 self:updateDropdown(dropdown, nil, nil, callback)
-
+            else
+                -- Save the selected value
+                if dropdownKey then
+                    saveDropdownValue(dropdownKey, search.TextBox.Text)
+                    debouncedSave()
+                end
             end
         end)
 
@@ -2108,6 +2587,12 @@ Position = UDim2.new(0, 0, 0, 100),
         end
 
         local button = page.button
+        
+        -- Save selected page name
+        if toggle and page.button then
+            savedSettings.selectedPage = page.button.Name
+            saveSettings()
+        end
 
         if toggle then
             -- page button
@@ -2527,8 +3012,17 @@ section2:Dropdown("Dropdown", {"Hello", "World", "Hello World", "Word", 1, 2, 3}
    print("Selected", text)
 end)
 
--- Auto-select first page to show content
-win:SelectPage(page1, false)
+-- Auto-select first page to show content (or saved page if available)
+local initialPage = page1
+if savedSettings.selectedPage then
+    for _, page in pairs(win.pages) do
+        if page.button and page.button.Name == savedSettings.selectedPage then
+            initialPage = page
+            break
+        end
+    end
+end
+win:SelectPage(initialPage, false)
 
 -- Ensure sections are properly expanded after page selection
 wait(0.1)
@@ -2536,15 +3030,284 @@ for _, section in pairs(page1.sections) do
     section:Resize(true)
 end
 
-local page2 = win:NewPage("ตั้งค่า")
-local setting1 = page2:NewSecction("ตัวเลือก")
+local page3 = win:NewPage("ผู้เล่น")
+local player1 = page3:NewSecction("ความไวการเดิน")
 
-setting1:Toggle("เปิด/ปิด", true, function(t)
-    print("Setting toggle:", t)
+player1:Textbox("ความไว", "16", function(value)
+    print("Sensitivity:", value)
 end)
 
-setting1:Button("ปุ่ม", function(t)
-    print("Setting button")
+player1:Toggle("เดินเร็ว", false, function(t)
+    print("Speed toggle:", t)
+end)
+
+local player2 = page3:NewSecction("กระโดด")
+
+player2:Textbox("ความสูง", "50", function(value)
+    print("Jump height:", value)
+end)
+
+player2:Toggle("กระโดดสูง", false, function(t)
+    print("High jump toggle:", t)
+end)
+
+player2:Toggle("กระโดดหลายครั้ง", false, function(t)
+    print("Multi jump toggle:", t)
+end)
+
+local page2 = win:NewPage("ตั้งค่า")
+local setting1 = page2:NewSecction("สีของหน้าต่าง")
+
+setting1:ColorPicker("สีสวิตช์ปิด", themes.NotToggledColor, function(color)
+    win:setTheme("NotToggledColor", color)
+    saveSettings()
+end)
+
+setting1:ColorPicker("สีสวิตช์เปิด", themes.ToggledColor, function(color)
+    win:setTheme("ToggledColor", color)
+    saveSettings()
+end)
+
+setting1:ColorPicker("สีพื้นหลัง", themes.Background, function(color)
+    win:setTheme("Background", color)
+    saveSettings()
+end)
+
+setting1:ColorPicker("สีแถบบน", themes.TopBarColor, function(color)
+    win:setTheme("TopBarColor", color)
+    saveSettings()
+end)
+
+setting1:ColorPicker("สีตัวหนังสือ", themes.TextColor, function(color)
+    win:setTheme("TextColor", color)
+    saveSettings()
+end)
+
+local setting2 = page2:NewSecction("ฟอนต์ & ขนาด และภาษา")
+
+setting2:Textbox("ขนาดตัวหนังสือ", tostring(savedSettings.fontSize or 14), function(size)
+    local textSize = tonumber(size)
+    if textSize and textSize >= 10 and textSize <= 24 then
+        for _, child in pairs(win.container.Main:GetDescendants()) do
+            if child:IsA("TextLabel") or child:IsA("TextButton") then
+                -- Skip top bar buttons (Toggle, Maximize, Close) and their text
+                if child.Name ~= "Title" or child.Parent.Name ~= "TopBar" then
+                    if child.Name ~= "ToggleButton" and child.Name ~= "MaximizeButton" and child.Name ~= "CloseButton" then
+                        if child.TextSize >= 10 and child.TextSize <= 24 then
+                            child.TextSize = textSize
+                        end
+                    end
+                end
+            end
+        end
+        savedSettings.fontSize = textSize
+        saveSettings()
+    end
+end)
+
+setting2:Dropdown("เปลี่ยนฟอนต์", {"Gotham", "GothamBold", "GothamSemibold", "Arial", "ArialBold", "SourceSans", "SourceSansBold", "SourceSansLight", "SourceSansItalic", "Ubuntu", "UbuntuBold", "Code", "Legacy", "Fantasy", "Cartoon"}, function(font)
+    local fontEnum = Enum.Font[font]
+    for _, child in pairs(win.container.Main:GetDescendants()) do
+        if child:IsA("TextLabel") or child:IsA("TextButton") then
+            if child.Name ~= "Title" or child.Parent.Name ~= "TopBar" then
+                child.Font = fontEnum
+            end
+        end
+    end
+    savedSettings.font = font
+    saveSettings()
+end)
+
+local translations = {
+    Thai = {
+        ["เมนูหลัก"] = "เมนูหลัก",
+        ["Test1"] = "Test1",
+        ["Test2"] = "Test2",
+        ["Toggle"] = "Toggle",
+        ["Notification"] = "การแจ้งเตือน",
+        ["Default"] = "ค่าเริ่มต้น",
+        ["ColorPicker"] = "เลือกสี",
+        ["ColorPicker2"] = "เลือกสี2",
+        ["Slider"] = "สไลเดอร์",
+        ["Dropdown"] = "รายการแบบเลือก",
+        ["Hello"] = "สวัสดี",
+        ["World"] = "โลก",
+        ["Hello World"] = "สวัสดีโลก",
+        ["Word"] = "คำ",
+        ["ผู้เล่น"] = "ผู้เล่น",
+        ["ความไวการเดิน"] = "ความไวการเดิน",
+        ["ความไว"] = "ความไว",
+        ["เดินเร็ว"] = "เดินเร็ว",
+        ["ความเร็ว"] = "ความเร็ว",
+        ["กระโดด"] = "กระโดด",
+        ["ความสูง"] = "ความสูง",
+        ["กระโดดสูง"] = "กระโดดสูง",
+        ["กระโดดหลายครั้ง"] = "กระโดดหลายครั้ง",
+        ["ตั้งค่า"] = "ตั้งค่า",
+        ["สีของหน้าต่าง"] = "สีของหน้าต่าง",
+        ["สีสวิตช์ปิด"] = "สีสวิตช์ปิด",
+        ["สีสวิตช์เปิด"] = "สีสวิตช์เปิด",
+        ["สีพื้นหลัง"] = "สีพื้นหลัง",
+        ["สีแถบบน"] = "สีแถบบน",
+        ["สีสไลเดอร์"] = "สีสไลเดอร์",
+        ["สีตัวหนังสือ"] = "สีตัวหนังสือ",
+        ["ฟอนต์ & ขนาด และภาษา"] = "ฟอนต์ & ขนาด และภาษา",
+        ["ขนาดตัวหนังสือ"] = "ขนาดตัวหนังสือ",
+        ["Change Font"] = "เปลี่ยนฟอนต์",
+        ["Change Language"] = "เปลี่ยนภาษา",
+        ["Main Menu"] = "เมนูหลัก",
+        ["Player"] = "ผู้เล่น",
+        ["Walk Sensitivity"] = "ความไวการเดิน",
+        ["Sensitivity"] = "ความไว",
+        ["Walk Fast"] = "เดินเร็ว",
+        ["Speed"] = "ความเร็ว",
+        ["Jump"] = "กระโดด",
+        ["Height"] = "ความสูง",
+        ["High Jump"] = "กระโดดสูง",
+        ["Multi Jump"] = "กระโดดหลายครั้ง",
+        ["Settings"] = "ตั้งค่า",
+        ["Window Colors"] = "สีของหน้าต่าง",
+        ["Switch Off Color"] = "สีสวิตช์ปิด",
+        ["Switch On Color"] = "สีสวิตช์เปิด",
+        ["Background Color"] = "สีพื้นหลัง",
+        ["Top Bar Color"] = "สีแถบบน",
+        ["Slider Color"] = "สีสไลเดอร์",
+        ["Text Color"] = "สีตัวหนังสือ",
+        ["Font & Size & Language"] = "ฟอนต์ & ขนาด และภาษา",
+        ["Text Size"] = "ขนาดตัวหนังสือ",
+        ["Change Font"] = "เปลี่ยนฟอนต์",
+        ["Change Language"] = "เปลี่ยนภาษา"
+    },
+    English = {
+        ["เมนูหลัก"] = "Main Menu",
+        ["Test1"] = "Test1",
+        ["Test2"] = "Test2",
+        ["Toggle"] = "Toggle",
+        ["Notification"] = "Notification",
+        ["Default"] = "Default",
+        ["ColorPicker"] = "Color Picker",
+        ["ColorPicker2"] = "Color Picker 2",
+        ["Slider"] = "Slider",
+        ["Dropdown"] = "Dropdown",
+        ["Hello"] = "Hello",
+        ["World"] = "World",
+        ["Hello World"] = "Hello World",
+        ["Word"] = "Word",
+        ["ผู้เล่น"] = "Player",
+        ["ความไวการเดิน"] = "Walk Sensitivity",
+        ["ความไว"] = "Sensitivity",
+        ["เดินเร็ว"] = "Walk Fast",
+        ["ความเร็ว"] = "Speed",
+        ["กระโดด"] = "Jump",
+        ["ความสูง"] = "Height",
+        ["กระโดดสูง"] = "High Jump",
+        ["กระโดดหลายครั้ง"] = "Multi Jump",
+        ["ตั้งค่า"] = "Settings",
+        ["สีของหน้าต่าง"] = "Window Colors",
+        ["สีสวิตช์ปิด"] = "Switch Off Color",
+        ["สีสวิตช์เปิด"] = "Switch On Color",
+        ["สีพื้นหลัง"] = "Background Color",
+        ["สีแถบบน"] = "Top Bar Color",
+        ["สีสไลเดอร์"] = "Slider Color",
+        ["สีตัวหนังสือ"] = "Text Color",
+        ["ฟอนต์ & ขนาด และภาษา"] = "Font & Size & Language",
+        ["ขนาดตัวหนังสือ"] = "Text Size",
+        ["เปลี่ยนฟอนต์"] = "Change Font",
+        ["เปลี่ยนภาษา"] = "Change Language",
+        ["Main Menu"] = "Main Menu",
+        ["Player"] = "Player",
+        ["Walk Sensitivity"] = "Walk Sensitivity",
+        ["Sensitivity"] = "Sensitivity",
+        ["Walk Fast"] = "Walk Fast",
+        ["Speed"] = "Speed",
+        ["Jump"] = "Jump",
+        ["Height"] = "Height",
+        ["High Jump"] = "High Jump",
+        ["Multi Jump"] = "Multi Jump",
+        ["Settings"] = "Settings",
+        ["Window Colors"] = "Window Colors",
+        ["Switch Off Color"] = "Switch Off Color",
+        ["Switch On Color"] = "Switch On Color",
+        ["Background Color"] = "Background Color",
+        ["Top Bar Color"] = "Top Bar Color",
+        ["Slider Color"] = "Slider Color",
+        ["Text Color"] = "Text Color",
+        ["Font & Size & Language"] = "Font & Size & Language",
+        ["Text Size"] = "Text Size",
+        ["Change Font"] = "Change Font",
+        ["Change Language"] = "Change Language"
+    }
+}
+
+local function setLanguage(langKey)
+    for _, child in pairs(win.container.Main:GetDescendants()) do
+        if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+            local currentText = child.Text
+            if translations[langKey][currentText] then
+                child.Text = translations[langKey][currentText]
+            end
+        end
+    end
+    -- Also check the pages container for button texts
+    for _, page in pairs(win.pages) do
+        if page.button and page.button.Title then
+            local currentText = page.button.Title.Text
+            if translations[langKey][currentText] then
+                page.button.Title.Text = translations[langKey][currentText]
+            end
+        end
+    end
+end
+
+-- Apply loaded font size if available
+if savedSettings.fontSize then
+    for _, child in pairs(win.container.Main:GetDescendants()) do
+        if child:IsA("TextLabel") or child:IsA("TextButton") then
+            -- Skip top bar buttons (Toggle, Maximize, Close) and their text
+            if child.Name ~= "Title" or child.Parent.Name ~= "TopBar" then
+                if child.Name ~= "ToggleButton" and child.Name ~= "MaximizeButton" and child.Name ~= "CloseButton" then
+                    if child.TextSize >= 10 and child.TextSize <= 24 then
+                        child.TextSize = savedSettings.fontSize
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Apply loaded font if available
+if savedSettings.font then
+    local fontEnum = Enum.Font[savedSettings.font]
+    if fontEnum then
+        for _, child in pairs(win.container.Main:GetDescendants()) do
+            if child:IsA("TextLabel") or child:IsA("TextButton") then
+                if child.Name ~= "Title" or child.Parent.Name ~= "TopBar" then
+                    child.Font = fontEnum
+                end
+            end
+        end
+    end
+end
+
+-- Apply loaded theme colors if available
+if savedSettings.themes then
+    for themeName, colorData in pairs(savedSettings.themes) do
+        if themes[themeName] then
+            local color3 = Color3.fromRGB(math.floor(colorData.R * 255), math.floor(colorData.G * 255), math.floor(colorData.B * 255))
+            win:setTheme(themeName, color3)
+        end
+    end
+end
+
+-- Set initial language (use saved if available, otherwise default to English)
+local initialLanguage = savedSettings.language or "English"
+setLanguage(initialLanguage)
+
+setting2:Dropdown("เปลี่ยนภาษา", {"ไทย", "English"}, function(lang)
+    local langKey = lang == "ไทย" and "Thai" or "English"
+    savedSettings.language = langKey
+    saveSettings()
+    setLanguage(langKey)
 end)
 
 return library
