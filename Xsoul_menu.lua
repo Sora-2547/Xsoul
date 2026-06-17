@@ -8,7 +8,7 @@ local utility = {}
 -- Mobile config
 local isMobile = input.TouchEnabled
 local CONFIG = {
-    NORMAL_SIZE = isMobile and UDim2.new(0.8, 0, 0.75, 0) or UDim2.new(0.3, 0, 0.45, 0),
+    NORMAL_SIZE = isMobile and UDim2.new(0.75, 0, 0.75, 0) or UDim2.new(0.3, 0, 0.45, 0),
     MAX_SIZE = UDim2.new(0.95, 0, 0.9, 0),
     CENTER_POS = UDim2.new(0.5, 0, 0.5, 0),
     TOPBAR_HEIGHT = 38
