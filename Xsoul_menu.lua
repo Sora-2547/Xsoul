@@ -228,8 +228,8 @@ do
         local isMobile = input.TouchEnabled
 
         -- Set different sizes for mobile vs desktop
-        local windowSize = isMobile and UDim2.new(0, 320, 0, 280) or UDim2.new(0, 511, 0, 390)
-        local windowPosition = isMobile and UDim2.new(0.5, -160, 0.05, 0) or UDim2.new(0.25, 0, 0.052435593, 0)
+        local windowSize = isMobile and UDim2.new(0, 340, 0, 280) or UDim2.new(0, 530, 0, 390)
+        local windowPosition = isMobile and UDim2.new(0.5, -170, 0.05, 0) or UDim2.new(0.25, 0, 0.052435593, 0)
 
         local container = utility:Create("ScreenGui", {
             Name = title,
