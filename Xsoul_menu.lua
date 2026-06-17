@@ -396,14 +396,15 @@ Position = UDim2.new(0, 0, 0, 100),
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0.5, 0, 0.5, 0),
                 Size = UDim2.new(1, 0, 1, 0),
-                ZIndex = 5,
+                ZIndex = 6,
                 Font = Enum.Font.GothamBlack,
                 Text = "Xsoul",
                 RichText = true,
                 TextColor3 = themes.TextColor,
-                TextSize = 12,
+                TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Center,
-                TextYAlignment = Enum.TextYAlignment.Center
+                TextYAlignment = Enum.TextYAlignment.Center,
+                Visible = true
             })
         })
         
@@ -2507,6 +2508,15 @@ section2:Dropdown("Dropdown", {"Hello", "World", "Hello World", "Word", 1, 2, 3}
 section2:Dropdown("Dropdown", {"Hello", "World", "Hello World", "Word", 1, 2, 3}, function(text)
    print("Selected", text)
 end)
+
+-- Auto-select first page to show content
+win:SelectPage(page1, false)
+
+-- Ensure sections are properly expanded after page selection
+wait(0.1)
+for _, section in pairs(page1.sections) do
+    section:Resize(true)
+end
 
 local page2 = win:NewPage("ตั้งค่า")
 local setting1 = page2:NewSecction("ตัวเลือก")
