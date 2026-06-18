@@ -387,6 +387,41 @@
     .copy-script-btn:hover { background: var(--accent); color: #fff; box-shadow: 0 4px 14px var(--glow); }
     .copy-script-btn.copied { background: #22c55e; color: #fff; }
 
+    /* ===== SCRIPTS GRID ===== */
+    .scripts-section { margin-top: 20px; }
+    .scripts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .script-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; transition: all 0.3s ease; cursor: pointer;
+      animation: fadeInUp 0.6s ease both;
+    }
+    .script-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 8px 28px var(--glow); }
+    .script-card:nth-child(1) { animation-delay: 0.1s; }
+    .script-card:nth-child(2) { animation-delay: 0.2s; }
+    .script-card:nth-child(3) { animation-delay: 0.3s; }
+    
+    .script-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .script-card-icon { font-size: 1.8rem; }
+    .script-card-name { font-weight: 700; font-size: 1rem; color: var(--text); }
+    .script-card-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+    .script-card-footer { display: flex; align-items: center; justify-content: space-between; }
+    .script-card-tag {
+      font-family: var(--mono); font-size: 0.65rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .script-card-tag.free { background: #4ade8022; color: #4ade80; border: 1px solid #4ade8044; }
+    .script-card-tag.beta { background: #ff6eb422; color: #ff9ed4; border: 1px solid #ff6eb444; }
+    .script-card-tag.premium { background: #7c5cfc22; color: #a78bfa; border: 1px solid #7c5cfc44; }
+    
+    .copy-mini-btn {
+      background: var(--border); border: none; border-radius: 8px;
+      padding: 8px 12px; font-size: 0.75rem; font-weight: 600;
+      color: var(--muted); cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .copy-mini-btn:hover { background: var(--accent); color: #fff; }
+    .copy-mini-btn svg { width: 13px; height: 13px; }
+
     /* ===== TOAST ===== */
     .toast {
       position: fixed; bottom: 32px; right: 32px; background: #161a27ee;
@@ -398,6 +433,93 @@
     }
     .toast.show { transform: translateY(0); opacity: 1; }
     .toast.error-toast { border-color: var(--error); color: var(--error); }
+
+    /* ===== RANK MODAL ===== */
+    .rank-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px); z-index: 2000;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .rank-modal-overlay.active { opacity: 1; visibility: visible; }
+    
+    .rank-modal {
+      background: var(--card); border: 1px solid var(--border); border-radius: 24px;
+      padding: 40px; width: min(520px, 90vw); max-height: 85vh; overflow-y: auto;
+      transform: scale(0.9) translateY(20px); transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+      position: relative;
+    }
+    .rank-modal-overlay.active .rank-modal { transform: scale(1) translateY(0); }
+    
+    .rank-modal-close {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--border); border: none; border-radius: 10px;
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; color: var(--text);
+    }
+    .rank-modal-close:hover { background: var(--error); color: #fff; }
+    
+    .rank-modal-header { text-align: center; margin-bottom: 24px; }
+    .rank-modal-icon { font-size: 4rem; margin-bottom: 12px; display: block; }
+    .rank-modal-title { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    .rank-modal-badge {
+      display: inline-block; font-family: var(--mono); font-size: 0.7rem; font-weight: 700;
+      padding: 6px 14px; border-radius: 999px; letter-spacing: 0.08em; text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .rank-modal-description { color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 24px; }
+    
+    .rank-modal-perks { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .rank-modal-perks li {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
+      background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border);
+    }
+    .rank-modal-perks li::before {
+      content: '✓'; font-weight: 700; flex-shrink: 0;
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+    
+    /* Rank-specific modal styles */
+    .rank-modal.bronze-modal { border-color: #cd7f32; }
+    .rank-modal.bronze-modal .rank-modal-title { color: #e8a055; }
+    .rank-modal.bronze-modal .rank-modal-badge { background: #cd7f3222; color: #e8a055; border: 1px solid #cd7f3266; }
+    .rank-modal.bronze-modal .rank-modal-perks li::before { background: #cd7f32; color: #1a1208; }
+    
+    .rank-modal.silver-modal { border-color: #8899bb; }
+    .rank-modal.silver-modal .rank-modal-title { color: #b8c8e8; }
+    .rank-modal.silver-modal .rank-modal-badge { background: #8899bb22; color: #b8c8e8; border: 1px solid #8899bb66; }
+    .rank-modal.silver-modal .rank-modal-perks li::before { background: #a0b4d0; color: #131620; }
+    
+    .rank-modal.gold-modal { border-color: #ffd700; }
+    .rank-modal.gold-modal .rank-modal-title { 
+      background: linear-gradient(135deg, #ffe566, #ffa500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+    }
+    .rank-modal.gold-modal .rank-modal-badge { background: #ffd70022; color: #ffe566; border: 1px solid #ffd70066; }
+    .rank-modal.gold-modal .rank-modal-perks li::before { background: #ffd700; color: #1a1600; }
+    
+    .rank-modal.platinum-modal { border-color: #40e0d0; }
+    .rank-modal.platinum-modal .rank-modal-title { 
+      background: linear-gradient(135deg, #40e0d0, #7fffd4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+    }
+    .rank-modal.platinum-modal .rank-modal-badge { background: #40e0d022; color: #40e0d0; border: 1px solid #40e0d066; }
+    .rank-modal.platinum-modal .rank-modal-perks li::before { background: #40e0d0; color: #0e1520; }
+    
+    .rank-modal.diamond-modal { border-color: #7c5cfc; }
+    .rank-modal.diamond-modal .rank-modal-title { 
+      background: linear-gradient(135deg, #a78bfa, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+    }
+    .rank-modal.diamond-modal .rank-modal-badge { background: #7c5cfc22; color: #a78bfa; border: 1px solid #7c5cfc77; }
+    .rank-modal.diamond-modal .rank-modal-perks li::before { background: #7c5cfc; color: #0c0e20; }
+    
+    .rank-modal.premium-modal { border-color: #ff6eb4; }
+    .rank-modal.premium-modal .rank-modal-title { 
+      background: linear-gradient(90deg, #ff6eb4, #c471ed, #7c5cfc, #60a5fa, #c471ed, #ff6eb4);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 300%; animation: titleShimmer 3s linear infinite;
+    }
+    .rank-modal.premium-modal .rank-modal-badge { background: linear-gradient(135deg, #ff6eb433, #c471ed33); color: #ff9ed4; border: 1px solid #c471ed66; }
+    .rank-modal.premium-modal .rank-modal-perks li::before { background: #c471ed; color: #120828; }
 
     footer {
       position: relative; z-index: 1; text-align: center; font-size: .78rem;
@@ -465,6 +587,7 @@
         <div class="input-field" id="confirmPasswordFields" style="display:none;">
           <label for="authConfirmPassword">ยืนยันรหัสผ่าน</label>
           <input type="password" id="authConfirmPassword" placeholder="••••••••">
+          <div id="passwordMatchStatus" class="status-msg"></div>
         </div>
         <button type="submit" class="submit-btn" id="submitAuthBtn">เข้าสู่ระบบ</button>
       </div>
@@ -559,7 +682,7 @@
     <div class="ranks-grid">
 
       <!-- BRONZE -->
-      <div class="rank-card rank-bronze" onclick="showToast('Bronze — ระดับเริ่มต้น')">
+      <div class="rank-card rank-bronze" onclick="openRankModal('bronze')">
         <span class="rank-badge">Free</span>
         <span class="rank-icon">🥉</span>
         <div class="rank-name">Bronze</div>
@@ -573,7 +696,7 @@
       </div>
 
       <!-- SILVER -->
-      <div class="rank-card rank-silver" onclick="showToast('Silver — ระดับกลาง')">
+      <div class="rank-card rank-silver" onclick="openRankModal('silver')">
         <span class="rank-badge">Basic</span>
         <span class="rank-icon">🥈</span>
         <div class="rank-name">Silver</div>
@@ -588,7 +711,7 @@
       </div>
 
       <!-- GOLD -->
-      <div class="rank-card rank-gold" onclick="showToast('Gold — ระดับสูง ✨')">
+      <div class="rank-card rank-gold" onclick="openRankModal('gold')">
         <span class="rank-badge">Popular</span>
         <span class="rank-icon">🥇</span>
         <div class="rank-name">Gold</div>
@@ -603,7 +726,7 @@
       </div>
 
       <!-- PLATINUM -->
-      <div class="rank-card rank-platinum" onclick="showToast('Platinum — ระดับพรีเมียม 💎')">
+      <div class="rank-card rank-platinum" onclick="openRankModal('platinum')">
         <span class="rank-badge">Pro</span>
         <span class="rank-icon">💠</span>
         <div class="rank-name">Platinum</div>
@@ -618,7 +741,7 @@
       </div>
 
       <!-- DIAMOND -->
-      <div class="rank-card rank-diamond" onclick="showToast('Diamond — ระดับสูงสุด 💜')">
+      <div class="rank-card rank-diamond" onclick="openRankModal('diamond')">
         <span class="rank-badge">Elite</span>
         <span class="rank-icon">💎</span>
         <div class="rank-name">Diamond</div>
@@ -633,7 +756,7 @@
       </div>
 
       <!-- PREMIUM MAX -->
-      <div class="rank-card rank-premium" onclick="showToast('PremiumMax — ระดับ GOD ⚡')">
+      <div class="rank-card rank-premium" onclick="openRankModal('premium')">
         <div class="stars" id="premiumStars"></div>
         <span class="rank-badge">⚡ GOD TIER</span>
         <span class="rank-icon">👑</span>
@@ -652,19 +775,75 @@
     </div>
   </div>
 
-  <!-- SCRIPT CARD -->
-  <div class="card">
-    <div class="card-title">🗺️ Map ทำลายไข่เพื่อฟัก Brainrots!</div>
-    <div class="script-wrapper">
-      <div class="script-label">Lua Script</div>
-      <div class="script-box" id="brainrotScript">loadstring(game:HttpGet("https://raw.githubusercontent.com/Sora-2547/Xsoul/refs/heads/main/Xsoul_menu.lua", true))()</div>
-      <button class="copy-script-btn" id="copyBtn" onclick="copyScript()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-        </svg>
-        Copy
-      </button>
+  <!-- SCRIPTS SECTION -->
+  <div class="scripts-section">
+    <div class="section-title">� Scripts</div>
+    <p style="color:var(--muted);font-size:0.83rem;margin-bottom:20px;margin-top:6px;">สคริปต์ที่พร้อมใช้งานสำหรับทุก Rank</p>
+    <div class="scripts-grid">
+      <div class="script-card" onclick="copyScript('brainrotScript')">
+        <div class="script-card-header">
+          <span class="script-card-icon">🗺️</span>
+          <span class="script-card-name">Xsoul Menu</span>
+        </div>
+        <p class="script-card-desc">สคริปต์เมนูหลักสำหรับเกม Brainrots</p>
+        <div class="script-card-footer">
+          <span class="script-card-tag free">Free</span>
+          <button class="copy-mini-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+            </svg>
+            Copy
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- SCRIPTS BETA SECTION (PremiumMax Only) -->
+  <div class="scripts-section" id="betaSection">
+    <div class="section-title">⚡ Scripts Beta</div>
+    <p style="color:var(--muted);font-size:0.83rem;margin-bottom:20px;margin-top:6px;">สคริปต์ทดลองสำหรับ PremiumMax เท่านั้น</p>
+    <div class="scripts-grid">
+      <div class="script-card" onclick="copyScript('betaScript1')">
+        <div class="script-card-header">
+          <span class="script-card-icon">🧪</span>
+          <span class="script-card-name">Beta Feature 1</span>
+        </div>
+        <p class="script-card-desc">ฟีเจอร์ทดลองใหม่ล่าสุด (Coming Soon)</p>
+        <div class="script-card-footer">
+          <span class="script-card-tag beta">Beta</span>
+          <button class="copy-mini-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+            </svg>
+            Copy
+          </button>
+        </div>
+      </div>
+      <div class="script-card" onclick="copyScript('betaScript2')">
+        <div class="script-card-header">
+          <span class="script-card-icon">🔮</span>
+          <span class="script-card-name">Beta Feature 2</span>
+        </div>
+        <p class="script-card-desc">ฟีเจอร์พิเศษกำลังพัฒนา (Coming Soon)</p>
+        <div class="script-card-footer">
+          <span class="script-card-tag beta">Beta</span>
+          <button class="copy-mini-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+            </svg>
+            Copy
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden script data -->
+  <div style="display:none;">
+    <div id="brainrotScript">loadstring(game:HttpGet("https://raw.githubusercontent.com/Sora-2547/Xsoul/refs/heads/main/Xsoul_menu.lua", true))()</div>
+    <div id="betaScript1">-- Beta Script 1 Coming Soon</div>
+    <div id="betaScript2">-- Beta Script 2 Coming Soon</div>
   </div>
 </main>
 
@@ -675,6 +854,25 @@
 <div class="toast" id="toast">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
   <span id="toastText">คัดลอกแล้ว!</span>
+</div>
+
+<!-- ===== RANK MODAL ===== -->
+<div class="rank-modal-overlay" id="rankModalOverlay">
+  <div class="rank-modal" id="rankModal">
+    <button class="rank-modal-close" onclick="closeRankModal()">✕</button>
+    <div class="rank-modal-header">
+      <span class="rank-modal-icon" id="modalIcon">🥉</span>
+      <span class="rank-modal-badge" id="modalBadge">Free</span>
+      <h2 class="rank-modal-title" id="modalTitle">Bronze</h2>
+      <p class="rank-modal-description" id="modalDescription">ระดับเริ่มต้นสำหรับผู้ใช้งานใหม่</p>
+    </div>
+    <ul class="rank-modal-perks" id="modalPerks">
+      <li>เข้าถึงสคริปต์พื้นฐาน</li>
+      <li>เติมเงินเครดิตเพิ่มเติม 0%</li>
+      <li>คัย์เต็มราคาทุกแพ็คเก็จ</li>
+      <li>Support ทั่วไป</li>
+    </ul>
+  </div>
 </div>
 
 <!-- ===== FIREBASE ===== -->
@@ -726,6 +924,34 @@
   }
 
   document.getElementById('regUsername').addEventListener('input', e => checkUsernameAvailability(e.target.value.trim()));
+
+  // Password match validation
+  const passwordInput = document.getElementById('authPassword');
+  const confirmPasswordInput = document.getElementById('authConfirmPassword');
+  const passwordMatchStatus = document.getElementById('passwordMatchStatus');
+
+  function checkPasswordMatch() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    if (!confirmPassword) {
+      passwordMatchStatus.style.display = 'none';
+      return;
+    }
+    
+    if (password === confirmPassword) {
+      passwordMatchStatus.textContent = '✓ รหัสผ่านตรงกัน';
+      passwordMatchStatus.className = 'status-msg success';
+      passwordMatchStatus.style.display = 'block';
+    } else {
+      passwordMatchStatus.textContent = '❌ รหัสผ่านไม่ตรงกัน';
+      passwordMatchStatus.className = 'status-msg error';
+      passwordMatchStatus.style.display = 'block';
+    }
+  }
+
+  passwordInput.addEventListener('input', checkPasswordMatch);
+  confirmPasswordInput.addEventListener('input', checkPasswordMatch);
 
   window.toggleAuthMode = () => {
     isSignUpMode = !isSignUpMode;
@@ -877,11 +1103,12 @@
   })();
 
   /* Copy script */
-  function copyScript(){
-    navigator.clipboard.writeText(document.getElementById('brainrotScript').textContent).then(()=>{
-      const btn=document.getElementById('copyBtn');
-      btn.classList.add('copied'); btn.textContent='✓ Copied!';
-      setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy'; },2000);
+  function copyScript(scriptId){
+    const scriptText = document.getElementById(scriptId).textContent;
+    navigator.clipboard.writeText(scriptText).then(()=>{
+      showToast('คัดลอกสคริปต์แล้ว!');
+    }).catch(()=>{
+      showToast('คัดลอกไม่สำเร็จ', true);
     });
   }
 
@@ -890,6 +1117,132 @@
   document.addEventListener('click', e=>{
     const chip=document.getElementById('userChip');
     if(chip&&!chip.contains(e.target)) chip.classList.remove('open');
+  });
+
+  /* Rank Modal */
+  const rankData = {
+    bronze: {
+      icon: '🥉',
+      badge: 'Free',
+      title: 'Bronze',
+      description: 'ระดับเริ่มต้นสำหรับผู้ใช้งานใหม่',
+      perks: [
+        'เข้าถึงสคริปต์พื้นฐาน',
+        'เติมเงินเครดิตเพิ่มเติม 0%',
+        'คัย์เต็มราคาทุกแพ็คเก็จ',
+        'Support ทั่วไป'
+      ],
+      modalClass: 'bronze-modal'
+    },
+    silver: {
+      icon: '🥈',
+      badge: 'Basic',
+      title: 'Silver',
+      description: 'ระดับกลางสำหรับผู้ใช้งานที่ต้องการสิทธิพิเศษเพิ่มเติม',
+      perks: [
+        'สิทธิ์ทั้งหมดของ Bronze',
+        'กรอบ เเละ ชื่อ ในโปรไฟล์',
+        'เติมเงินเครดิตเพิ่มเติม 1.75%',
+        'คัย์ลดราคา 1.3% ทุกแพ็คเก็จ',
+        'Support ทั่วไป'
+      ],
+      modalClass: 'silver-modal'
+    },
+    gold: {
+      icon: '🥇',
+      badge: 'Popular',
+      title: 'Gold',
+      description: 'ระดับสูงสำหรับผู้ใช้งานที่ต้องการสิทธิพิเศษมากขึ้น',
+      perks: [
+        'สิทธิ์ทั้งหมดของ Silver',
+        'กรอบ เเละ ชื่อ ในโปรไฟล์',
+        'เติมเงินเครดิตเพิ่มเติม 4.5%',
+        'คัย์ลดราคา 4.23% ทุกแพ็คเก็จ',
+        'Priority Support'
+      ],
+      modalClass: 'gold-modal'
+    },
+    platinum: {
+      icon: '💠',
+      badge: 'Pro',
+      title: 'Platinum',
+      description: 'ระดับพรีเมียมสำหรับผู้ใช้งานขั้นสูง',
+      perks: [
+        'สิทธิ์ทั้งหมดของ Gold',
+        'กรอบ เเละ ชื่อ พิเศษในโปรไฟล์',
+        'เติมเงินเครดิตเพิ่มเติม 7%',
+        'คัย์ลดราคา 9.02% ทุกแพ็คเก็จ',
+        'Exclusive Support'
+      ],
+      modalClass: 'platinum-modal'
+    },
+    diamond: {
+      icon: '💎',
+      badge: 'Elite',
+      title: 'Diamond',
+      description: 'ระดับสูงสุดสำหรับผู้ใช้งาน VIP',
+      perks: [
+        'สิทธิ์ทั้งหมดของ Platinum',
+        'กรอบ เเละ ชื่อ สุดพิเศษในโปรไฟล์',
+        'เติมเงินเครดิตเพิ่มเติม 15.57%',
+        'คัย์ลดราคา 17.33% ทุกแพ็คเก็จ',
+        '24/7 VIP Support'
+      ],
+      modalClass: 'diamond-modal'
+    },
+    premium: {
+      icon: '👑',
+      badge: '⚡ GOD TIER',
+      title: 'PremiumMax',
+      description: 'ระดับสูงที่สุดในระบบสำหรับผู้ใช้งานพิเศษ',
+      perks: [
+        'สิทธิ์ทั้งหมดของ Diamond',
+        'เติมเงินเครดิตเพิ่มเติม 32.97%',
+        'คัย์ลดราคา 44.67% ทุกแพ็คเก็จ',
+        'กรอบ เเละ ชื่อ สุดพิเศษในโปรไฟล์',
+        'ทดลองใช้ Scripts Beta ที่ยังไม่ปล่อยให้ใช้ก่อนใคร',
+        '24/7 SUPER Support'
+      ],
+      modalClass: 'premium-modal'
+    }
+  };
+
+  window.openRankModal = (rank) => {
+    const data = rankData[rank];
+    if (!data) return;
+
+    const modal = document.getElementById('rankModal');
+    const overlay = document.getElementById('rankModalOverlay');
+    
+    // Remove all rank-specific classes
+    modal.classList.remove('bronze-modal', 'silver-modal', 'gold-modal', 'platinum-modal', 'diamond-modal', 'premium-modal');
+    modal.classList.add(data.modalClass);
+
+    document.getElementById('modalIcon').textContent = data.icon;
+    document.getElementById('modalBadge').textContent = data.badge;
+    document.getElementById('modalTitle').textContent = data.title;
+    document.getElementById('modalDescription').textContent = data.description;
+    
+    const perksList = document.getElementById('modalPerks');
+    perksList.innerHTML = '';
+    data.perks.forEach(perk => {
+      const li = document.createElement('li');
+      li.textContent = perk;
+      perksList.appendChild(li);
+    });
+
+    overlay.classList.add('active');
+  };
+
+  window.closeRankModal = () => {
+    document.getElementById('rankModalOverlay').classList.remove('active');
+  };
+
+  // Close modal when clicking outside
+  document.getElementById('rankModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'rankModalOverlay') {
+      closeRankModal();
+    }
   });
 </script>
 </body>
