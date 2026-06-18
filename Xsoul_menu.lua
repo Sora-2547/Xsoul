@@ -77,7 +77,8 @@ local function saveToLocal()
         local themeData = {}
         for name, color in pairs(themes) do
             if typeof(color) == "Color3" then
-                themeData[name] = {R = color.R, G = color.G, B = color.B}
+                -- Save as RGB values (0-255) for better compatibility
+                themeData[name] = {R = color.R * 255, G = color.G * 255, B = color.B * 255}
             end
         end
         savedSettings.themes = themeData
@@ -205,7 +206,8 @@ local function loadFromLocal()
         if savedSettings.themes then
             for name, colorData in pairs(savedSettings.themes) do
                 if themes[name] then
-                    themes[name] = Color3.fromRGB(math.floor(colorData.R * 255), math.floor(colorData.G * 255), math.floor(colorData.B * 255))
+                    -- Values are already in 0-255 range, no need to multiply again
+                    themes[name] = Color3.fromRGB(math.floor(colorData.R), math.floor(colorData.G), math.floor(colorData.B))
                 end
             end
         end
@@ -225,7 +227,8 @@ saveSettings = function()
             local themeData = {}
             for name, color in pairs(themes) do
                 if typeof(color) == "Color3" then
-                    themeData[name] = {R = color.R, G = color.G, B = color.B}
+                    -- Save as RGB values (0-255) for better compatibility
+                    themeData[name] = {R = color.R * 255, G = color.G * 255, B = color.B * 255}
                 end
             end
             savedSettings.themes = themeData
@@ -254,7 +257,8 @@ loadSettings = function()
             if savedSettings.themes then
                 for name, colorData in pairs(savedSettings.themes) do
                     if themes[name] then
-                        themes[name] = Color3.fromRGB(math.floor(colorData.R * 255), math.floor(colorData.G * 255), math.floor(colorData.B * 255))
+                        -- Values are already in 0-255 range, no need to multiply again
+                        themes[name] = Color3.fromRGB(math.floor(colorData.R), math.floor(colorData.G), math.floor(colorData.B))
                     end
                 end
             end
@@ -3313,7 +3317,8 @@ end
 if savedSettings.themes then
     for themeName, colorData in pairs(savedSettings.themes) do
         if themes[themeName] then
-            local color3 = Color3.fromRGB(math.floor(colorData.R * 255), math.floor(colorData.G * 255), math.floor(colorData.B * 255))
+            -- Values are already in 0-255 range, no need to multiply again
+            local color3 = Color3.fromRGB(math.floor(colorData.R), math.floor(colorData.G), math.floor(colorData.B))
             win:setTheme(themeName, color3)
         end
     end
@@ -3329,5 +3334,128 @@ setting2:Dropdown("เปลี่ยนภาษา", {"ไทย", "English"},
     saveSettings()
     setLanguage(langKey)
 end)
+
+-- Add reset button directly to page container (without section header)
+local resetButton = utility:Create("ImageButton", {
+    Name = "ResetButton",
+    Parent = page2.container,
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Size = UDim2.new(1, -20, 0, 30),
+    Position = UDim2.new(0, 10, 0, 0),
+    ZIndex = 2,
+    Image = "rbxassetid://5028857472",
+    ImageColor3 = themes.TopBarColor:Lerp(Color3.new(1, 1, 1), 0.3), -- Lighter than TopBarColor
+    ScaleType = Enum.ScaleType.Slice,
+    SliceCenter = Rect.new(2, 2, 298, 298)
+}, {
+    utility:Create("TextLabel", {
+        Name = "Title",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        ZIndex = 3,
+        Font = Enum.Font.GothamBold,
+        Text = "คืนค่าเริ่มต้น",
+        TextColor3 = Color3.fromRGB(20, 20, 20), -- Dark text color
+        TextSize = 14,
+        TextTransparency = 0
+    })
+})
+
+resetButton.MouseButton1Click:Connect(function()
+    -- Reset all settings to default
+    savedSettings = {
+        themes = {},
+        fontSize = 14,
+        font = "Gotham",
+        language = "English",
+        toggles = {},
+        textboxes = {},
+        sliders = {},
+        dropdowns = {},
+        colorpickers = {},
+        windowPosition = nil,
+        isMaximized = false,
+        selectedPage = nil
+    }
+    
+    -- Reset theme colors to default
+    themes.NotToggledColor = Color3.fromRGB(100, 80, 150)
+    themes.Background = Color3.fromRGB(10, 5, 20)
+    themes.Glow = Color3.fromRGB(80, 40, 160)
+    themes.Accent = Color3.fromRGB(0, 255, 255)
+    themes.LightContrast = Color3.fromRGB(30, 15, 50)
+    themes.DarkContrast = Color3.fromRGB(20, 10, 35)
+    themes.TextColor = Color3.fromRGB(0, 255, 255)
+    themes.ButtonColor = Color3.fromRGB(100, 80, 150)
+    themes.ToggledColor = Color3.fromRGB(0, 200, 255)
+    themes.SliderColor = Color3.fromRGB(120, 60, 200)
+    themes.TopBarColor = Color3.fromRGB(60, 20, 120)
+    
+    -- Apply reset theme
+    for themeName, color in pairs(themes) do
+        win:setTheme(themeName, color)
+    end
+    
+    -- Reset font size
+    for _, child in pairs(win.container.Main:GetDescendants()) do
+        if child:IsA("TextLabel") or child:IsA("TextButton") then
+            if child.Name ~= "Title" or child.Parent.Name ~= "TopBar" then
+                if child.Name ~= "ToggleButton" and child.Name ~= "MaximizeButton" and child.Name ~= "CloseButton" then
+                    if child.TextSize >= 10 and child.TextSize <= 24 then
+                        child.TextSize = 14
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Reset font
+    local fontEnum = Enum.Font.Gotham
+    for _, child in pairs(win.container.Main:GetDescendants()) do
+        if child:IsA("TextLabel") or child:IsA("TextButton") then
+            if child.Name ~= "Title" or child.Parent.Name ~= "TopBar" then
+                child.Font = fontEnum
+            end
+        end
+    end
+    
+    -- Reset language
+    setLanguage("English")
+    
+    -- Clear workspace storage
+    pcall(function()
+        local folder = workspace:FindFirstChild("XsoulSettings")
+        if folder then
+            folder:Destroy()
+        end
+    end)
+    
+    -- Clear PlayerGui storage
+    pcall(function()
+        local playerGui = player:FindFirstChild("PlayerGui")
+        if playerGui then
+            local folder = playerGui:FindFirstChild("XsoulSettings")
+            if folder then
+                folder:Destroy()
+            end
+        end
+    end)
+    
+    -- Clear file storage
+    pcall(function()
+        if isfile(settingsFile) then
+            delfile(settingsFile)
+        end
+    end)
+    
+    -- Save the reset settings
+    saveSettings()
+    
+    win:Notify("รีเซต", "คืนค่าเริ่มต้นเรียบร้อยแล้ว")
+end)
+
+-- Update page canvas size to include reset button
+page2:Resize()
 
 return library
