@@ -605,19 +605,21 @@
 
     /* ===== AVATAR FRAME (rank-based) ===== */
     /*
-      Frame PNGs: 512×442px. Smallest hole_ratio = 0.637 (Gold).
-      Frame overlay = 157% of avatar → 157%×42 = 65.9px.
-      Gold hole in that size = 65.9×0.637 = 42px = exact avatar ✓
-      Centered explicitly via translate(-50%,-50%) on avatar center.
+      Frame PNGs: square, transparent BG, hole centered.
+      Frame element = same size as avatar wrap (42px).
+      background-size: cover fills the element; transparent BG blends.
+      Avatar image has its own border-radius for circular clipping.
     */
     .avatar-wrap {
       position: relative;
       display: inline-flex; align-items: center; justify-content: center;
       width: 42px; height: 42px;
-      flex-shrink: 0; overflow: hidden;
+      flex-shrink: 0;
+    }
+    .user-avatar {
+      position: relative; z-index: 1; flex-shrink: 0;
       border-radius: 50%;
     }
-    .user-avatar { position: relative; z-index: 1; flex-shrink: 0; }
     .avatar-frame {
       position: absolute;
       width: 100%; height: 100%;
@@ -626,7 +628,6 @@
       background-repeat: no-repeat;
       background-position: center center;
       background-size: cover;
-      border-radius: 50%;
       filter: drop-shadow(0 0 6px rgba(255,255,255,0.12));
     }
     .avatar-wrap.has-frame .user-avatar { border-color: transparent !important; }
@@ -713,8 +714,6 @@
       position: relative; flex-shrink: 0;
       width: 80px; height: 80px;
       display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
-      border-radius: 50%;
     }
     .frame-preview-img {
       width: 80px; height: 80px; border-radius: 50%;
@@ -729,7 +728,6 @@
       background-repeat: no-repeat;
       background-position: center center;
       background-size: cover;
-      border-radius: 50%;
       pointer-events: none; z-index: 2;
       transition: background-image 0.25s;
     }
@@ -1654,12 +1652,12 @@
   const RANK_ORDER = { bronze:0, silver:1, gold:2, platinum:3, diamond:4, premium:5, premiummax:5 };
   const FRAMES = [
     { key:'none',     label:'ไม่ใช้กรอบ', minRank:'bronze', url:'' },
-    { key:'bronze',   label:'Bronze',     minRank:'bronze',   url: FRAME_BASE + '/__l5e/assets-v1/98b20e9e-8565-4da3-bd10-4118bfef7f35/rank-bronze.png' },
-    { key:'silver',   label:'Silver',     minRank:'silver',   url: FRAME_BASE + '/__l5e/assets-v1/cf6b02d6-03b8-473b-9af7-b558fb368605/rank-silver.png' },
-    { key:'gold',     label:'Gold',       minRank:'gold',     url: FRAME_BASE + '/__l5e/assets-v1/702d2733-cd62-45ca-8c63-605ae618b142/rank-gold.png' },
-    { key:'platinum', label:'Platinum',   minRank:'platinum', url: FRAME_BASE + '/__l5e/assets-v1/ead66c35-b230-4940-b37a-bcb29a71986c/rank-platinum.png' },
-    { key:'diamond',  label:'Diamond',    minRank:'diamond',  url: FRAME_BASE + '/__l5e/assets-v1/48c75ef2-1b53-4fa8-b7a0-0a797cb8e908/rank-diamond.png' },
-    { key:'premium',  label:'PremiumMAX', minRank:'premium',  url: FRAME_BASE + '/__l5e/assets-v1/05bf6144-207e-4102-9e0d-21e61c44810d/rank-premium.png' },
+    { key:'bronze',   label:'Bronze',     minRank:'bronze',   url:'rank1.png' },
+    { key:'silver',   label:'Silver',     minRank:'silver',   url:'rank2.png' },
+    { key:'gold',     label:'Gold',       minRank:'gold',     url:'rank3.png' },
+    { key:'platinum', label:'Platinum',   minRank:'platinum', url:'rank4.png' },
+    { key:'diamond',  label:'Diamond',    minRank:'diamond',  url:'rank5.png' },
+    { key:'premium',  label:'PremiumMAX', minRank:'premium',  url:'rank6.png' },
   ];
   window.__FRAMES = FRAMES;
   window.__RANK_ORDER = RANK_ORDER;
@@ -2080,6 +2078,7 @@
     }
   });
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
