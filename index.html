@@ -521,6 +521,60 @@
     .rank-modal.premium-modal .rank-modal-badge { background: linear-gradient(135deg, #ff6eb433, #c471ed33); color: #ff9ed4; border: 1px solid #c471ed66; }
     .rank-modal.premium-modal .rank-modal-perks li::before { background: #c471ed; color: #120828; }
 
+    /* ===== USER NAME SETTINGS MODAL ===== */
+    .user-settings-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px); z-index: 2000;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .user-settings-overlay.active { opacity: 1; visibility: visible; }
+    
+    .user-settings-modal {
+      background: var(--card); border: 1px solid var(--border); border-radius: 24px;
+      padding: 32px; width: min(400px, 90vw); max-height: 85vh; overflow-y: auto;
+      transform: scale(0.9) translateY(20px); transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .user-settings-overlay.active .user-settings-modal { transform: scale(1) translateY(0); }
+    
+    .user-settings-close {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--border); border: none; border-radius: 10px;
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; color: var(--text);
+    }
+    .user-settings-close:hover { background: var(--error); color: #fff; }
+    
+    .user-settings-header { text-align: center; margin-bottom: 24px; }
+    .user-settings-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+    .user-settings-description { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+    
+    .settings-form { display: flex; flex-direction: column; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+    .form-input {
+      background: #0a0d1a; border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 16px; font-size: 0.9rem; color: var(--text); transition: all 0.2s;
+    }
+    .form-input:focus { outline: none; border-color: var(--accent); }
+    .form-input[type="color"] { height: 48px; cursor: pointer; }
+    
+    .settings-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .btn {
+      flex: 1; padding: 12px 20px; border-radius: 12px; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; border: none;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); box-shadow: 0 4px 14px var(--glow); }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    /* Chip name style support */
+    .chip-name {
+      padding: 4px 10px; border-radius: 8px; border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
     footer {
       position: relative; z-index: 1; text-align: center; font-size: .78rem;
       color: var(--muted); padding-bottom: 40px;
@@ -533,17 +587,28 @@
       position: fixed; left: 0; top: 0; width: 260px; height: 100vh;
       background: var(--card); border-right: 1px solid var(--border);
       display: flex; flex-direction: column; z-index: 100;
-      padding: 24px 0; transition: transform 0.3s ease;
+      padding: 24px 0; transition: width 0.3s ease, transform 0.3s ease;
     }
+    .sidebar.collapsed { width: 70px; }
+    .sidebar.collapsed .sidebar-brand span { display: none; }
+    .sidebar.collapsed .sidebar-item span { display: none; }
+    .sidebar.collapsed .sidebar-item { justify-content: center; padding: 12px; }
+    .sidebar.collapsed .sidebar-footer { display: none; }
     .sidebar-header {
       padding: 0 24px 24px; border-bottom: 1px solid var(--border);
-      margin-bottom: 16px;
+      margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;
     }
+    .sidebar.collapsed .sidebar-header { padding: 0 12px 24px; justify-content: center; }
     .sidebar-brand {
       font-size: 1.4rem; font-weight: 800; color: var(--text);
       display: flex; align-items: center; gap: 10px;
     }
     .sidebar-brand span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .sidebar-toggle {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      padding: 4px; border-radius: 8px; transition: all 0.2s;
+    }
+    .sidebar-toggle:hover { background: rgba(255,255,255,0.05); color: var(--text); }
     .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 0 12px; }
     .sidebar-item {
       display: flex; align-items: center; gap: 12px; padding: 12px 16px;
@@ -563,17 +628,41 @@
       display: flex; min-height: 100vh;
     }
     .main-content {
-      flex: 1; margin-left: 260px; padding: 32px 40px;
-      max-width: calc(100% - 260px);
+      flex: 1; margin-left: 260px; padding: 100px 40px 32px 40px;
+      max-width: calc(100% - 260px); transition: margin-left 0.3s ease, max-width 0.3s ease, padding 0.3s ease;
+    }
+    .sidebar.collapsed ~ .main-wrapper .main-content {
+      margin-left: 70px; max-width: calc(100% - 70px);
     }
     .content-section { display: none; }
     .content-section.active { display: block; animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* ===== TOP NAVBAR ===== */
+    .top-navbar {
+      position: fixed; top: 0; right: 0; left: 260px; height: 60px;
+      background: var(--card); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; z-index: 99; transition: left 0.3s ease;
+    }
+    .sidebar.collapsed ~ .top-navbar { left: 70px; }
+    .top-navbar-left { display: flex; align-items: center; gap: 16px; }
+    .top-navbar-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+    .top-navbar-right { display: flex; align-items: center; gap: 12px; }
+
     @media (max-width: 768px) {
       .sidebar { transform: translateX(-100%); }
       .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; max-width: 100%; padding: 20px; }
+      .sidebar.collapsed { width: 260px; }
+      .sidebar.collapsed .sidebar-brand span { display: block; }
+      .sidebar.collapsed .sidebar-item span { display: block; }
+      .sidebar.collapsed .sidebar-item { justify-content: flex-start; padding: 12px 16px; }
+      .sidebar.collapsed .sidebar-footer { display: block; }
+      .sidebar.collapsed .sidebar-header { padding: 0 24px 24px; justify-content: space-between; }
+      .main-content { margin-left: 0; max-width: 100%; padding: 88px 20px 32px 20px; }
+      .sidebar.collapsed ~ .main-wrapper .main-content { margin-left: 0; max-width: 100%; }
+      .top-navbar { left: 0; }
+      .sidebar.collapsed ~ .top-navbar { left: 0; }
       .mobile-menu-btn { display: flex !important; }
     }
     .mobile-menu-btn {
@@ -680,26 +769,36 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <div class="sidebar-brand">⚡ <span>XSOUL</span></div>
+    <button class="sidebar-toggle" onclick="toggleSidebarCollapse()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+    </button>
   </div>
   <nav class="sidebar-nav">
     <div class="sidebar-item active" onclick="showSection('dashboard')" id="nav-dashboard">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      Dashboard
+      <span>Dashboard</span>
     </div>
     <div class="sidebar-item" onclick="showSection('ranks')" id="nav-ranks">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 01 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
-      Ranks
+      <span>Ranks</span>
     </div>
     <div class="sidebar-item" onclick="showSection('scripts')" id="nav-scripts">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      Scripts
+      <span>Scripts</span>
     </div>
     <div class="sidebar-item" onclick="showSection('beta')" id="nav-beta">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      Scripts Beta
+      <span>Scripts Beta</span>
     </div>
   </nav>
-  <div class="sidebar-footer">
+</aside>
+
+<!-- ===== TOP NAVBAR ===== -->
+<nav class="top-navbar" id="topNavbar" style="display:none;">
+  <div class="top-navbar-left">
+    <span class="top-navbar-title" id="pageTitle">Dashboard</span>
+  </div>
+  <div class="top-navbar-right">
     <div class="user-chip" id="userChip" onclick="toggleDropdown()">
       <div class="user-chip-inner">
         <img src="" alt="Avatar" class="user-avatar" id="userAvatar">
@@ -711,17 +810,13 @@
           <div class="dropdown-uname" id="dropdownName">User</div>
           <div class="dropdown-email" id="dropdownEmail">user@xsoul.com</div>
         </div>
+        <button class="dropdown-item" onclick="event.stopPropagation(); openUserSettings()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          ตั้งค่าชื่อผู้ใช้
+        </button>
         <button class="dropdown-item" onclick="event.stopPropagation(); showToast('โปรไฟล์ — coming soon')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           โปรไฟล์
-        </button>
-        <button class="dropdown-item" onclick="event.stopPropagation(); showToast('การตั้งค่า — coming soon')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          ตั้งค่า
-        </button>
-        <button class="dropdown-item" onclick="event.stopPropagation(); showToast('ประวัติ — coming soon')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          ประวัติการใช้งาน
         </button>
         <hr class="dropdown-divider">
         <button class="dropdown-item danger" onclick="event.stopPropagation(); logout()">
@@ -731,7 +826,7 @@
       </div>
     </div>
   </div>
-</aside>
+</nav>
 
 <!-- ===== MAIN WRAPPER ===== -->
 <div class="main-wrapper" id="mainWrapper" style="display:none;">
@@ -969,6 +1064,35 @@
   </div>
 </div>
 
+<!-- ===== USER NAME SETTINGS MODAL ===== -->
+<div class="user-settings-overlay" id="userSettingsModal">
+  <div class="user-settings-modal">
+    <button class="user-settings-close" onclick="closeUserSettings()">✕</button>
+    <div class="user-settings-header">
+      <h2 class="user-settings-title">ตั้งค่าชื่อผู้ใช้</h2>
+      <p class="user-settings-description">ปรับแต่งกรอบและสีของชื่อผู้ใช้ในเมนูบัญชี</p>
+    </div>
+    <div class="settings-form">
+      <div class="form-group">
+        <label class="form-label">สีของชื่อ</label>
+        <input type="color" id="nameTextColor" class="form-input" value="#e8eaf6">
+      </div>
+      <div class="form-group">
+        <label class="form-label">สีขอบ</label>
+        <input type="color" id="nameBorderColor" class="form-input" value="#7c5cfc">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ความหนาขอบ (px)</label>
+        <input type="number" id="nameBorderWidth" class="form-input" value="1" min="0" max="5">
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-secondary" onclick="closeUserSettings()">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveUserNameStyle()">บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== FIREBASE ===== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -1120,10 +1244,11 @@
     const mainWrapper = document.getElementById('mainWrapper');
     const footer = document.getElementById('mainFooter');
     const sidebar = document.getElementById('sidebar');
+    const topNavbar = document.getElementById('topNavbar');
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     if (user) {
       gate.style.opacity='0'; gate.style.visibility='hidden';
-      mainWrapper.style.display='flex'; footer.style.display='block'; sidebar.style.display='flex';
+      mainWrapper.style.display='flex'; footer.style.display='block'; sidebar.style.display='flex'; topNavbar.style.display='flex';
       if (window.innerWidth <= 768) mobileMenuBtn.style.display='flex';
       let name = user.email ? user.email.split('@')[0] : 'User';
       try {
@@ -1135,9 +1260,20 @@
       document.getElementById('userName').textContent = name;
       document.getElementById('dropdownName').textContent = name;
       document.getElementById('dropdownEmail').textContent = user.email||'';
+      
+      // Load user name style settings
+      try {
+        const ud = await get(ref(db,`users/${user.uid}/nameStyle`));
+        if (ud.exists()) {
+          const style = ud.val();
+          if (style.borderColor) document.getElementById('userName').style.borderColor = style.borderColor;
+          if (style.color) document.getElementById('userName').style.color = style.color;
+          if (style.borderWidth) document.getElementById('userName').style.borderWidth = style.borderWidth + 'px';
+        }
+      } catch {}
     } else {
       gate.style.opacity='1'; gate.style.visibility='visible';
-      mainWrapper.style.display='none'; footer.style.display='none'; sidebar.style.display='none';
+      mainWrapper.style.display='none'; footer.style.display='none'; sidebar.style.display='none'; topNavbar.style.display='none';
       mobileMenuBtn.style.display='none';
     }
   });
@@ -1234,6 +1370,15 @@
     // Add active class to selected sidebar item
     document.getElementById('nav-' + sectionId).classList.add('active');
     
+    // Update page title
+    const titles = {
+      'dashboard': 'Dashboard',
+      'ranks': 'Ranks',
+      'scripts': 'Scripts',
+      'beta': 'Scripts Beta'
+    };
+    document.getElementById('pageTitle').textContent = titles[sectionId] || 'Dashboard';
+    
     // Close sidebar on mobile after selection
     if (window.innerWidth <= 768) {
       document.getElementById('sidebar').classList.remove('open');
@@ -1242,6 +1387,48 @@
 
   window.toggleSidebar = () => {
     document.getElementById('sidebar').classList.toggle('open');
+  };
+
+  window.toggleSidebarCollapse = () => {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  };
+
+  /* User Name Settings */
+  window.openUserSettings = () => {
+    document.getElementById('userSettingsModal').classList.add('active');
+    document.getElementById('userDropdown').classList.remove('open');
+  };
+
+  window.closeUserSettings = () => {
+    document.getElementById('userSettingsModal').classList.remove('active');
+  };
+
+  window.saveUserNameStyle = async () => {
+    const borderColor = document.getElementById('nameBorderColor').value;
+    const textColor = document.getElementById('nameTextColor').value;
+    const borderWidth = document.getElementById('nameBorderWidth').value;
+
+    const userNameEl = document.getElementById('userName');
+    userNameEl.style.borderColor = borderColor;
+    userNameEl.style.color = textColor;
+    userNameEl.style.borderWidth = borderWidth + 'px';
+    userNameEl.style.borderStyle = 'solid';
+
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        await set(ref(db, `users/${user.uid}/nameStyle`), {
+          borderColor,
+          color: textColor,
+          borderWidth: parseInt(borderWidth)
+        });
+        showToast('บันทึกการตั้งค่าชื่อผู้ใช้สำเร็จ!');
+      }
+    } catch (error) {
+      showToast('บันทึกไม่สำเร็จ', true);
+    }
+
+    closeUserSettings();
   };
 
   /* Rank Modal */
