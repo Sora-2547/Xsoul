@@ -528,6 +528,60 @@
     footer a { color: var(--accent); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
 
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      position: fixed; left: 0; top: 0; width: 260px; height: 100vh;
+      background: var(--card); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; z-index: 100;
+      padding: 24px 0; transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      padding: 0 24px 24px; border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .sidebar-brand {
+      font-size: 1.4rem; font-weight: 800; color: var(--text);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sidebar-brand span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 0 12px; }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      border-radius: 12px; cursor: pointer; transition: all 0.2s;
+      color: var(--muted); font-size: 0.9rem; font-weight: 500;
+    }
+    .sidebar-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .sidebar-item.active { background: var(--accent22); color: var(--accent); border: 1px solid var(--accent44); }
+    .sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer {
+      padding: 16px 24px; border-top: 1px solid var(--border);
+    }
+    .sidebar-footer .user-chip { width: 100%; justify-content: flex-start; }
+
+    /* ===== MAIN CONTENT WITH SIDEBAR ===== */
+    .main-wrapper {
+      display: flex; min-height: 100vh;
+    }
+    .main-content {
+      flex: 1; margin-left: 260px; padding: 32px 40px;
+      max-width: calc(100% - 260px);
+    }
+    .content-section { display: none; }
+    .content-section.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; max-width: 100%; padding: 20px; }
+      .mobile-menu-btn { display: flex !important; }
+    }
+    .mobile-menu-btn {
+      display: none; position: fixed; top: 16px; left: 16px;
+      z-index: 101; background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px; cursor: pointer;
+    }
+
     @media (max-width: 600px) {
       .ranks-grid { grid-template-columns: 1fr 1fr; }
       .rank-premium { grid-column: span 2; }
@@ -617,68 +671,102 @@
   </div>
 </div>
 
-<!-- ===== NAVBAR ===== -->
-<nav class="navbar" id="mainNavbar" style="display:none;">
-  <span class="navbar-brand">⚡ XSOUL HUB</span>
-  <div class="user-chip" id="userChip" onclick="toggleDropdown()">
-    <div class="user-chip-inner">
-      <img src="" alt="Avatar" class="user-avatar" id="userAvatar">
-      <span class="chip-name" id="userName">User</span>
-      <svg class="chevron-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+<!-- ===== MOBILE MENU BUTTON ===== -->
+<button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-brand">⚡ <span>XSOUL</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-item active" onclick="showSection('dashboard')" id="nav-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
     </div>
-    <div class="user-dropdown" id="userDropdown">
-      <div class="dropdown-header">
-        <div class="dropdown-uname" id="dropdownName">User</div>
-        <div class="dropdown-email" id="dropdownEmail">user@xsoul.com</div>
+    <div class="sidebar-item" onclick="showSection('ranks')" id="nav-ranks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 01 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+      Ranks
+    </div>
+    <div class="sidebar-item" onclick="showSection('scripts')" id="nav-scripts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Scripts
+    </div>
+    <div class="sidebar-item" onclick="showSection('beta')" id="nav-beta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Scripts Beta
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-chip" id="userChip" onclick="toggleDropdown()">
+      <div class="user-chip-inner">
+        <img src="" alt="Avatar" class="user-avatar" id="userAvatar">
+        <span class="chip-name" id="userName">User</span>
+        <svg class="chevron-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
-      <button class="dropdown-item" onclick="event.stopPropagation(); showToast('โปรไฟล์ — coming soon')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        โปรไฟล์
-      </button>
-      <button class="dropdown-item" onclick="event.stopPropagation(); showToast('การตั้งค่า — coming soon')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-        ตั้งค่า
-      </button>
-      <button class="dropdown-item" onclick="event.stopPropagation(); showToast('ประวัติ — coming soon')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        ประวัติการใช้งาน
-      </button>
-      <hr class="dropdown-divider">
-      <button class="dropdown-item danger" onclick="event.stopPropagation(); logout()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        ออกจากระบบ
-      </button>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="dropdown-header">
+          <div class="dropdown-uname" id="dropdownName">User</div>
+          <div class="dropdown-email" id="dropdownEmail">user@xsoul.com</div>
+        </div>
+        <button class="dropdown-item" onclick="event.stopPropagation(); showToast('โปรไฟล์ — coming soon')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          โปรไฟล์
+        </button>
+        <button class="dropdown-item" onclick="event.stopPropagation(); showToast('การตั้งค่า — coming soon')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          ตั้งค่า
+        </button>
+        <button class="dropdown-item" onclick="event.stopPropagation(); showToast('ประวัติ — coming soon')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          ประวัติการใช้งาน
+        </button>
+        <hr class="dropdown-divider">
+        <button class="dropdown-item danger" onclick="event.stopPropagation(); logout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          ออกจากระบบ
+        </button>
+      </div>
     </div>
   </div>
-</nav>
+</aside>
 
-<!-- ===== MAIN ===== -->
-<main id="mainContent" style="display:none;">
-  <header>
-    <div class="badge">⚡ Roblox Script Hub</div>
-    <h1>Xsoul</h1>
-    <p class="subtitle">ยินดีต้อนรับเข้าสู่ระบบจัดการสคริปต์ระดับพรีเมียม</p>
-  </header>
+<!-- ===== MAIN WRAPPER ===== -->
+<div class="main-wrapper" id="mainWrapper" style="display:none;">
+  <main class="main-content">
+    
+    <!-- DASHBOARD SECTION -->
+    <div class="content-section active" id="section-dashboard">
+      <header>
+        <div class="badge">⚡ Roblox Script Hub</div>
+        <h1>Xsoul</h1>
+        <p class="subtitle">ยินดีต้อนรับเข้าสู่ระบบจัดการสคริปต์ระดับพรีเมียม</p>
+      </header>
 
-  <div class="stats">
-    <div class="stat">
-      <div class="stat-value">1</div>
-      <div class="stat-label">Scripts</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value">1</div>
+          <div class="stat-label">Scripts</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">v2.0</div>
+          <div class="stat-label">Version</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" style="color:var(--success)">ON</div>
+          <div class="stat-label">Status</div>
+        </div>
+      </div>
     </div>
-    <div class="stat">
-      <div class="stat-value">v2.0</div>
-      <div class="stat-label">Version</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value" style="color:var(--success)">ON</div>
-      <div class="stat-label">Status</div>
-    </div>
-  </div>
 
-  <!-- RANK SECTION -->
-  <div>
-    <div class="section-title">ระบบ Rank ผู้ใช้งาน</div>
-    <p style="color:var(--muted);font-size:0.83rem;margin-bottom:20px;margin-top:6px;">อัปเกรด Rank ของคุณเพื่อปลดล็อกสิทธิ์พิเศษและสคริปต์เอกซ์คลูซีฟ</p>
+    <!-- RANKS SECTION -->
+    <div class="content-section" id="section-ranks">
+      <header>
+        <h1>ระบบ Rank ผู้ใช้งาน</h1>
+        <p class="subtitle">อัปเกรด Rank ของคุณเพื่อปลดล็อกสิทธิ์พิเศษและสคริปต์เอกซ์คลูซีฟ</p>
+      </header>
     <div class="ranks-grid">
 
       <!-- BRONZE -->
@@ -773,79 +861,85 @@
       </div>
 
     </div>
-  </div>
+    </div>
 
-  <!-- SCRIPTS SECTION -->
-  <div class="scripts-section">
-    <div class="section-title">� Scripts</div>
-    <p style="color:var(--muted);font-size:0.83rem;margin-bottom:20px;margin-top:6px;">สคริปต์ที่พร้อมใช้งานสำหรับทุก Rank</p>
-    <div class="scripts-grid">
-      <div class="script-card" onclick="copyScript('brainrotScript')">
-        <div class="script-card-header">
-          <span class="script-card-icon">🗺️</span>
-          <span class="script-card-name">Xsoul Menu</span>
-        </div>
-        <p class="script-card-desc">สคริปต์เมนูหลักสำหรับเกม Brainrots</p>
-        <div class="script-card-footer">
-          <span class="script-card-tag free">Free</span>
-          <button class="copy-mini-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-            </svg>
-            Copy
-          </button>
+    <!-- SCRIPTS SECTION -->
+    <div class="content-section" id="section-scripts">
+      <header>
+        <h1>Scripts</h1>
+        <p class="subtitle">สคริปต์ที่พร้อมใช้งานสำหรับทุก Rank</p>
+      </header>
+      <div class="scripts-grid">
+        <div class="script-card" onclick="copyScript('brainrotScript')">
+          <div class="script-card-header">
+            <span class="script-card-icon">🗺️</span>
+            <span class="script-card-name">Xsoul Menu</span>
+          </div>
+          <p class="script-card-desc">สคริปต์เมนูหลักสำหรับเกม Brainrots</p>
+          <div class="script-card-footer">
+            <span class="script-card-tag free">Free</span>
+            <button class="copy-mini-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              Copy
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- SCRIPTS BETA SECTION (PremiumMax Only) -->
-  <div class="scripts-section" id="betaSection">
-    <div class="section-title">⚡ Scripts Beta</div>
-    <p style="color:var(--muted);font-size:0.83rem;margin-bottom:20px;margin-top:6px;">สคริปต์ทดลองสำหรับ PremiumMax เท่านั้น</p>
-    <div class="scripts-grid">
-      <div class="script-card" onclick="copyScript('betaScript1')">
-        <div class="script-card-header">
-          <span class="script-card-icon">🧪</span>
-          <span class="script-card-name">Beta Feature 1</span>
+    <!-- SCRIPTS BETA SECTION -->
+    <div class="content-section" id="section-beta">
+      <header>
+        <h1>Scripts Beta</h1>
+        <p class="subtitle">สคริปต์ทดลองสำหรับ PremiumMax เท่านั้น</p>
+      </header>
+      <div class="scripts-grid">
+        <div class="script-card" onclick="copyScript('betaScript1')">
+          <div class="script-card-header">
+            <span class="script-card-icon">🧪</span>
+            <span class="script-card-name">Beta Feature 1</span>
+          </div>
+          <p class="script-card-desc">ฟีเจอร์ทดลองใหม่ล่าสุด (Coming Soon)</p>
+          <div class="script-card-footer">
+            <span class="script-card-tag beta">Beta</span>
+            <button class="copy-mini-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              Copy
+            </button>
+          </div>
         </div>
-        <p class="script-card-desc">ฟีเจอร์ทดลองใหม่ล่าสุด (Coming Soon)</p>
-        <div class="script-card-footer">
-          <span class="script-card-tag beta">Beta</span>
-          <button class="copy-mini-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-            </svg>
-            Copy
-          </button>
-        </div>
-      </div>
-      <div class="script-card" onclick="copyScript('betaScript2')">
-        <div class="script-card-header">
-          <span class="script-card-icon">🔮</span>
-          <span class="script-card-name">Beta Feature 2</span>
-        </div>
-        <p class="script-card-desc">ฟีเจอร์พิเศษกำลังพัฒนา (Coming Soon)</p>
-        <div class="script-card-footer">
-          <span class="script-card-tag beta">Beta</span>
-          <button class="copy-mini-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-            </svg>
-            Copy
-          </button>
+        <div class="script-card" onclick="copyScript('betaScript2')">
+          <div class="script-card-header">
+            <span class="script-card-icon">🔮</span>
+            <span class="script-card-name">Beta Feature 2</span>
+          </div>
+          <p class="script-card-desc">ฟีเจอร์พิเศษกำลังพัฒนา (Coming Soon)</p>
+          <div class="script-card-footer">
+            <span class="script-card-tag beta">Beta</span>
+            <button class="copy-mini-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              Copy
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Hidden script data -->
-  <div style="display:none;">
-    <div id="brainrotScript">loadstring(game:HttpGet("https://raw.githubusercontent.com/Sora-2547/Xsoul/refs/heads/main/Xsoul_menu.lua", true))()</div>
-    <div id="betaScript1">-- Beta Script 1 Coming Soon</div>
-    <div id="betaScript2">-- Beta Script 2 Coming Soon</div>
-  </div>
-</main>
+  </main>
+</div>
+
+<!-- Hidden script data -->
+<div style="display:none;">
+  <div id="brainrotScript">loadstring(game:HttpGet("https://raw.githubusercontent.com/Sora-2547/Xsoul/refs/heads/main/Xsoul_menu.lua", true))()</div>
+  <div id="betaScript1">-- Beta Script 1 Coming Soon</div>
+  <div id="betaScript2">-- Beta Script 2 Coming Soon</div>
+</div>
 
 <footer id="mainFooter" style="display:none;">
   Made with ♥ by <a href="#">Xsoul</a> &nbsp;·&nbsp; Roblox Script Hub
@@ -1023,12 +1117,14 @@
 
   onAuthStateChanged(auth, async user => {
     const gate = document.getElementById('loginGate');
-    const main = document.getElementById('mainContent');
+    const mainWrapper = document.getElementById('mainWrapper');
     const footer = document.getElementById('mainFooter');
-    const nav = document.getElementById('mainNavbar');
+    const sidebar = document.getElementById('sidebar');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     if (user) {
       gate.style.opacity='0'; gate.style.visibility='hidden';
-      main.style.display='flex'; footer.style.display='block'; nav.style.display='flex';
+      mainWrapper.style.display='flex'; footer.style.display='block'; sidebar.style.display='flex';
+      if (window.innerWidth <= 768) mobileMenuBtn.style.display='flex';
       let name = user.email ? user.email.split('@')[0] : 'User';
       try {
         const ud = await get(ref(db,`users/${user.uid}`));
@@ -1041,7 +1137,8 @@
       document.getElementById('dropdownEmail').textContent = user.email||'';
     } else {
       gate.style.opacity='1'; gate.style.visibility='visible';
-      main.style.display='none'; footer.style.display='none'; nav.style.display='none';
+      mainWrapper.style.display='none'; footer.style.display='none'; sidebar.style.display='none';
+      mobileMenuBtn.style.display='none';
     }
   });
 
@@ -1118,6 +1215,34 @@
     const chip=document.getElementById('userChip');
     if(chip&&!chip.contains(e.target)) chip.classList.remove('open');
   });
+
+  /* Sidebar Navigation */
+  window.showSection = (sectionId) => {
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+      section.classList.remove('active');
+    });
+    
+    // Remove active class from all sidebar items
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    
+    // Show selected section
+    document.getElementById('section-' + sectionId).classList.add('active');
+    
+    // Add active class to selected sidebar item
+    document.getElementById('nav-' + sectionId).classList.add('active');
+    
+    // Close sidebar on mobile after selection
+    if (window.innerWidth <= 768) {
+      document.getElementById('sidebar').classList.remove('open');
+    }
+  };
+
+  window.toggleSidebar = () => {
+    document.getElementById('sidebar').classList.toggle('open');
+  };
 
   /* Rank Modal */
   const rankData = {
