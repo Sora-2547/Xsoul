@@ -153,7 +153,7 @@
       box-shadow: 0 2px 12px rgba(0,0,0,0.3);
     }
     .user-chip-inner:hover { border-color: var(--accent); box-shadow: 0 0 18px var(--glow), 0 4px 20px rgba(124,92,252,0.2); }
-    .user-avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; box-shadow: 0 0 10px var(--glow); }
+    .user-avatar { width: 42px; height: 42px; border-radius: 10px; border: 2px solid var(--accent); object-fit: cover; box-shadow: 0 0 10px var(--glow); }
     .chip-name { font-weight: 700; font-size: 1rem; letter-spacing: 0.01em; }
     .chevron-icon { color: var(--muted); transition: transform 0.2s; margin-left: 2px; }
     .user-chip.open .chevron-icon { transform: rotate(180deg); }
@@ -599,7 +599,7 @@
 
     /* User avatar border styles */
     .user-avatar {
-      border-radius: 50%; border: 2px solid transparent;
+      border-radius: 10px; border: 2px solid transparent;
       transition: all 0.2s;
     }
 
@@ -718,7 +718,7 @@
       overflow: visible;
     }
     .frame-preview-img {
-      width: 80px; height: 80px; border-radius: 50%;
+      width: 80px; height: 80px; border-radius: 14px;
       object-fit: cover; border: 2px solid var(--accent);
       box-shadow: 0 0 12px var(--glow);
       position: relative; z-index: 1; flex-shrink: 0;
@@ -987,7 +987,7 @@
       .mobile-menu-btn { display: flex; }
       /* User chip compact on mobile */
       .chip-name { font-size: 0.88rem !important; }
-      .user-avatar { width: 34px !important; height: 34px !important; }
+      .user-avatar { width: 34px !important; height: 34px !important; border-radius: 8px !important; }
     }
 
     @media (max-width: 600px) {
@@ -1139,7 +1139,7 @@
           <div class="dropdown-uname" id="dropdownName">User</div>
           <div class="dropdown-email" id="dropdownEmail">Username</div>
         </div>
-        <button class="dropdown-item" onclick="event.stopPropagation(); showToast('โปรไฟล์ — coming soon')">
+        <button class="dropdown-item" onclick="event.stopPropagation(); openProfileFrame()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           โปรไฟล์
         </button>
@@ -1393,12 +1393,23 @@
   </div>
 </div>
 
-<!-- ===== USER NAME SETTINGS MODAL ===== -->
+<!-- ===== USER NAME SETTINGS MODAL (EMPTY) ===== -->
 <div class="user-settings-overlay" id="userSettingsModal">
-  <div class="user-settings-modal">
+  <div class="user-settings-modal" style="padding:24px; min-height: auto;">
     <button class="user-settings-close" onclick="closeUserSettings()">✕</button>
+    <div class="user-settings-header" style="margin-bottom:0;">
+      <h2 class="user-settings-title">ตั้งค่า</h2>
+      <p class="user-settings-description" style="color:var(--muted);">ไม่มีรายการตั้งค่าในขณะนี้</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PROFILE FRAME MODAL ===== -->
+<div class="user-settings-overlay" id="profileFrameModal">
+  <div class="user-settings-modal">
+    <button class="user-settings-close" onclick="closeProfileFrame()">✕</button>
     <div class="user-settings-header">
-      <h2 class="user-settings-title">ตั้งค่ารูปโปรไฟล์</h2>
+      <h2 class="user-settings-title">โปรไฟล์</h2>
       <p class="user-settings-description">เลือกกรอบโปรไฟล์ที่คุณได้ปลดล็อคตามแรงค์</p>
     </div>
     <div class="settings-form">
@@ -1423,10 +1434,9 @@
         <div class="frame-grid" id="frameGrid"></div>
       </div>
       <div class="settings-actions">
-        <button class="btn btn-primary" onclick="closeUserSettings()">เสร็จสิ้น</button>
+        <button class="btn btn-primary" onclick="closeProfileFrame()">เสร็จสิ้น</button>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -1790,12 +1800,21 @@
     });
   };
 
-  // Hook openUserSettings to render the grid each time it opens
-  const _origOpenUserSettings = window.openUserSettings;
+  // Hook openProfileFrame to render the grid each time it opens
+  window.openProfileFrame = () => {
+    document.getElementById('profileFrameModal').classList.add('active');
+    const dd = document.getElementById('userDropdown'); if (dd) dd.classList.remove('open');
+    window.renderFrameGrid();
+  };
+
+  window.closeProfileFrame = () => {
+    document.getElementById('profileFrameModal').classList.remove('active');
+  };
+
+  // openUserSettings now opens the empty settings modal
   window.openUserSettings = () => {
     document.getElementById('userSettingsModal').classList.add('active');
     const dd = document.getElementById('userDropdown'); if (dd) dd.classList.remove('open');
-    window.renderFrameGrid();
   };
 
 </script>
@@ -1937,33 +1956,6 @@
     document.getElementById('userSettingsModal').classList.remove('active');
   };
 
-  window.saveAvatarStyle = async () => {
-    const borderColor = document.getElementById('avatarBorderColor').value;
-    const borderWidth = document.getElementById('avatarBorderWidth').value;
-    const borderStyle = document.getElementById('avatarBorderStyle').value;
-
-    const userAvatarEl = document.getElementById('userAvatar');
-    userAvatarEl.style.borderColor = borderColor;
-    userAvatarEl.style.borderWidth = borderWidth + 'px';
-    userAvatarEl.style.borderStyle = borderStyle;
-
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        await set(ref(db, `users/${user.uid}/avatarStyle`), {
-          borderColor,
-          borderWidth: parseInt(borderWidth),
-          borderStyle
-        });
-        showToast('บันทึกการตั้งค่ารูปโปรไฟล์สำเร็จ!');
-      }
-    } catch (error) {
-      showToast('บันทึกไม่สำเร็จ', true);
-    }
-
-    closeUserSettings();
-  };
-
   /* Rank Modal */
   const rankData = {
     bronze: {
@@ -2090,5 +2082,6 @@
     }
   });
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
