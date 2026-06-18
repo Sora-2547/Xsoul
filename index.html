@@ -287,9 +287,10 @@
     <form id="emailAuthForm" onsubmit="handleAuthSubmit(event)">
       <div class="input-group">
         
+        <!-- ส่วนฟิลด์สำหรับสมัครสมาชิกใหม่ -->
         <div id="signUpFields" style="display: none; flex-direction: column; gap: 14px;">
           <div class="input-field">
-            <label for="regUsername">ชื่อผู้ใช้ (Username) <span style="color:var(--error)">*ใช้ได้แค่ a-z, 0-9, _, -</span></label>
+            <label for="regUsername">ชื่อผู้ใช้ (Username) <span style="color:var(--error)">*ใช้ได้แก่ a-z, A-Z, 0-9, _, -</span></label>
             <div class="input-container">
               <input type="text" id="regUsername" placeholder="เช่น xsoul_player" minlength="4">
               <button type="button" class="random-btn" onclick="generateRandomUsername()">สุ่มชื่อ</button>
@@ -317,16 +318,19 @@
           <div class="divider">ข้อมูลการเข้าสู่ระบบ</div>
         </div>
 
+        <!-- ฟิลด์อีเมล -->
         <div class="input-field">
           <label for="authEmail" id="labelEmail">อีเมล หรือ ชื่อผู้ใช้</label>
           <input type="text" id="authEmail" required placeholder="example@xsoul.com หรือ username">
         </div>
         
+        <!-- ฟิลด์รหัสผ่านหลัก -->
         <div class="input-field">
           <label for="authPassword" id="labelPassword">รหัสผ่าน (Password)</label>
           <input type="password" id="authPassword" required placeholder="••••••••" minlength="6">
         </div>
 
+        <!-- ฟิลด์ยืนยันรหัสผ่าน (แสดงเฉพาะตอนสมัครสมาชิก) -->
         <div class="input-field" id="confirmPasswordFields" style="display: none;">
           <label for="authConfirmPassword">ยืนยันรหัสผ่าน (Confirm Password)</label>
           <input type="password" id="authConfirmPassword" placeholder="••••••••" minlength="6">
@@ -457,7 +461,7 @@
     github: new GithubAuthProvider()
   };
 
-  // เช็คตัวอักษรแปลกๆ และช่องว่าง (RegEx ยอมรับแค่ a-z, A-Z, 0-9, _, -)
+  // เช็คตัวอักษรและช่องว่าง (รองรับ a-z, A-Z, 0-9, _ และ - ทั่วถึงทั้งพิมพ์เล็กพิมพ์ใหญ่)
   function validateAllowedChars(text) {
     const regex = /^[a-zA-Z0-9_-]+$/;
     return regex.test(text);
@@ -488,7 +492,7 @@
     }
 
     if(!validateAllowedChars(username)) {
-      statusMsg.textContent = "❌ ห้ามเว้นวรรคหรือใช้ตัวอักษรพิเศษ (ใช้ได้เฉพาะ a-z, 0-9, _, -)";
+      statusMsg.textContent = "❌ ห้ามเว้นวรรคหรือใช้ตัวอักษรพิเศษ (ใช้ได้เฉพาะ a-z, A-Z, 0-9, _, -)";
       statusMsg.className = "status-msg error";
       isUsernameValid = false;
       return;
@@ -516,7 +520,7 @@
     checkUsernameAvailability(val);
   });
 
-  // เช็คความตรงกันของรหัสผ่านแบบ Realtime ในหน้าสตรีม
+  // เช็คความตรงกันของรหัสผ่านแบบ Realtime ในหน้าสมัคร
   function checkPasswordMatch() {
     const pass = document.getElementById('authPassword').value;
     const confirmPass = document.getElementById('authConfirmPassword').value;
@@ -560,7 +564,7 @@
       confirmPasswordFields.style.display = "flex";
       document.getElementById('authConfirmPassword').required = true;
       labelEmail.textContent = "อีเมลสำหรับใช้งาน (Email)";
-      labelPassword.textContent = "ตั้งรหัสผ่าน (Password) *ใช้ได้แค่ a-z, 0-9, _, -";
+      labelPassword.textContent = "ตั้งรหัสผ่าน (Password) *ใช้ได้แก่ a-z, A-Z, 0-9, _, -";
       authEmailInput.placeholder = "example@xsoul.com";
       authEmailInput.type = "email";
     } else {
@@ -597,7 +601,7 @@
 
       // ตรวจสอบอักษรพิเศษในรหัสผ่าน
       if (!validateAllowedChars(password)) {
-        showToast("รหัสผ่านห้ามใช้ตัวอักษรพิเศษหรือเว้นวรรค (ใช้ได้แค่ a-z, 0-9, _, -)");
+        showToast("รหัสผ่านห้ามใช้ตัวอักษรพิเศษหรือเว้นวรรค (ใช้ได้แก่ a-z, A-Z, 0-9, _, -)");
         return;
       }
 
