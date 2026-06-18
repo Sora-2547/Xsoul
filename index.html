@@ -605,10 +605,7 @@
 
     /* ===== AVATAR FRAME (rank-based) ===== */
     /*
-      Frame PNGs: 512×442px. Smallest hole_ratio = 0.637 (Gold).
-      Frame overlay = 157% of avatar → 157%×42 = 65.9px.
-      Gold hole in that size = 65.9×0.637 = 42px = exact avatar ✓
-      Centered explicitly via translate(-50%,-50%) on avatar center.
+      Frame PNGs: 512×442px. Adjusted sizing for proper alignment.
     */
     .avatar-wrap {
       position: relative;
@@ -619,7 +616,7 @@
     .user-avatar { position: relative; z-index: 1; flex-shrink: 0; }
     .avatar-frame {
       position: absolute;
-      width: 157%; height: 157%;
+      width: 140%; height: 140%;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none; z-index: 2;
@@ -725,8 +722,8 @@
     }
     .frame-preview-overlay {
       position: absolute;
-      /* 157% of 80px = 125.6px → Gold hole = 80px exactly ✓ */
-      width: 157%; height: 157%;
+      /* 140% of 80px = 112px for proper alignment */
+      width: 140%; height: 140%;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       background-repeat: no-repeat;
