@@ -3,22 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Xsoul Script | Roblox</title>
+  <title>Xsoul Script</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --bg:       #0b0d14;
-      --surface:  #13162100;
-      --card:     #161a27;
-      --border:   #252a3d;
-      --accent:   #7c5cfc;
-      --accent2:  #c471ed;
-      --glow:     #7c5cfc55;
-      --text:     #e8eaf6;
-      --muted:    #6b7194;
-      --success:  #4ade80;
-      --mono:     'JetBrains Mono', monospace;
-      --sans:     'Space Grotesk', sans-serif;
+      --bg: #0b0d14;
+      --card: #161a27;
+      --border: #252a3d;
+      --accent: #7c5cfc;
+      --accent2: #c471ed;
+      --glow: #7c5cfc55;
+      --text: #e8eaf6;
+      --muted: #6b7194;
+      --success: #4ade80;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Space Grotesk', sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,7 +33,6 @@
       overflow-x: hidden;
     }
 
-    /* ── ambient background ── */
     body::before {
       content: '';
       position: fixed; inset: 0;
@@ -45,7 +43,6 @@
       z-index: 0;
     }
 
-    /* ── grid lines ── */
     body::after {
       content: '';
       position: fixed; inset: 0;
@@ -68,7 +65,6 @@
       gap: 40px;
     }
 
-    /* ── header ── */
     header { text-align: center; }
 
     .badge {
@@ -103,7 +99,6 @@
       line-height: 1.6;
     }
 
-    /* ── stats row ── */
     .stats {
       display: flex;
       gap: 12px;
@@ -135,7 +130,6 @@
       margin-top: 2px;
     }
 
-    /* ── card ── */
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -172,74 +166,7 @@
       50%      { opacity: .4; }
     }
 
-    /* ── input group ── */
-    .input-group {
-      display: flex;
-      gap: 10px;
-      align-items: stretch;
-    }
-
-    .link-input {
-      flex: 1;
-      background: #0e1120;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 18px;
-      font-family: var(--mono);
-      font-size: .85rem;
-      color: var(--text);
-      outline: none;
-      transition: border-color .2s, box-shadow .2s;
-    }
-
-    .link-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--glow);
-    }
-
-    .link-input::placeholder { color: var(--muted); }
-
-    .btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 20px;
-      border-radius: 12px;
-      border: none;
-      font-family: var(--sans);
-      font-size: .88rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .2s;
-      white-space: nowrap;
-    }
-
-    .btn-copy {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      box-shadow: 0 4px 20px var(--glow);
-    }
-
-    .btn-copy:hover { transform: translateY(-1px); box-shadow: 0 6px 28px var(--glow); }
-    .btn-copy:active { transform: translateY(0); }
-
-    .btn-copy.copied {
-      background: linear-gradient(135deg, #22c55e, #4ade80);
-      box-shadow: 0 4px 20px #22c55e44;
-    }
-
-    .btn-clear {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-
-    .btn-clear:hover { border-color: var(--accent); color: var(--text); }
-
-    /* ── script box ── */
-    .script-wrapper {
-      position: relative;
-    }
+    .script-wrapper { position: relative; }
 
     .script-label {
       font-size: .72rem;
@@ -259,9 +186,7 @@
       font-size: .82rem;
       color: #a78bfa;
       line-height: 1.7;
-      white-space: pre-wrap;
       word-break: break-all;
-      position: relative;
       min-height: 80px;
     }
 
@@ -285,7 +210,6 @@
     .copy-script-btn:hover { background: var(--accent); color: #fff; }
     .copy-script-btn.copied { background: #22c55e; color: #fff; }
 
-    /* ── toast ── */
     .toast {
       position: fixed;
       bottom: 32px; right: 32px;
@@ -308,7 +232,6 @@
 
     .toast.show { transform: translateY(0); opacity: 1; }
 
-    /* ── footer ── */
     footer {
       position: relative; z-index: 1;
       text-align: center;
@@ -319,12 +242,6 @@
 
     footer a { color: var(--accent); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
-
-    /* ── responsive ── */
-    @media (max-width: 500px) {
-      .input-group { flex-direction: column; }
-      .card { padding: 22px 18px; }
-    }
   </style>
 </head>
 <body>
@@ -338,7 +255,7 @@
 
   <div class="stats">
     <div class="stat">
-      <div class="stat-value" id="scriptCount">0</div>
+      <div class="stat-value">1</div>
       <div class="stat-label">Scripts</div>
     </div>
     <div class="stat">
@@ -351,37 +268,12 @@
     </div>
   </div>
 
-  <!-- link input card -->
   <div class="card">
-    <div class="card-title">ใส่ลิงก์สคริปต์</div>
-
-    <div class="input-group">
-      <input
-        id="linkInput"
-        class="link-input"
-        type="text"
-        placeholder="https://raw.githubusercontent.com/..."
-        spellcheck="false"
-      />
-      <button class="btn btn-copy" id="copyLinkBtn" onclick="copyLink()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-        </svg>
-        คัดลอกลิงก์
-      </button>
-      <button class="btn btn-clear" onclick="clearInput()">ล้าง</button>
-    </div>
-  </div>
-
-  <!-- loadstring card -->
-  <div class="card">
-    <div class="card-title">Loadstring สำเร็จรูป</div>
-    <p style="font-size:.85rem;color:var(--muted);">ใส่ลิงก์ด้านบน แล้วโค้ดด้านล่างจะอัปเดตอัตโนมัติ — คัดลอกไปวางใน Executor ได้เลย</p>
-
+    <div class="card-title">🗺️ Map ทำลายไข่เพื่อฟัก Brainrots!</div>
     <div class="script-wrapper">
       <div class="script-label">Lua Script</div>
-      <div class="script-box" id="scriptBox">loadstring(game:HttpGet("", true))()</div>
-      <button class="copy-script-btn" id="copyScriptBtn" onclick="copyScript()">
+      <div class="script-box" id="brainrotScript">loadstring(game:HttpGet("https://raw.githubusercontent.com/Sora-2547/Xsoul/refs/heads/main/Xsoul_menu.lua", true))()</div>
+      <button class="copy-script-btn" id="copyBtn" onclick="copyScript()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
         </svg>
@@ -389,131 +281,34 @@
       </button>
     </div>
   </div>
-
-  <!-- saved links card -->
-  <div class="card">
-    <div class="card-title">ลิงก์ที่บันทึกไว้</div>
-    <div id="savedList" style="display:flex;flex-direction:column;gap:10px;">
-      <p style="color:var(--muted);font-size:.85rem;text-align:center;padding:12px 0;">ยังไม่มีลิงก์ที่บันทึกไว้</p>
-    </div>
-    <button class="btn btn-copy" style="align-self:flex-start;" onclick="saveLink()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-      </svg>
-      บันทึกลิงก์
-    </button>
-  </div>
 </main>
 
 <footer>
   Made with ♥ by <a href="#">Xsoul</a> &nbsp;·&nbsp; Roblox Script Hub
 </footer>
 
-<!-- toast -->
 <div class="toast" id="toast">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
     <polyline points="20 6 9 17 4 12"/>
   </svg>
-  <span id="toastMsg">คัดลอกแล้ว!</span>
+  คัดลอกแล้ว!
 </div>
 
 <script>
-  const input      = document.getElementById('linkInput');
-  const scriptBox  = document.getElementById('scriptBox');
-  const copyLinkBtn   = document.getElementById('copyLinkBtn');
-  const copyScriptBtn = document.getElementById('copyScriptBtn');
-  const savedList  = document.getElementById('savedList');
-  const countEl    = document.getElementById('scriptCount');
-
-  let saved = JSON.parse(localStorage.getItem('xsoul_links') || '[]');
-
-  // live update loadstring
-  input.addEventListener('input', () => {
-    const url = input.value.trim();
-    scriptBox.textContent = url
-      ? `loadstring(game:HttpGet("${url}", true))()`
-      : `loadstring(game:HttpGet("", true))()`;
-  });
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    document.getElementById('toastMsg').textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
-  }
-
-  function copyLink() {
-    const url = input.value.trim();
-    if (!url) { showToast('⚠️ กรุณาใส่ลิงก์ก่อน'); return; }
-    navigator.clipboard.writeText(url).then(() => {
-      copyLinkBtn.classList.add('copied');
-      copyLinkBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> คัดลอกแล้ว!`;
-      showToast('คัดลอกลิงก์แล้ว!');
-      setTimeout(() => {
-        copyLinkBtn.classList.remove('copied');
-        copyLinkBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> คัดลอกลิงก์`;
-      }, 2000);
-    });
-  }
-
   function copyScript() {
-    const text = scriptBox.textContent;
+    const text = document.getElementById('brainrotScript').textContent;
     navigator.clipboard.writeText(text).then(() => {
-      copyScriptBtn.classList.add('copied');
-      copyScriptBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
-      showToast('คัดลอก Loadstring แล้ว!');
+      const btn = document.getElementById('copyBtn');
+      btn.classList.add('copied');
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+      document.getElementById('toast').classList.add('show');
       setTimeout(() => {
-        copyScriptBtn.classList.remove('copied');
-        copyScriptBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2v1"/></svg> Copy`;
+        document.getElementById('toast').classList.remove('show');
+        btn.classList.remove('copied');
+        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy`;
       }, 2000);
     });
   }
-
-  function clearInput() {
-    input.value = '';
-    scriptBox.textContent = `loadstring(game:HttpGet("", true))()`;
-    input.focus();
-  }
-
-  function saveLink() {
-    const url = input.value.trim();
-    if (!url) { showToast('⚠️ กรุณาใส่ลิงก์ก่อน'); return; }
-    if (saved.includes(url)) { showToast('มีลิงก์นี้อยู่แล้ว'); return; }
-    saved.push(url);
-    localStorage.setItem('xsoul_links', JSON.stringify(saved));
-    renderSaved();
-    showToast('บันทึกลิงก์แล้ว!');
-  }
-
-  function deleteLink(idx) {
-    saved.splice(idx, 1);
-    localStorage.setItem('xsoul_links', JSON.stringify(saved));
-    renderSaved();
-  }
-
-  function loadLink(url) {
-    input.value = url;
-    scriptBox.textContent = `loadstring(game:HttpGet("${url}", true))()`;
-    showToast('โหลดลิงก์แล้ว!');
-  }
-
-  function renderSaved() {
-    countEl.textContent = saved.length;
-    if (saved.length === 0) {
-      savedList.innerHTML = `<p style="color:var(--muted);font-size:.85rem;text-align:center;padding:12px 0;">ยังไม่มีลิงก์ที่บันทึกไว้</p>`;
-      return;
-    }
-    savedList.innerHTML = saved.map((url, i) => `
-      <div style="display:flex;align-items:center;gap:10px;background:#0e1120;border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
-        <span style="font-family:var(--mono);font-size:.78rem;color:#a78bfa;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${url}">${url}</span>
-        <button onclick="loadLink('${url.replace(/'/g,"\\'")}')
-" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-family:var(--sans);font-size:.75rem;color:var(--muted);cursor:pointer;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">โหลด</button>
-        <button onclick="deleteLink(${i})" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;line-height:1;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--muted)'">✕</button>
-      </div>
-    `).join('');
-  }
-
-  renderSaved();
 </script>
 </body>
 </html>
