@@ -3210,6 +3210,52 @@
     }).catch(() => {});
   };
 
+  // ===== SAVE VERIFICATION DATA =====
+  window.saveVerificationData = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error('No user logged in');
+      showToast('ไม่พบผู้ใช้', true);
+      return;
+    }
+    const address = document.getElementById('settingsAddress').value.trim();
+    const terms = document.getElementById('settingsTerms').checked;
+    const msg = document.getElementById('termsMsg');
+    const phone = document.getElementById('settingsPhone').value.trim();
+    
+    console.log('Saving data:', { phone, address, terms, uid: user.uid });
+    
+    if (!terms) { 
+      msg.style.color='var(--error)'; 
+      msg.textContent='กรุณายอมรับข้อกำหนดและเงื่อนไขก่อน'; 
+      return; 
+    }
+    msg.textContent = '';
+    try {
+      const updates = { address, termsAccepted: true };
+      // Save phone if provided
+      if (phone) updates.phone = phone;
+      
+      console.log('Updates to save:', updates);
+      
+      await Promise.all(Object.entries(updates).map(([k,v]) => {
+        console.log(`Saving ${k}:`, v);
+        return set(ref(db,`users/${user.uid}/${k}`), v);
+      }));
+      
+      showToast('✓ บันทึกข้อมูลสำเร็จ');
+      msg.style.color='var(--success)'; msg.textContent='✓ บันทึกแล้ว';
+      
+      // Close the settings window after successful save
+      setTimeout(() => closeUserSettings(), 500);
+    } catch(e) {
+      console.error('Save error:', e);
+      showToast('บันทึกไม่สำเร็จ: ' + (e.message || e.code), true);
+      msg.style.color='var(--error)'; 
+      msg.textContent='บันทึกไม่สำเร็จ: ' + (e.message || e.code);
+    }
+  };
+
 </script>
 
 <script>
@@ -3449,7 +3495,7 @@
       'frame-platinum': 'Platinum Frame',
       'frame-diamond': 'Diamond Frame',
       'frame-premium': 'Premium Frame',
-      'frame-locked': 'Must reach ' + f.label + ' rank to use this frame',
+      'frame-locked': 'Must reach required rank to use this frame',
     },
     th: {
       // Settings tabs
@@ -3502,7 +3548,7 @@
       'frame-platinum': 'กรอบแพลตตินัม',
       'frame-diamond': 'กรอบไดมอนด์',
       'frame-premium': 'กรอบพรีเมียม',
-      'frame-locked': 'ต้องเลื่อนขั้นถึงแรงค์ ' + f.label + ' ก่อนจึงจะใช้กรอบนี้ได้',
+      'frame-locked': 'ต้องเลื่อนขั้นถึงแรงค์ที่กำหนดก่อนจึงจะใช้กรอบนี้ได้',
     }
   };
   
@@ -3561,52 +3607,6 @@
     } catch (e) {
       msg.style.color = 'var(--error)';
       msg.textContent = e.code === 'auth/too-many-requests' ? 'ส่งบ่อยเกินไป กรุณารอสักครู่' : ('เกิดข้อผิดพลาด: ' + (e.code||e.message));
-    }
-  };
-
-  // ===== SAVE VERIFICATION DATA =====
-  window.saveVerificationData = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      console.error('No user logged in');
-      showToast('ไม่พบผู้ใช้', true);
-      return;
-    }
-    const address = document.getElementById('settingsAddress').value.trim();
-    const terms = document.getElementById('settingsTerms').checked;
-    const msg = document.getElementById('termsMsg');
-    const phone = document.getElementById('settingsPhone').value.trim();
-    
-    console.log('Saving data:', { phone, address, terms, uid: user.uid });
-    
-    if (!terms) { 
-      msg.style.color='var(--error)'; 
-      msg.textContent='กรุณายอมรับข้อกำหนดและเงื่อนไขก่อน'; 
-      return; 
-    }
-    msg.textContent = '';
-    try {
-      const updates = { address, termsAccepted: true };
-      // Save phone if provided
-      if (phone) updates.phone = phone;
-      
-      console.log('Updates to save:', updates);
-      
-      await Promise.all(Object.entries(updates).map(([k,v]) => {
-        console.log(`Saving ${k}:`, v);
-        return set(ref(db,`users/${user.uid}/${k}`), v);
-      }));
-      
-      showToast('✓ บันทึกข้อมูลสำเร็จ');
-      msg.style.color='var(--success)'; msg.textContent='✓ บันทึกแล้ว';
-      
-      // Close the settings window after successful save
-      setTimeout(() => closeUserSettings(), 500);
-    } catch(e) {
-      console.error('Save error:', e);
-      showToast('บันทึกไม่สำเร็จ: ' + (e.message || e.code), true);
-      msg.style.color='var(--error)'; 
-      msg.textContent='บันทึกไม่สำเร็จ: ' + (e.message || e.code);
     }
   };
 
