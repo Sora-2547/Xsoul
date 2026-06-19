@@ -1678,7 +1678,8 @@
           <div class="grid-fields">
             <div class="input-field">
               <label for="regPhone">เบอร์โทรศัพท์</label>
-              <input type="tel" id="regPhone" placeholder="0987654321">
+              <input type="tel" id="regPhone" placeholder="0987654321" required>
+              <div id="phoneCheckStatus" class="status-msg"></div>
             </div>
             <div class="input-field">
               <label for="regBirth">วันเกิด</label>
@@ -2618,7 +2619,29 @@
     } catch(err) { s.textContent='❌ DB Error: '+err.message; s.className='status-msg error'; isUsernameValid=false; }
   }
 
+  async function checkPhoneAvailability(phone) {
+    const s = document.getElementById('phoneCheckStatus');
+    if (!phone) { s.style.display='none'; return; }
+    if (phone.length < 9) { s.textContent='❌ ต้องยาว 9 ตัวขึ้นไป'; s.className='status-msg error'; return; }
+    try {
+      const snap = await get(ref(db, 'users'));
+      if (snap.exists()) {
+        const users = snap.val();
+        for (const uid in users) {
+          if (users[uid].phone === phone) {
+            s.textContent='❌ เบอร์มือถือนี้ถูกใช้ไปแล้ว';
+            s.className='status-msg error';
+            return;
+          }
+        }
+      }
+      s.textContent='✓ เบอร์มือถือนี้ใช้ได้';
+      s.className='status-msg success';
+    } catch(err) { s.textContent='❌ DB Error: '+err.message; s.className='status-msg error'; }
+  }
+
   document.getElementById('regUsername').addEventListener('input', e => checkUsernameAvailability(e.target.value.trim()));
+  document.getElementById('regPhone').addEventListener('input', e => checkPhoneAvailability(e.target.value.trim()));
 
   // Password match validation
   const passwordInput = document.getElementById('authPassword');
@@ -2648,11 +2671,18 @@
   passwordInput.addEventListener('input', checkPasswordMatch);
   confirmPasswordInput.addEventListener('input', checkPasswordMatch);
   
-  // Password strength meter
+  // Password strength meter (only show during sign-up)
   passwordInput.addEventListener('input', () => {
     const password = passwordInput.value;
     const strengthBar = document.getElementById('passwordStrengthBar');
     const strengthText = document.getElementById('passwordStrengthText');
+    
+    // Hide strength meter during login mode
+    if (!isSignUpMode) {
+      strengthBar.style.width = '0%';
+      strengthText.textContent = '';
+      return;
+    }
     
     let strength = 0;
     let strengthLabel = '';
@@ -2664,33 +2694,36 @@
       return;
     }
     
-    // Length check
-    if (password.length >= 6) strength += 1;
+    // Length check (stricter requirements)
     if (password.length >= 8) strength += 1;
     if (password.length >= 10) strength += 1;
+    if (password.length >= 12) strength += 1;
     
-    // Character variety
+    // Character variety (all required for strong password)
     if (/[a-z]/.test(password)) strength += 1;
     if (/[A-Z]/.test(password)) strength += 1;
     if (/[0-9]/.test(password)) strength += 1;
     if (/[^a-zA-Z0-9]/.test(password)) strength += 1;
     
     // Calculate strength percentage
-    const strengthPercent = Math.min((strength / 7) * 100, 100);
+    const strengthPercent = Math.min((strength / 6) * 100, 100);
     
-    // Set strength label and color
+    // Set strength label and color (stricter criteria)
     if (strength <= 2) {
-      strengthLabel = 'อ่อนแอ';
+      strengthLabel = 'อ่อนแอ (ต้องมี 8 ตัวขึ้นไป)';
       strengthColor = '#ef4444';
-    } else if (strength <= 4) {
-      strengthLabel = 'ปานกลาง';
+    } else if (strength <= 3) {
+      strengthLabel = 'ปานกลาง (แนะนำให้เพิ่มตัวอักษรพิเศษ)';
       strengthColor = '#f59e0b';
-    } else if (strength <= 5) {
-      strengthLabel = 'ดี';
+    } else if (strength <= 4) {
+      strengthLabel = 'ดี (แนะนำให้เพิ่มตัวพิมพ์ใหญ่)';
       strengthColor = '#22c55e';
+    } else if (strength <= 5) {
+      strengthLabel = 'แข็งแรง';
+      strengthColor = '#10b981';
     } else {
       strengthLabel = 'แข็งแรงมาก';
-      strengthColor = '#10b981';
+      strengthColor = '#059669';
     }
     
     strengthBar.style.width = strengthPercent + '%';
@@ -3403,8 +3436,8 @@
         if (socialWarning) socialWarning.style.display = 'block';
       }
       
-      // Check if all verification fields are complete (phone, address, birthdate)
-      const isFullyVerified = d.phoneVerified && d.address && d.birthdate;
+      // Check if all verification fields are complete (phone, address, birthdate, email)
+      const isFullyVerified = d.phoneVerified && d.address && d.address !== 'Social' && d.birthdate && d.birthdate !== 'Social' && user.emailVerified;
       
       // Show green verified message only when all fields are complete
       const parent = document.getElementById('stab-content-verify');
@@ -3423,8 +3456,14 @@
         }
       }
       
-      // Show edit button and hide save button when fully verified
-      if (isFullyVerified) {
+      // Show yellow warning when not fully verified
+      if (!isFullyVerified) {
+        const socialWarning = document.getElementById('socialPhoneWarning');
+        if (socialWarning) socialWarning.style.display = 'block';
+      }
+      
+      // Show edit button when phone is verified (even if not fully verified)
+      if (d.phoneVerified) {
         document.getElementById('editContactInfoBtn').style.display = 'block';
         document.getElementById('cancelContactInfoEditBtn').style.display = 'none';
         document.querySelector('button[onclick="saveVerificationData()"]').style.display = 'none';
