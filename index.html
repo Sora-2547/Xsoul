@@ -1700,10 +1700,12 @@
         <div class="input-field">
           <label for="authPassword">รหัสผ่าน (Password)</label>
           <input type="password" id="authPassword" required placeholder="••••••••" minlength="6">
-          <div id="passwordStrengthMeter" style="margin-top:8px;height:4px;background:var(--bg);border-radius:2px;overflow:hidden;">
-            <div id="passwordStrengthBar" style="height:100%;width:0%;transition:width 0.3s ease,background 0.3s ease;"></div>
+          <div id="passwordStrengthWrap" style="display:none;">
+            <div id="passwordStrengthMeter" style="margin-top:8px;height:4px;background:var(--bg);border-radius:2px;overflow:hidden;">
+              <div id="passwordStrengthBar" style="height:100%;width:0%;transition:width 0.3s ease,background 0.3s ease;"></div>
+            </div>
+            <div id="passwordStrengthText" style="font-size:0.7rem;color:var(--muted);margin-top:4px;"></div>
           </div>
-          <div id="passwordStrengthText" style="font-size:0.7rem;color:var(--muted);margin-top:4px;"></div>
         </div>
         <div class="input-field" id="confirmPasswordFields" style="display:none;">
           <label for="authConfirmPassword">ยืนยันรหัสผ่าน</label>
@@ -2415,7 +2417,6 @@
 
       <button class="btn btn-secondary" onclick="closeUserSettings()" style="width:100%;padding:12px;" data-i18n="close-btn">ปิด</button>
     </div><!-- end stab-content-display -->
-    </div>
 
   </div>
 </div>
@@ -2743,9 +2744,11 @@
     document.getElementById('authConfirmPassword').required = isSignUpMode;
     document.getElementById('labelEmail').textContent = isSignUpMode ? 'อีเมลสำหรับใช้งาน (Email)' : 'อีเมล หรือ ชื่อผู้ใช้';
     document.getElementById('authEmail').placeholder = isSignUpMode ? 'example@xsoul.com' : 'example@xsoul.com หรือ username';
-    // Hide password strength meter during login mode
+    // Show password strength meter only during sign-up
+    const strengthWrap = document.getElementById('passwordStrengthWrap');
     const strengthBar = document.getElementById('passwordStrengthBar');
     const strengthText = document.getElementById('passwordStrengthText');
+    if (strengthWrap) strengthWrap.style.display = isSignUpMode ? 'block' : 'none';
     if (!isSignUpMode) {
       if (strengthBar) strengthBar.style.width = '0%';
       if (strengthText) strengthText.textContent = '';
@@ -4517,7 +4520,6 @@
     if (e.target.id === 'rankUpOverlay') closeRankUp();
   });
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
