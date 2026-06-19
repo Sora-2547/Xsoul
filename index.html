@@ -2560,6 +2560,7 @@
   window.fbGet = get;
   window.fbSet = set;
   window.fbOnValue = onValue;
+  window.sendEmailVerification = sendEmailVerification;
   let isSignUpMode = false;
   let isUsernameValid = false;
   const providers = { google: new GoogleAuthProvider(), github: new GithubAuthProvider() };
@@ -4213,9 +4214,9 @@
       const pvEl = document.getElementById('acctPhoneVerified');
       if (pvEl) pvEl.style.display = d.phoneVerified ? 'inline-flex' : 'none';
       const addrEl = document.getElementById('acctAddress');
-      if (addrEl) addrEl.textContent = d.address || '(ยังไม่ได้ระบุ)';
+      if (addrEl) addrEl.textContent = (d.address && d.address !== 'Social') ? d.address : '(ยังไม่ได้ระบุ)';
       const avEl = document.getElementById('acctAddressVerified');
-      if (avEl) avEl.style.display = d.address ? 'inline-flex' : 'none';
+      if (avEl) avEl.style.display = (d.address && d.address !== 'Social' && d.address.trim() !== '') ? 'inline-flex' : 'none';
       const bdEl = document.getElementById('acctBirthdate');
       if (bdEl) {
         if (d.birthdate && d.birthdate !== 'Social') {
@@ -4255,7 +4256,7 @@
     if (!user) return;
     // Check if user is fully verified (phone, address, birthdate all filled)
     try {
-      const snap = await get(ref(db, `users/${user.uid}`));
+      const snap = await window.fbGet(window.fbRef(db, `users/${user.uid}`));
       if (!snap.exists()) {
         showToast('⚠️ ให้ยืนยันตัวตนก่อนเพื่อเติมเงินและซื้อคีย์', true);
         openUserSettings();
