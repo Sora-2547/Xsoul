@@ -2551,7 +2551,7 @@
     RecaptchaVerifier, signInWithPhoneNumber, sendEmailVerification, linkWithCredential, PhoneAuthProvider,
     fetchSignInMethodsForEmail
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, set, get, onValue, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBUPSUB6Ic8lqKYC7FTRa_szjQmTFeXYlQ",
@@ -2698,8 +2698,22 @@
      try {
        const snap = await get(ref(db, `phones/${fullKey}`));
        if (my !== phoneReq) return;
-       if (snap.exists()) { setStatus(s, 'error', '❌ เบอร์มือถือนี้ถูกใช้ไปแล้ว'); isPhoneValid = false; }
-       else { setStatus(s, 'success', '✓ เบอร์มือถือนี้ใช้ได้'); isPhoneValid = true; }
+       if (snap.exists()) {
+         setStatus(s, 'error', '❌ เบอร์มือถือนี้ถูกใช้ไปแล้ว'); isPhoneValid = false;
+       } else {
+         // Fallback: scan users/ in case phones index was never backfilled
+         const fullPhone = cc + digits; // e.g. "+66945785138"
+         const usersSnap = await get(query(ref(db, 'users'), orderByChild('phone'), equalTo(fullPhone)));
+         if (my !== phoneReq) return;
+         if (usersSnap.exists()) {
+           // Backfill the index for future checks
+           const uid = Object.keys(usersSnap.val())[0];
+           try { await set(ref(db, `phones/${fullKey}`), { uid }); } catch (_) {}
+           setStatus(s, 'error', '❌ เบอร์มือถือนี้ถูกใช้ไปแล้ว'); isPhoneValid = false;
+         } else {
+           setStatus(s, 'success', '✓ เบอร์มือถือนี้ใช้ได้'); isPhoneValid = true;
+         }
+       }
      } catch (err) {
        if (my !== phoneReq) return;
        setStatus(s, 'error', '❌ ตรวจสอบไม่ได้: ' + err.message);
@@ -2720,8 +2734,21 @@
     try {
       const snap = await get(ref(db, `emails/${emailKey(email)}`));
       if (my !== emailReq) return;
-      if (snap.exists()) { setStatus(s, 'error', '❌ อีเมลนี้ถูกใช้ไปแล้ว'); isEmailValid = false; }
-      else { setStatus(s, 'success', '✓ อีเมลนี้ใช้ได้'); isEmailValid = true; }
+      if (snap.exists()) {
+        setStatus(s, 'error', '❌ อีเมลนี้ถูกใช้ไปแล้ว'); isEmailValid = false;
+      } else {
+        // Fallback: scan users/ in case emails index was never backfilled
+        const usersSnap = await get(query(ref(db, 'users'), orderByChild('email'), equalTo(email)));
+        if (my !== emailReq) return;
+        if (usersSnap.exists()) {
+          // Backfill the index for future checks
+          const uid = Object.keys(usersSnap.val())[0];
+          try { await set(ref(db, `emails/${emailKey(email)}`), { uid }); } catch (_) {}
+          setStatus(s, 'error', '❌ อีเมลนี้ถูกใช้ไปแล้ว'); isEmailValid = false;
+        } else {
+          setStatus(s, 'success', '✓ อีเมลนี้ใช้ได้'); isEmailValid = true;
+        }
+      }
     } catch (err) {
       if (my !== emailReq) return;
       setStatus(s, 'error', '❌ ตรวจสอบไม่ได้: ' + err.message);
@@ -3749,6 +3776,21 @@
           phoneErrorMsg.textContent = '❌ เบอร์มือถือนี้ถูกใช้โดยบัญชีอื่นแล้ว';
           phoneErrorMsg.style.display = 'block';
           return;
+        }
+        // Fallback: if index missing, scan users/ directly
+        if (!phoneSnap.exists()) {
+          const fullPhone = countryCode + phone; // e.g. "+66945785138"
+          const usersSnap = await get(query(ref(db, 'users'), orderByChild('phone'), equalTo(fullPhone)));
+          if (usersSnap.exists()) {
+            const takenUid = Object.keys(usersSnap.val())[0];
+            if (takenUid !== user.uid) {
+              // Backfill the index
+              try { await set(ref(db, `phones/${phoneIndexKey}`), { uid: takenUid }); } catch (_) {}
+              phoneErrorMsg.textContent = '❌ เบอร์มือถือนี้ถูกใช้โดยบัญชีอื่นแล้ว';
+              phoneErrorMsg.style.display = 'block';
+              return;
+            }
+          }
         }
       } catch (e) {
         phoneErrorMsg.textContent = '❌ ตรวจสอบเบอร์ไม่ได้: ' + e.message;
