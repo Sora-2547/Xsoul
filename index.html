@@ -2225,13 +2225,13 @@
           <span id="phoneVerifiedBadge" style="display:none;background:#4ade8022;color:#4ade80;border:1px solid #4ade8055;border-radius:999px;font-size:0.65rem;padding:2px 8px;">✓ ยืนยันแล้ว</span>
         </div>
         <div style="display:flex;gap:8px;">
-          <select id="phoneCountryCode" class="form-input" style="flex:0 0 auto;width:90px;font-family:var(--mono);">
-            <option value="+66">+66 (TH)</option>
-            <option value="+1">+1 (US)</option>
-            <option value="+44">+44 (UK)</option>
-            <option value="+81">+81 (JP)</option>
-            <option value="+86">+86 (CN)</option>
-            <option value="+82">+82 (KR)</option>
+          <select id="phoneCountryCode" class="form-input" style="flex:0 0 auto;width:75px;font-family:var(--mono);font-size:0.85rem;padding:10px 8px;">
+            <option value="+66">+66</option>
+            <option value="+1">+1</option>
+            <option value="+44">+44</option>
+            <option value="+81">+81</option>
+            <option value="+86">+86</option>
+            <option value="+82">+82</option>
           </select>
           <input class="form-input" id="settingsPhone" type="tel" placeholder="812345678" style="flex:1;font-family:var(--mono);letter-spacing:0.05em;" />
         </div>
@@ -2260,6 +2260,16 @@
           <span id="addressVerifiedBadge" style="display:none;background:#4ade8022;color:#4ade80;border:1px solid #4ade8055;border-radius:999px;font-size:0.65rem;padding:2px 8px;">✓ บันทึกแล้ว</span>
         </div>
         <textarea class="form-input" id="settingsAddress" rows="3" placeholder="บ้านเลขที่ / ถนน / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์" style="resize:vertical;line-height:1.6;"></textarea>
+      </div>
+
+      <!-- BIRTHDATE -->
+      <div style="margin-bottom:22px;">
+        <div style="font-size:0.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--accent2);display:inline-block;box-shadow:0 0 6px var(--accent2);"></span>
+          วันเกิด
+          <span id="birthdateVerifiedBadge" style="display:none;background:#4ade8022;color:#4ade80;border:1px solid #4ade8055;border-radius:999px;font-size:0.65rem;padding:2px 8px;">✓ บันทึกแล้ว</span>
+        </div>
+        <input class="form-input" id="settingsBirthdate" type="date" style="width:100%;font-family:var(--sans);" />
       </div>
 
       <!-- EDIT BUTTON (shown when data is saved) -->
@@ -2336,9 +2346,12 @@
           <span id="acctAddressVerified" style="display:none;background:#4ade8022;color:#16a34a;border:1px solid #4ade8055;border-radius:999px;font-size:0.65rem;padding:3px 10px;font-weight:700;flex-shrink:0;">✓ บันทึกแล้ว</span>
         </div>
         <!-- Birthdate -->
-        <div class="acct-info-row" style="background:rgba(124,92,252,0.04);border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
-          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;">🎂 วันเกิด</div>
-          <div style="font-size:0.88rem;font-weight:600;color:var(--text);" id="acctBirthdate">–</div>
+        <div class="acct-info-row" style="background:rgba(124,92,252,0.04);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="font-size:0.7rem;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;">🎂 วันเกิด</div>
+            <div style="font-size:0.88rem;font-weight:600;color:var(--text);" id="acctBirthdate">–</div>
+          </div>
+          <span id="acctBirthdateVerified" style="display:none;background:#4ade8022;color:#16a34a;border:1px solid #4ade8055;border-radius:999px;font-size:0.65rem;padding:3px 10px;font-weight:700;flex-shrink:0;">✓ บันทึกแล้ว</span>
         </div>
         <!-- Referrer -->
         <div class="acct-info-row" style="background:rgba(124,92,252,0.04);border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
@@ -3313,9 +3326,28 @@
         if (avBadge) avBadge.style.display = 'none';
       }
       
+      // If birthdate is saved, show badge and make field read-only
+      const bvBadge = document.getElementById('birthdateVerifiedBadge');
+      if (d.birthdate) {
+        if (bvBadge) {
+          bvBadge.style.display = 'inline-flex';
+        }
+        const bdEl = document.getElementById('settingsBirthdate');
+        if (bdEl && d.phoneVerified) {
+          bdEl.readOnly = true;
+          bdEl.style.background = 'var(--bg)';
+          bdEl.style.color = 'var(--text)';
+        }
+      } else {
+        if (bvBadge) bvBadge.style.display = 'none';
+      }
+      
       // address
       const addrEl = document.getElementById('settingsAddress');
       if (addrEl && d.address) addrEl.value = d.address;
+      // birthdate
+      const bdEl = document.getElementById('settingsBirthdate');
+      if (bdEl && d.birthdate) bdEl.value = d.birthdate;
       // terms
       const termsEl = document.getElementById('settingsTerms');
       if (termsEl) termsEl.checked = !!d.termsAccepted;
@@ -3353,6 +3385,7 @@
       return;
     }
     const address = document.getElementById('settingsAddress').value.trim();
+    const birthdate = document.getElementById('settingsBirthdate').value;
     const terms = document.getElementById('settingsTerms').checked;
     const msg = document.getElementById('termsMsg');
     const phone = document.getElementById('settingsPhone').value.trim();
@@ -3387,6 +3420,8 @@
         updates.phone = countryCode + phone;
         updates.phoneVerified = true;
       }
+      // Save birthdate if provided
+      if (birthdate) updates.birthdate = birthdate;
       
       console.log('Updates to save:', updates);
       
@@ -3427,6 +3462,9 @@
       if (address) {
         document.getElementById('addressVerifiedBadge').style.display = 'inline-flex';
       }
+      if (birthdate) {
+        document.getElementById('birthdateVerifiedBadge').style.display = 'inline-flex';
+      }
       
       // Make fields read-only
       document.getElementById('settingsPhone').readOnly = true;
@@ -3438,6 +3476,9 @@
       document.getElementById('settingsAddress').readOnly = true;
       document.getElementById('settingsAddress').style.background = 'var(--bg)';
       document.getElementById('settingsAddress').style.color = 'var(--text)';
+      document.getElementById('settingsBirthdate').readOnly = true;
+      document.getElementById('settingsBirthdate').style.background = 'var(--bg)';
+      document.getElementById('settingsBirthdate').style.color = 'var(--text)';
       
       // Show edit button
       document.getElementById('editContactInfoBtn').style.display = 'block';
@@ -3463,6 +3504,8 @@
     document.getElementById('phoneCountryCode').style.background = '';
     document.getElementById('settingsAddress').readOnly = false;
     document.getElementById('settingsAddress').style.background = '';
+    document.getElementById('settingsBirthdate').readOnly = false;
+    document.getElementById('settingsBirthdate').style.background = '';
     
     // Hide edit button
     document.getElementById('editContactInfoBtn').style.display = 'none';
@@ -3482,6 +3525,8 @@
     document.getElementById('phoneCountryCode').style.background = 'var(--bg)';
     document.getElementById('settingsAddress').readOnly = true;
     document.getElementById('settingsAddress').style.background = 'var(--bg)';
+    document.getElementById('settingsBirthdate').readOnly = true;
+    document.getElementById('settingsBirthdate').style.background = 'var(--bg)';
     
     // Hide cancel button
     document.getElementById('cancelContactInfoEditBtn').style.display = 'none';
@@ -4050,6 +4095,8 @@
       if (avEl) avEl.style.display = d.address ? 'inline-flex' : 'none';
       const bdEl = document.getElementById('acctBirthdate');
       if (bdEl) bdEl.textContent = (d.birthdate && d.birthdate !== 'Social') ? d.birthdate : '(ยังไม่ได้ระบุ)';
+      const bvEl = document.getElementById('acctBirthdateVerified');
+      if (bvEl) bvEl.style.display = d.birthdate ? 'inline-flex' : 'none';
       const refEl = document.getElementById('acctReferrer');
       if (refEl) refEl.textContent = (d.referrer && d.referrer !== 'none') ? d.referrer : '(ไม่มี)';
       const rk = (d.rank || 'free').toLowerCase().replace(/\s+/g,'');
@@ -4074,6 +4121,17 @@
   window.openTopup = async () => {
     const user = auth.currentUser;
     if (!user) return;
+    // Check if user is verified
+    try {
+      const snap = await get(ref(db, `users/${user.uid}`));
+      if (!snap.exists() || !snap.val().phoneVerified) {
+        showToast('⚠️ ให้ยืนยันตัวตนก่อนเพื่อเติมเงินและซื้อคีย์', true);
+        openUserSettings();
+        return;
+      }
+    } catch (e) {
+      console.error('Verification check error:', e);
+    }
     document.getElementById('topupOverlay').classList.add('active');
     _topupSelectedPkg = null;
     document.querySelectorAll('.topup-pkg').forEach(p => p.classList.remove('selected'));
