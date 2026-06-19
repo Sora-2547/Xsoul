@@ -1699,6 +1699,10 @@
         <div class="input-field">
           <label for="authPassword">รหัสผ่าน (Password)</label>
           <input type="password" id="authPassword" required placeholder="••••••••" minlength="6">
+          <div id="passwordStrengthMeter" style="margin-top:8px;height:4px;background:var(--bg);border-radius:2px;overflow:hidden;">
+            <div id="passwordStrengthBar" style="height:100%;width:0%;transition:width 0.3s ease,background 0.3s ease;"></div>
+          </div>
+          <div id="passwordStrengthText" style="font-size:0.7rem;color:var(--muted);margin-top:4px;"></div>
         </div>
         <div class="input-field" id="confirmPasswordFields" style="display:none;">
           <label for="authConfirmPassword">ยืนยันรหัสผ่าน</label>
@@ -2559,6 +2563,37 @@
   let isSignUpMode = false;
   let isUsernameValid = false;
   const providers = { google: new GoogleAuthProvider(), github: new GithubAuthProvider() };
+  
+  // Auto-logout after 5 minutes of inactivity
+  let inactivityTimer = null;
+  const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+  
+  function resetInactivityTimer() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      if (auth.currentUser) {
+        signOut(auth).then(() => {
+          showToast('ออกจากระบบเนื่องจากไม่มีการใช้งานเป็นเวลา 5 นาที');
+          location.reload();
+        }).catch(e => console.error('Auto-logout error:', e));
+      }
+    }, INACTIVITY_TIMEOUT);
+  }
+  
+  // Track user activity
+  const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+  activityEvents.forEach(event => {
+    document.addEventListener(event, resetInactivityTimer);
+  });
+  
+  // Start timer when user logs in
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      resetInactivityTimer();
+    } else {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+    }
+  });
 
   function validateAllowedChars(t) { return /^[a-zA-Z0-9_-]+$/.test(t); }
 
@@ -2611,6 +2646,57 @@
 
   passwordInput.addEventListener('input', checkPasswordMatch);
   confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+  
+  // Password strength meter
+  passwordInput.addEventListener('input', () => {
+    const password = passwordInput.value;
+    const strengthBar = document.getElementById('passwordStrengthBar');
+    const strengthText = document.getElementById('passwordStrengthText');
+    
+    let strength = 0;
+    let strengthLabel = '';
+    let strengthColor = '';
+    
+    if (password.length === 0) {
+      strengthBar.style.width = '0%';
+      strengthText.textContent = '';
+      return;
+    }
+    
+    // Length check
+    if (password.length >= 6) strength += 1;
+    if (password.length >= 8) strength += 1;
+    if (password.length >= 10) strength += 1;
+    
+    // Character variety
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^a-zA-Z0-9]/.test(password)) strength += 1;
+    
+    // Calculate strength percentage
+    const strengthPercent = Math.min((strength / 7) * 100, 100);
+    
+    // Set strength label and color
+    if (strength <= 2) {
+      strengthLabel = 'อ่อนแอ';
+      strengthColor = '#ef4444';
+    } else if (strength <= 4) {
+      strengthLabel = 'ปานกลาง';
+      strengthColor = '#f59e0b';
+    } else if (strength <= 5) {
+      strengthLabel = 'ดี';
+      strengthColor = '#22c55e';
+    } else {
+      strengthLabel = 'แข็งแรงมาก';
+      strengthColor = '#10b981';
+    }
+    
+    strengthBar.style.width = strengthPercent + '%';
+    strengthBar.style.background = strengthColor;
+    strengthText.textContent = strengthLabel;
+    strengthText.style.color = strengthColor;
+  });
 
   window.toggleAuthMode = () => {
     isSignUpMode = !isSignUpMode;
@@ -2636,6 +2722,23 @@
       const confirmPassword = document.getElementById('authConfirmPassword').value;
       if (!isUsernameValid) { showToast('ชื่อผู้ใช้ไม่ถูกต้อง', true); return; }
       if (password !== confirmPassword) { showToast('รหัสผ่านไม่ตรงกัน', true); return; }
+      // Check if phone number is already used
+      if (phone) {
+        try {
+          const phoneSnapshot = await get(ref(db, 'users'));
+          if (phoneSnapshot.exists()) {
+            const users = phoneSnapshot.val();
+            for (const uid in users) {
+              if (users[uid].phone === phone) {
+                showToast('เบอร์มือถือนี้ถูกใช้ไปแล้ว', true);
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Phone check error:', e);
+        }
+      }
       createUserWithEmailAndPassword(auth, loginOrEmail, password)
         .then(async uc => {
           const u = uc.user;
@@ -3292,10 +3395,18 @@
         // Hide yellow warning
         const socialWarning = document.getElementById('socialPhoneWarning');
         if (socialWarning) socialWarning.style.display = 'none';
-        // Show green verified message
-        const parent = document.getElementById('stab-content-verify');
-        if (parent) {
-          const existing = parent.querySelector('.verified-success-message');
+      } else {
+        if (pvBadge) pvBadge.style.display = 'none';
+      }
+      
+      // Check if all verification fields are complete (phone, address, birthdate)
+      const isFullyVerified = d.phoneVerified && d.address && d.birthdate;
+      
+      // Show green verified message only when all fields are complete
+      const parent = document.getElementById('stab-content-verify');
+      if (parent) {
+        const existing = parent.querySelector('.verified-success-message');
+        if (isFullyVerified) {
           if (!existing) {
             const verifiedMsg = document.createElement('div');
             verifiedMsg.style.cssText = 'background:#4ade8022;border:1px solid #4ade8055;border-radius:12px;padding:12px 16px;margin-bottom:18px;font-size:0.83rem;color:#4ade80;line-height:1.6;';
@@ -3303,21 +3414,24 @@
             verifiedMsg.className = 'verified-success-message';
             parent.insertBefore(verifiedMsg, parent.firstChild);
           }
+        } else {
+          if (existing) existing.remove();
         }
-        // Show edit button and hide save button
+      }
+      
+      // Show edit button and hide save button when fully verified
+      if (isFullyVerified) {
         document.getElementById('editContactInfoBtn').style.display = 'block';
         document.getElementById('cancelContactInfoEditBtn').style.display = 'none';
         document.querySelector('button[onclick="saveVerificationData()"]').style.display = 'none';
       } else {
-        if (pvBadge) pvBadge.style.display = 'none';
-        // Hide edit and cancel buttons, show save button when not verified
         document.getElementById('editContactInfoBtn').style.display = 'none';
         document.getElementById('cancelContactInfoEditBtn').style.display = 'none';
         document.querySelector('button[onclick="saveVerificationData()"]').style.display = 'block';
       }
       
-      // If address is saved, show badge and make field read-only
-      if (d.address) {
+      // If address is saved and not empty, show badge and make field read-only
+      if (d.address && d.address !== 'Social' && d.address.trim() !== '') {
         if (avBadge) {
           avBadge.style.display = 'inline-flex';
         }
@@ -3331,14 +3445,14 @@
         if (avBadge) avBadge.style.display = 'none';
       }
       
-      // If birthdate is saved, show badge and make field read-only
+      // If birthdate is saved and not "Social", show badge and make field read-only
       const bvBadge = document.getElementById('birthdateVerifiedBadge');
       const birthdateEl = document.getElementById('settingsBirthdate');
-      if (d.birthdate && d.phoneVerified) {
+      if (d.birthdate && d.birthdate !== 'Social' && d.birthdate.trim() !== '') {
         if (bvBadge) {
           bvBadge.style.display = 'inline-flex';
         }
-        if (birthdateEl) {
+        if (birthdateEl && d.phoneVerified) {
           birthdateEl.readOnly = true;
           birthdateEl.style.background = 'var(--bg)';
           birthdateEl.style.color = 'var(--text)';
@@ -4139,10 +4253,17 @@
   window.openTopup = async () => {
     const user = auth.currentUser;
     if (!user) return;
-    // Check if user is verified
+    // Check if user is fully verified (phone, address, birthdate all filled)
     try {
       const snap = await get(ref(db, `users/${user.uid}`));
-      if (!snap.exists() || !snap.val().phoneVerified) {
+      if (!snap.exists()) {
+        showToast('⚠️ ให้ยืนยันตัวตนก่อนเพื่อเติมเงินและซื้อคีย์', true);
+        openUserSettings();
+        return;
+      }
+      const d = snap.val();
+      const isFullyVerified = d.phoneVerified && d.address && d.address !== 'Social' && d.birthdate && d.birthdate !== 'Social';
+      if (!isFullyVerified) {
         showToast('⚠️ ให้ยืนยันตัวตนก่อนเพื่อเติมเงินและซื้อคีย์', true);
         openUserSettings();
         return;
