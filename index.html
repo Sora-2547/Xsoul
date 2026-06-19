@@ -101,6 +101,7 @@
     .status-msg { font-size: 0.72rem; margin-top: 2px; font-weight: 500; display: none; }
     .status-msg.success { color: var(--success); display: block; }
     .status-msg.error { color: var(--error); display: block; }
+    .status-msg.checking { color: var(--muted); display: block; }
 
     .submit-btn {
       background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border: none; border-radius: 10px;
@@ -1704,6 +1705,7 @@
         <div class="input-field">
           <label for="authEmail" id="labelEmail">อีเมล หรือ ชื่อผู้ใช้</label>
           <input type="text" id="authEmail" required placeholder="example@xsoul.com หรือ username">
+          <div id="emailCheckStatus" class="status-msg" style="display:none;"></div>
         </div>
         <div class="input-field">
           <label for="authPassword">รหัสผ่าน (Password)</label>
@@ -2546,7 +2548,8 @@
   import {
     getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider,
     createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
-    RecaptchaVerifier, signInWithPhoneNumber, sendEmailVerification, linkWithCredential, PhoneAuthProvider
+    RecaptchaVerifier, signInWithPhoneNumber, sendEmailVerification, linkWithCredential, PhoneAuthProvider,
+    fetchSignInMethodsForEmail
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
   import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -2573,6 +2576,11 @@
   window.sendEmailVerification = sendEmailVerification;
   let isSignUpMode = false;
   let isUsernameValid = false;
+  let isPhoneValid = false;
+  let isEmailValid = false;
+  // Public index helpers (keys must avoid Firebase-illegal chars . # $ [ ] /)
+  const phoneKey = (p) => (p || '').replace(/[^0-9]/g, '');
+  const emailKey = (e) => (e || '').toLowerCase().trim().replace(/[.#$\[\]\/@]/g, '_');
   const providers = { google: new GoogleAuthProvider(), github: new GithubAuthProvider() };
   
   // Auto-logout after 5 minutes of inactivity
@@ -2630,41 +2638,106 @@
     checkUsernameAvailability(u);
   };
 
+  // Generic token to ignore stale async results when typing fast
+  function setStatus(el, type, text) {
+    if (!text) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.textContent = text;
+    el.className = 'status-msg ' + type; // type: success | error | checking
+  }
+
+  let usernameReq = 0;
   async function checkUsernameAvailability(username) {
     const s = document.getElementById('usernameStatus');
-    if (!username) { s.style.display='none'; isUsernameValid=false; return; }
-    if (username.length < 4) { s.textContent='❌ ต้องยาว 4 ตัวขึ้นไป'; s.className='status-msg error'; isUsernameValid=false; return; }
-    if (!validateAllowedChars(username)) { s.textContent='❌ ภาษาอังกฤษ/ตัวเลข/_ เท่านั้น'; s.className='status-msg error'; isUsernameValid=false; return; }
+    isUsernameValid = false;
+    if (!username) { setStatus(s, '', ''); return; }
+    if (username.length < 4) { setStatus(s, 'error', '❌ ต้องยาว 4 ตัวขึ้นไป'); return; }
+    if (!validateAllowedChars(username)) { setStatus(s, 'error', '❌ ภาษาอังกฤษ/ตัวเลข/_ เท่านั้น'); return; }
+    const my = ++usernameReq;
+    setStatus(s, 'checking', '⏳ กำลังตรวจสอบ...');
     try {
       const snap = await get(ref(db, `usernames/${username.toLowerCase()}`));
-      if (snap.exists()) { s.textContent='❌ ชื่อนี้มีคนใช้แล้ว'; s.className='status-msg error'; isUsernameValid=false; }
-      else { s.textContent='✓ ใช้งานได้'; s.className='status-msg success'; isUsernameValid=true; }
-    } catch(err) { s.textContent='❌ DB Error: '+err.message; s.className='status-msg error'; isUsernameValid=false; }
+      if (my !== usernameReq) return; // stale
+      if (snap.exists()) { setStatus(s, 'error', '❌ ชื่อนี้มีคนใช้แล้ว'); isUsernameValid = false; }
+      else { setStatus(s, 'success', '✓ ชื่อนี้ใช้งานได้'); isUsernameValid = true; }
+    } catch (err) {
+      if (my !== usernameReq) return;
+      setStatus(s, 'error', '❌ ตรวจสอบไม่ได้: ' + err.message);
+      isUsernameValid = false;
+    }
   }
 
-  async function checkPhoneAvailability(phone) {
+  let phoneReq = 0;
+  async function checkPhoneAvailability(phoneLocal) {
     const s = document.getElementById('phoneCheckStatus');
-    if (!phone) { s.style.display='none'; return; }
-    if (phone.length < 9) { s.textContent='❌ ต้องยาว 9 ตัวขึ้นไป'; s.className='status-msg error'; return; }
+    isPhoneValid = false;
+    const digits = phoneKey(phoneLocal);
+    if (!digits) { setStatus(s, '', ''); return; }
+    if (digits.length < 9) { setStatus(s, 'error', '❌ ต้องยาว 9 ตัวขึ้นไป'); return; }
+    const cc = document.getElementById('regPhoneCountryCode').value;
+    const fullKey = phoneKey(cc + phoneLocal);
+    const my = ++phoneReq;
+    setStatus(s, 'checking', '⏳ กำลังตรวจสอบ...');
     try {
-      const snap = await get(ref(db, 'users'));
-      if (snap.exists()) {
-        const users = snap.val();
-        for (const uid in users) {
-          if (users[uid].phone === phone) {
-            s.textContent='❌ เบอร์มือถือนี้ถูกใช้ไปแล้ว';
-            s.className='status-msg error';
-            return;
-          }
-        }
-      }
-      s.textContent='✓ เบอร์มือถือนี้ใช้ได้';
-      s.className='status-msg success';
-    } catch(err) { s.textContent='❌ DB Error: '+err.message; s.className='status-msg error'; }
+      const snap = await get(ref(db, `phones/${fullKey}`));
+      if (my !== phoneReq) return;
+      if (snap.exists()) { setStatus(s, 'error', '❌ เบอร์มือถือนี้ถูกใช้ไปแล้ว'); isPhoneValid = false; }
+      else { setStatus(s, 'success', '✓ เบอร์มือถือนี้ใช้ได้'); isPhoneValid = true; }
+    } catch (err) {
+      if (my !== phoneReq) return;
+      setStatus(s, 'error', '❌ ตรวจสอบไม่ได้: ' + err.message);
+      isPhoneValid = false;
+    }
   }
 
-  document.getElementById('regUsername').addEventListener('input', e => checkUsernameAvailability(e.target.value.trim()));
-  document.getElementById('regPhone').addEventListener('input', e => checkPhoneAvailability(e.target.value.trim()));
+  let emailReq = 0;
+  async function checkEmailAvailability(email) {
+    const s = document.getElementById('emailCheckStatus');
+    isEmailValid = false;
+    if (!isSignUpMode) { setStatus(s, '', ''); return; }
+    if (!email) { setStatus(s, '', ''); return; }
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailOk) { setStatus(s, 'error', '❌ รูปแบบอีเมลไม่ถูกต้อง'); return; }
+    const my = ++emailReq;
+    setStatus(s, 'checking', '⏳ กำลังตรวจสอบ...');
+    try {
+      // 1) Ask Firebase Auth whether this email is already registered
+      let registered = false;
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        if (methods && methods.length > 0) registered = true;
+      } catch (_) { /* enumeration protection may block this; fall back to DB index */ }
+      // 2) Fallback / extra check against our public email index
+      if (!registered) {
+        try {
+          const snap = await get(ref(db, `emails/${emailKey(email)}`));
+          if (snap.exists()) registered = true;
+        } catch (_) {}
+      }
+      if (my !== emailReq) return;
+      if (registered) { setStatus(s, 'error', '❌ อีเมลนี้ถูกใช้ไปแล้ว'); isEmailValid = false; }
+      else { setStatus(s, 'success', '✓ อีเมลนี้ใช้ได้'); isEmailValid = true; }
+    } catch (err) {
+      if (my !== emailReq) return;
+      setStatus(s, 'error', '❌ ตรวจสอบไม่ได้: ' + err.message);
+      isEmailValid = false;
+    }
+  }
+
+  // Debounce helper so we don't hit the DB on every keystroke
+  function debounce(fn, ms) {
+    let t = null;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  }
+  const debouncedUsername = debounce(v => checkUsernameAvailability(v), 350);
+  const debouncedPhone = debounce(v => checkPhoneAvailability(v), 350);
+  const debouncedEmail = debounce(v => checkEmailAvailability(v), 450);
+
+  document.getElementById('regUsername').addEventListener('input', e => debouncedUsername(e.target.value.trim()));
+  document.getElementById('regPhone').addEventListener('input', e => debouncedPhone(e.target.value.trim()));
+  document.getElementById('regPhoneCountryCode').addEventListener('change', () => checkPhoneAvailability(document.getElementById('regPhone').value.trim()));
+  document.getElementById('authEmail').addEventListener('input', e => { if (isSignUpMode) debouncedEmail(e.target.value.trim()); });
+
 
 
 
@@ -2768,6 +2841,14 @@
     document.getElementById('authConfirmPassword').required = isSignUpMode;
     document.getElementById('labelEmail').textContent = isSignUpMode ? 'อีเมลสำหรับใช้งาน (Email)' : 'อีเมล หรือ ชื่อผู้ใช้';
     document.getElementById('authEmail').placeholder = isSignUpMode ? 'example@xsoul.com' : 'example@xsoul.com หรือ username';
+    // Reset live-validation flags + email status when switching modes
+    isEmailValid = false;
+    const emailStatusEl = document.getElementById('emailCheckStatus');
+    if (emailStatusEl) { emailStatusEl.style.display = 'none'; emailStatusEl.textContent = ''; }
+    if (isSignUpMode) {
+      const ev = document.getElementById('authEmail').value.trim();
+      if (ev) checkEmailAvailability(ev);
+    }
     // Show password strength meter only during sign-up
     const strengthWrap = document.getElementById('passwordStrengthWrap');
     const strengthBar = document.getElementById('passwordStrengthBar');
@@ -2790,27 +2871,21 @@
       const birth = document.getElementById('regBirth').value;
       const refCode = document.getElementById('regRef').value.trim();
       const confirmPassword = document.getElementById('authConfirmPassword').value;
-      if (!isUsernameValid) { showToast('ชื่อผู้ใช้ไม่ถูกต้อง', true); return; }
+      if (!isUsernameValid) { showToast('ชื่อผู้ใช้ไม่ถูกต้อง หรือถูกใช้ไปแล้ว', true); return; }
       if (!phoneLocal) { showToast('กรุณากรอกเบอร์โทรศัพท์', true); return; }
+      if (!isPhoneValid) { showToast('เบอร์มือถือไม่ถูกต้อง หรือถูกใช้ไปแล้ว', true); return; }
+      if (!isEmailValid) { showToast('อีเมลไม่ถูกต้อง หรือถูกใช้ไปแล้ว', true); return; }
       if (!birth) { showToast('กรุณาระบุวันเกิด', true); return; }
       if (password !== confirmPassword) { showToast('รหัสผ่านไม่ตรงกัน', true); return; }
-      // Check if phone number is already used
-      if (phone) {
-        try {
-          const phoneSnapshot = await get(ref(db, 'users'));
-          if (phoneSnapshot.exists()) {
-            const users = phoneSnapshot.val();
-            for (const uid in users) {
-              if (users[uid].phone === phone) {
-                showToast('เบอร์มือถือนี้ถูกใช้ไปแล้ว', true);
-                return;
-              }
-            }
-          }
-        } catch (e) {
-          console.error('Phone check error:', e);
-        }
-      }
+      // Final re-check right before creating the account (avoid races)
+      try {
+        const [uTaken, pTaken] = await Promise.all([
+          get(ref(db, `usernames/${username.toLowerCase()}`)),
+          get(ref(db, `phones/${phoneKey(phone)}`))
+        ]);
+        if (uTaken.exists()) { showToast('ชื่อนี้เพิ่งมีคนใช้ไป', true); checkUsernameAvailability(username); return; }
+        if (pTaken.exists()) { showToast('เบอร์มือถือนี้เพิ่งมีคนใช้ไป', true); checkPhoneAvailability(phoneLocal); return; }
+      } catch (e) { console.warn('Pre-signup re-check skipped:', e); }
       createUserWithEmailAndPassword(auth, loginOrEmail, password)
         .then(async uc => {
           const u = uc.user;
@@ -2819,6 +2894,8 @@
             birthdate:birth, referrer:refCode||'none', rank:'Free'
           });
           await set(ref(db,'usernames/'+username.toLowerCase()), { uid: u.uid, email: loginOrEmail });
+          await set(ref(db,'phones/'+phoneKey(phone)), { uid: u.uid });
+          await set(ref(db,'emails/'+emailKey(loginOrEmail)), { uid: u.uid });
           showToast('สมัครสมาชิกสำเร็จ!');
         })
         .catch(e => showToast('สมัครไม่สำเร็จ: '+e.message, true));
@@ -2878,6 +2955,7 @@
           const dn = u.displayName ? u.displayName.replace(/[^a-zA-Z0-9_-]/g,'') || 'User_'+u.uid.substring(0,5) : 'User_'+u.uid.substring(0,5);
           await set(ref(db,'users/'+u.uid), { username:dn, email:u.email, phone:'Social', birthdate:'Social', referrer:'none', rank:'Free' });
           await set(ref(db,'usernames/'+dn.toLowerCase()), { uid: u.uid, email: u.email || '' });
+          if (u.email) { try { await set(ref(db,'emails/'+emailKey(u.email)), { uid: u.uid }); } catch {} }
         }
         showToast('เข้าสู่ระบบสำเร็จ!');
       })
