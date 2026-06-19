@@ -1174,7 +1174,7 @@
     .avatar-frame {
       position: absolute;
       width: 165%; height: 165%;
-      top: -30%; left: -32.5%;
+      top: -27.5%; left: -32.5%;
       pointer-events: none; z-index: 2;
       background-repeat: no-repeat;
       background-position: center center;
@@ -1553,6 +1553,86 @@
       .stats .stat:last-child { grid-column: span 2; }
       .ranks-grid { grid-template-columns: 1fr; }
       .rank-premium { grid-column: span 1; }
+    }
+
+    /* ========== MODERN POLISH (2025) ========== */
+    html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+    body { font-feature-settings: "ss01","cv11"; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+
+    /* Sleeker scrollbar */
+    *::-webkit-scrollbar { width: 10px; height: 10px; }
+    *::-webkit-scrollbar-track { background: transparent; }
+    *::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #2a3050, #1a1f33);
+      border-radius: 999px; border: 2px solid transparent; background-clip: padding-box;
+    }
+    *::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, var(--accent), var(--accent2)); background-clip: padding-box; border: 2px solid transparent; }
+    * { scrollbar-color: #2a3050 transparent; scrollbar-width: thin; }
+
+    /* Selection */
+    ::selection { background: var(--accent); color: #fff; }
+
+    /* Refined focus ring (a11y) */
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+
+    /* Buttons – premium hover with sheen */
+    .btn, button.btn, .btn-primary, .btn-secondary {
+      position: relative; overflow: hidden;
+      transition: transform .18s ease, box-shadow .25s ease, filter .25s ease, background .25s ease;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
+    .btn:active:not(:disabled) { transform: translateY(0); filter: brightness(0.96); }
+    .btn-primary { box-shadow: 0 8px 24px -10px var(--glow), inset 0 1px 0 rgba(255,255,255,0.08); }
+    .btn-primary:hover:not(:disabled) { box-shadow: 0 12px 32px -8px var(--glow), inset 0 1px 0 rgba(255,255,255,0.12); }
+
+    /* Cards – soft lift on hover */
+    .auth-card, .frame-preview-panel { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+    /* Inputs polish */
+    input, textarea, select {
+      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    input:focus, textarea:focus, select:focus {
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent);
+    }
+
+    /* Frame option tiles – elevated hover */
+    .frame-option { transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease, border-color .25s ease; }
+    .frame-option:hover:not(.locked) { transform: translateY(-3px) scale(1.02); box-shadow: 0 14px 30px -16px var(--glow); }
+
+    /* Cartoon avatar tiles */
+    .cartoon-avatar-item { transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+    .cartoon-avatar-item:active { transform: scale(0.96); }
+
+    /* Mobile touch comfort */
+    @media (hover: none) {
+      .btn:hover { transform: none; filter: none; }
+      .frame-option:hover { transform: none; }
+    }
+
+    /* Responsive tightening */
+    @media (max-width: 640px) {
+      .auth-card { padding: 28px 22px; border-radius: 20px; }
+      .frame-preview-panel { flex-direction: column; text-align: center; gap: 16px; padding: 18px; }
+      .frame-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 10px; }
+      .btn { min-height: 44px; } /* tap target */
+    }
+    @media (max-width: 380px) {
+      .frame-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* Reduce motion respect */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
     }
   </style>
 </head>
