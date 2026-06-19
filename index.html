@@ -155,23 +155,24 @@
     }
     .user-chip-inner:hover { border-color: var(--accent); box-shadow: 0 0 18px var(--glow), 0 4px 20px rgba(124,92,252,0.2); }
     .user-avatar { width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; box-shadow: 0 0 10px var(--glow); }
-    .chip-name {
-      font-weight: 700; font-size: 1rem; letter-spacing: 0.01em;
-      max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      display: inline-block; vertical-align: middle;
+    .chip-name-wrap {
+      display: flex; flex-direction: column; align-items: flex-start;
+      gap: 2px; min-width: 0; line-height: 1;
     }
-    /* Rank tag — sits centered on the bottom edge of the user chip */
+    .chip-name {
+      font-weight: 700; font-size: 0.95rem; letter-spacing: 0.01em;
+      max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      display: inline-block; line-height: 1.15;
+    }
+    /* Rank tag — sits inline under the username */
     .rank-tag {
-      position: absolute;
-      left: 50%;
-      bottom: 0;
-      transform: translate(-50%, 50%);
-      font-family: var(--mono); font-size: 0.6rem; font-weight: 800;
+      display: inline-block;
+      font-family: var(--mono); font-size: 0.55rem; font-weight: 800;
       letter-spacing: 0.1em; text-transform: uppercase;
-      padding: 4px 0; border-radius: 999px;
-      width: 52px; text-align: center; overflow: hidden; text-overflow: ellipsis;
-      border: 1px solid transparent; line-height: 1; white-space: nowrap;
-      flex-shrink: 0; z-index: 2; pointer-events: none;
+      padding: 2px 8px; border-radius: 999px;
+      text-align: center; overflow: hidden; text-overflow: ellipsis;
+      border: 1px solid transparent; line-height: 1.1; white-space: nowrap;
+      flex-shrink: 0; pointer-events: none;
     }
     .rank-tag-bronze   { color: #e8a055; background: #cd7f3222; border-color: #cd7f3266; box-shadow: 0 0 8px #cd7f3244; }
     .rank-tag-silver   { color: #b8c8e8; background: #8899bb22; border-color: #8899bb66; box-shadow: 0 0 8px #8899bb44; }
@@ -216,19 +217,20 @@
 
     /* ===== CREDIT CHIP ===== */
     .credit-chip {
-      display: flex; align-items: center; gap: 6px;
+      display: flex; align-items: center; gap: 5px;
       background: rgba(22,26,39,0.9); border: 1px solid #ffd70044;
-      border-radius: 999px; padding: 6px 14px 6px 10px;
+      border-radius: 999px; padding: 4px 11px 4px 8px;
       cursor: pointer; transition: all 0.25s;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+      margin-right: 4px;
     }
-    .credit-chip:hover { border-color: #ffd700aa; box-shadow: 0 0 16px #ffd70033; }
-    .credit-chip-icon { font-size: 0.9rem; }
+    .credit-chip:hover { border-color: #ffd700aa; box-shadow: 0 0 14px #ffd70033; }
+    .credit-chip-icon { font-size: 0.78rem; }
     .credit-chip-amount {
-      font-family: var(--mono); font-weight: 800; font-size: 0.88rem;
-      color: #ffe566; letter-spacing: 0.04em;
+      font-family: var(--mono); font-weight: 800; font-size: 0.76rem;
+      color: #ffe566; letter-spacing: 0.03em; line-height: 1.1;
     }
-    .credit-chip-label { font-size: 0.68rem; color: var(--muted); }
+    .credit-chip-label { font-size: 0.58rem; color: var(--muted); line-height: 1; }
 
     /* ===== TOPUP MODAL ===== */
     .topup-overlay {
@@ -1126,9 +1128,14 @@
     body.theme-light footer a { color: #6d41f5; }
 
     /* Font size scale */
-    body.fs-small  { font-size:13px; }
-    body.fs-medium { font-size:16px; }
-    body.fs-large  { font-size:19px; }
+    /* Apply on <html> so rem units scale everywhere */
+    html.fs-small  { font-size: 14px; }
+    html.fs-medium { font-size: 16px; }
+    html.fs-large  { font-size: 18.5px; }
+    /* Legacy body classes kept as fallback */
+    body.fs-small  { font-size: 0.875rem; }
+    body.fs-medium { font-size: 1rem; }
+    body.fs-large  { font-size: 1.1rem; }
     .btn {
       flex: 1; padding: 12px 20px; border-radius: 12px; font-size: 0.9rem; font-weight: 600;
       cursor: pointer; transition: all 0.2s; border: none;
@@ -1767,9 +1774,11 @@
     </div>
     <div class="user-chip" id="userChip" onclick="toggleDropdown()">
       <div class="user-chip-inner">
-        <span class="rank-tag rank-tag-bronze" id="userRankTag">Bronze</span>
         <span class="avatar-wrap" id="userAvatarWrap"><img src="" alt="Avatar" class="user-avatar" id="userAvatar"><span class="avatar-frame" id="userAvatarFrame"></span></span>
-        <span class="chip-name" id="userName">User</span>
+        <span class="chip-name-wrap">
+          <span class="chip-name" id="userName">User</span>
+          <span class="rank-tag rank-tag-bronze" id="userRankTag">Bronze</span>
+        </span>
         <svg class="chevron-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="user-dropdown" id="userDropdown">
@@ -3339,8 +3348,13 @@
   // ===== FONT SIZE =====
   const FONT_SIZES = ['small','medium','large'];
   function applyFontSize(size) {
-    FONT_SIZES.forEach(s => document.body.classList.remove('fs-' + s));
-    if (size !== 'medium') document.body.classList.add('fs-' + size);
+    if (!FONT_SIZES.includes(size)) size = 'medium';
+    FONT_SIZES.forEach(s => {
+      document.documentElement.classList.remove('fs-' + s);
+      document.body.classList.remove('fs-' + s);
+    });
+    document.documentElement.classList.add('fs-' + size);
+    document.body.classList.add('fs-' + size);
     FONT_SIZES.forEach(s => {
       const btn = document.getElementById('fs-' + s);
       if (btn) btn.classList.toggle('active', s === size);
