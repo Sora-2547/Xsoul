@@ -86,11 +86,11 @@
     .input-container { display: flex; position: relative; align-items: center; }
     .input-container input { width: 100%; }
 
-    .input-field input {
-      background: #0e1120; border: 1px solid var(--border); border-radius: 10px;
+    .input-field input, .input-field select, .input-field textarea {
+      background: #0e1120; border: 1px solid var(--border); border-radius: 10px; box-sizing: border-box;
       padding: 12px 16px; color: #fff; font-family: var(--sans); font-size: 0.9rem; transition: all 0.2s;
     }
-    .input-field input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 12px var(--glow); }
+    .input-field input:focus, .input-field select:focus, .input-field textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 12px var(--glow); }
 
     .random-btn {
       position: absolute; right: 8px; background: var(--border); border: none;
@@ -1675,16 +1675,24 @@
             </div>
             <div id="usernameStatus" class="status-msg"></div>
           </div>
-          <div class="grid-fields">
-            <div class="input-field">
-              <label for="regPhone">เบอร์โทรศัพท์</label>
-              <input type="tel" id="regPhone" placeholder="0987654321">
-              <div id="phoneCheckStatus" class="status-msg"></div>
+          <div class="input-field">
+            <label for="regPhone">เบอร์โทรศัพท์</label>
+            <div style="display:grid;grid-template-columns:88px 1fr;gap:8px;align-items:center;">
+              <select id="regPhoneCountryCode" style="width:100%;">
+                <option value="+66">+66</option>
+                <option value="+1">+1</option>
+                <option value="+44">+44</option>
+                <option value="+81">+81</option>
+                <option value="+86">+86</option>
+                <option value="+82">+82</option>
+              </select>
+              <input type="tel" id="regPhone" placeholder="812345678" style="width:100%;">
             </div>
-            <div class="input-field">
-              <label for="regBirth">วันเกิด</label>
-              <input type="date" id="regBirth">
-            </div>
+            <div id="phoneCheckStatus" class="status-msg"></div>
+          </div>
+          <div class="input-field">
+            <label for="regBirth">วันเกิด</label>
+            <input type="date" id="regBirth">
           </div>
           <div class="input-field">
             <label for="regRef">รหัสแนะนำ (Referral Code)</label>
@@ -2658,6 +2666,8 @@
   document.getElementById('regUsername').addEventListener('input', e => checkUsernameAvailability(e.target.value.trim()));
   document.getElementById('regPhone').addEventListener('input', e => checkPhoneAvailability(e.target.value.trim()));
 
+
+
   // Password match validation
   const passwordInput = document.getElementById('authPassword');
   const confirmPasswordInput = document.getElementById('authConfirmPassword');
@@ -2774,12 +2784,15 @@
     const password = document.getElementById('authPassword').value;
     if (isSignUpMode) {
       const username = document.getElementById('regUsername').value.trim();
-      const phone = document.getElementById('regPhone').value.trim();
+      const countryCode = document.getElementById('regPhoneCountryCode').value;
+      const phoneLocal = document.getElementById('regPhone').value.trim();
+      const phone = countryCode + phoneLocal;
       const birth = document.getElementById('regBirth').value;
       const refCode = document.getElementById('regRef').value.trim();
       const confirmPassword = document.getElementById('authConfirmPassword').value;
       if (!isUsernameValid) { showToast('ชื่อผู้ใช้ไม่ถูกต้อง', true); return; }
-      if (!phone) { showToast('กรุณากรอกเบอร์โทรศัพท์', true); return; }
+      if (!phoneLocal) { showToast('กรุณากรอกเบอร์โทรศัพท์', true); return; }
+      if (!birth) { showToast('กรุณาระบุวันเกิด', true); return; }
       if (password !== confirmPassword) { showToast('รหัสผ่านไม่ตรงกัน', true); return; }
       // Check if phone number is already used
       if (phone) {
@@ -2801,7 +2814,10 @@
       createUserWithEmailAndPassword(auth, loginOrEmail, password)
         .then(async uc => {
           const u = uc.user;
-          await set(ref(db,'users/'+u.uid), { username, email:loginOrEmail, phone, birthdate:birth, referrer:refCode||'none', rank:'Free' });
+          await set(ref(db,'users/'+u.uid), {
+            username, email:loginOrEmail, phone, phoneVerified:true,
+            birthdate:birth, referrer:refCode||'none', rank:'Free'
+          });
           await set(ref(db,'usernames/'+username.toLowerCase()), { uid: u.uid, email: loginOrEmail });
           showToast('สมัครสมาชิกสำเร็จ!');
         })
