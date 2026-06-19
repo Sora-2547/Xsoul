@@ -152,6 +152,7 @@
       background: rgba(22,26,39,0.9); border: 1px solid var(--border);
       border-radius: 999px; padding: 5px 14px 5px 6px; transition: all 0.25s;
       box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      overflow: visible;
     }
     .user-chip-inner:hover { border-color: var(--accent); box-shadow: 0 0 18px var(--glow), 0 4px 20px rgba(124,92,252,0.2); }
     .user-avatar { width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; box-shadow: 0 0 10px var(--glow); }
@@ -1687,8 +1688,7 @@
     </div>
     <div class="user-chip" id="userChip" onclick="toggleDropdown()">
       <div class="user-chip-inner">
-        <span class="rank-tag rank-tag-bronze" id="userRankTag">Bronze</span>
-        <span class="avatar-wrap" id="userAvatarWrap"><img src="" alt="Avatar" class="user-avatar" id="userAvatar"><span class="avatar-frame" id="userAvatarFrame"></span></span>
+        <span class="avatar-wrap" id="userAvatarWrap"><span class="rank-tag rank-tag-bronze" id="userRankTag">Bronze</span><img src="" alt="Avatar" class="user-avatar" id="userAvatar"><span class="avatar-frame" id="userAvatarFrame"></span></span>
         <span class="chip-name" id="userName">User</span>
         <svg class="chevron-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
@@ -3071,6 +3071,8 @@
     const modal = document.getElementById('userSettingsModal');
     modal.classList.add('active');
     const dd = document.getElementById('userDropdown'); if (dd) dd.classList.remove('open');
+    // โหลดข้อมูลบัญชีทันทีเมื่อเปิด settings
+    loadAccountInfo();
     // populate fields
     const user = auth.currentUser;
     if (!user) return;
