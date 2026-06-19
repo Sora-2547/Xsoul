@@ -2701,18 +2701,7 @@
        if (snap.exists()) {
          setStatus(s, 'error', '❌ เบอร์มือถือนี้ถูกใช้ไปแล้ว'); isPhoneValid = false;
        } else {
-         // Fallback: scan users/ in case phones index was never backfilled
-         const fullPhone = cc + digits; // e.g. "+66945785138"
-         const usersSnap = await get(query(ref(db, 'users'), orderByChild('phone'), equalTo(fullPhone)));
-         if (my !== phoneReq) return;
-         if (usersSnap.exists()) {
-           // Backfill the index for future checks
-           const uid = Object.keys(usersSnap.val())[0];
-           try { await set(ref(db, `phones/${fullKey}`), { uid }); } catch (_) {}
-           setStatus(s, 'error', '❌ เบอร์มือถือนี้ถูกใช้ไปแล้ว'); isPhoneValid = false;
-         } else {
-           setStatus(s, 'success', '✓ เบอร์มือถือนี้ใช้ได้'); isPhoneValid = true;
-         }
+         setStatus(s, 'success', '✓ เบอร์มือถือนี้ใช้ได้'); isPhoneValid = true;
        }
      } catch (err) {
        if (my !== phoneReq) return;
@@ -2737,17 +2726,7 @@
       if (snap.exists()) {
         setStatus(s, 'error', '❌ อีเมลนี้ถูกใช้ไปแล้ว'); isEmailValid = false;
       } else {
-        // Fallback: scan users/ in case emails index was never backfilled
-        const usersSnap = await get(query(ref(db, 'users'), orderByChild('email'), equalTo(email)));
-        if (my !== emailReq) return;
-        if (usersSnap.exists()) {
-          // Backfill the index for future checks
-          const uid = Object.keys(usersSnap.val())[0];
-          try { await set(ref(db, `emails/${emailKey(email)}`), { uid }); } catch (_) {}
-          setStatus(s, 'error', '❌ อีเมลนี้ถูกใช้ไปแล้ว'); isEmailValid = false;
-        } else {
-          setStatus(s, 'success', '✓ อีเมลนี้ใช้ได้'); isEmailValid = true;
-        }
+        setStatus(s, 'success', '✓ อีเมลนี้ใช้ได้'); isEmailValid = true;
       }
     } catch (err) {
       if (my !== emailReq) return;
@@ -3029,6 +3008,22 @@
           name = d.displayName || d.username || name;
           uhandle = d.username || '';
           userRank = d.rank || 'Free';
+          // Backfill emails/phones indexes if missing (for users registered before indexes existed)
+          try {
+            if (d.email) {
+              const eKey = emailKey(d.email);
+              const eSnap = await get(ref(db, `emails/${eKey}`));
+              if (!eSnap.exists()) await set(ref(db, `emails/${eKey}`), { uid: user.uid });
+            }
+            if (d.phone && d.phone !== 'Social') {
+              // phone stored as "+66945785138" → key = strip non-digits = "66945785138"
+              const pKey = phoneKey(d.phone);
+              if (pKey) {
+                const pSnap = await get(ref(db, `phones/${pKey}`));
+                if (!pSnap.exists()) await set(ref(db, `phones/${pKey}`), { uid: user.uid });
+              }
+            }
+          } catch (_) {}
         }
       } catch {}
       const av = user.photoURL || 'https://api.dicebear.com/7.x/bottts/svg?seed='+user.uid;
@@ -3776,21 +3771,6 @@
           phoneErrorMsg.textContent = '❌ เบอร์มือถือนี้ถูกใช้โดยบัญชีอื่นแล้ว';
           phoneErrorMsg.style.display = 'block';
           return;
-        }
-        // Fallback: if index missing, scan users/ directly
-        if (!phoneSnap.exists()) {
-          const fullPhone = countryCode + phone; // e.g. "+66945785138"
-          const usersSnap = await get(query(ref(db, 'users'), orderByChild('phone'), equalTo(fullPhone)));
-          if (usersSnap.exists()) {
-            const takenUid = Object.keys(usersSnap.val())[0];
-            if (takenUid !== user.uid) {
-              // Backfill the index
-              try { await set(ref(db, `phones/${phoneIndexKey}`), { uid: takenUid }); } catch (_) {}
-              phoneErrorMsg.textContent = '❌ เบอร์มือถือนี้ถูกใช้โดยบัญชีอื่นแล้ว';
-              phoneErrorMsg.style.display = 'block';
-              return;
-            }
-          }
         }
       } catch (e) {
         phoneErrorMsg.textContent = '❌ ตรวจสอบเบอร์ไม่ได้: ' + e.message;
