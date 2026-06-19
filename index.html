@@ -3306,9 +3306,14 @@
         }
         // Show edit button and hide save button
         document.getElementById('editContactInfoBtn').style.display = 'block';
+        document.getElementById('cancelContactInfoEditBtn').style.display = 'none';
         document.querySelector('button[onclick="saveVerificationData()"]').style.display = 'none';
       } else {
         if (pvBadge) pvBadge.style.display = 'none';
+        // Hide edit and cancel buttons, show save button when not verified
+        document.getElementById('editContactInfoBtn').style.display = 'none';
+        document.getElementById('cancelContactInfoEditBtn').style.display = 'none';
+        document.querySelector('button[onclick="saveVerificationData()"]').style.display = 'block';
       }
       
       // If address is saved, show badge and make field read-only
@@ -3328,26 +3333,30 @@
       
       // If birthdate is saved, show badge and make field read-only
       const bvBadge = document.getElementById('birthdateVerifiedBadge');
-      if (d.birthdate) {
+      const birthdateEl = document.getElementById('settingsBirthdate');
+      if (d.birthdate && d.phoneVerified) {
         if (bvBadge) {
           bvBadge.style.display = 'inline-flex';
         }
-        const bdEl = document.getElementById('settingsBirthdate');
-        if (bdEl && d.phoneVerified) {
-          bdEl.readOnly = true;
-          bdEl.style.background = 'var(--bg)';
-          bdEl.style.color = 'var(--text)';
+        if (birthdateEl) {
+          birthdateEl.readOnly = true;
+          birthdateEl.style.background = 'var(--bg)';
+          birthdateEl.style.color = 'var(--text)';
         }
       } else {
         if (bvBadge) bvBadge.style.display = 'none';
+        if (birthdateEl) {
+          birthdateEl.readOnly = false;
+          birthdateEl.style.background = '';
+          birthdateEl.style.color = '';
+        }
       }
       
       // address
       const addrEl = document.getElementById('settingsAddress');
       if (addrEl && d.address) addrEl.value = d.address;
       // birthdate
-      const bdEl = document.getElementById('settingsBirthdate');
-      if (bdEl && d.birthdate) bdEl.value = d.birthdate;
+      if (birthdateEl && d.birthdate) birthdateEl.value = d.birthdate;
       // terms
       const termsEl = document.getElementById('settingsTerms');
       if (termsEl) termsEl.checked = !!d.termsAccepted;
@@ -4094,9 +4103,18 @@
       const avEl = document.getElementById('acctAddressVerified');
       if (avEl) avEl.style.display = d.address ? 'inline-flex' : 'none';
       const bdEl = document.getElementById('acctBirthdate');
-      if (bdEl) bdEl.textContent = (d.birthdate && d.birthdate !== 'Social') ? d.birthdate : '(ยังไม่ได้ระบุ)';
+      if (bdEl) {
+        if (d.birthdate && d.birthdate !== 'Social') {
+          // Format date to Thai format
+          const date = new Date(d.birthdate);
+          const thaiDate = date.toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'});
+          bdEl.textContent = thaiDate;
+        } else {
+          bdEl.textContent = '(ยังไม่ได้ระบุ)';
+        }
+      }
       const bvEl = document.getElementById('acctBirthdateVerified');
-      if (bvEl) bvEl.style.display = d.birthdate ? 'inline-flex' : 'none';
+      if (bvEl) bvEl.style.display = (d.birthdate && d.birthdate !== 'Social' && d.phoneVerified) ? 'inline-flex' : 'none';
       const refEl = document.getElementById('acctReferrer');
       if (refEl) refEl.textContent = (d.referrer && d.referrer !== 'none') ? d.referrer : '(ไม่มี)';
       const rk = (d.rank || 'free').toLowerCase().replace(/\s+/g,'');
