@@ -2346,35 +2346,35 @@
 
       <!-- FONT SIZE -->
       <div style="background:#0a0d1a;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:0.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">🔤 ขนาดตัวอักษร</div>
+        <div style="font-size:0.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;" data-i18n="font-size-label">🔤 ขนาดตัวอักษร</div>
         <div style="display:flex;gap:10px;">
-          <button class="font-size-btn" id="fs-small"  onclick="setFontSize('small')"  style="flex:1;">A<span style="font-size:0.65rem;">เล็ก</span></button>
-          <button class="font-size-btn" id="fs-medium" onclick="setFontSize('medium')" style="flex:1;">A<span style="font-size:0.65rem;">กลาง</span></button>
-          <button class="font-size-btn" id="fs-large"  onclick="setFontSize('large')"  style="flex:1;">A<span style="font-size:0.65rem;">ใหญ่</span></button>
+          <button class="font-size-btn" id="fs-small"  onclick="setFontSize('small')"  style="flex:1;" data-i18n="fs-small">A<span style="font-size:0.65rem;">เล็ก</span></button>
+          <button class="font-size-btn" id="fs-medium" onclick="setFontSize('medium')" style="flex:1;" data-i18n="fs-medium">A<span style="font-size:0.65rem;">กลาง</span></button>
+          <button class="font-size-btn" id="fs-large"  onclick="setFontSize('large')"  style="flex:1;" data-i18n="fs-large">A<span style="font-size:0.65rem;">ใหญ่</span></button>
         </div>
       </div>
 
       <!-- THEME -->
       <div style="background:#0a0d1a;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:0.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">🌗 ธีม</div>
+        <div style="font-size:0.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;" data-i18n="theme-label">🌗 ธีม</div>
         <div style="display:flex;gap:10px;">
-          <button class="theme-btn" id="theme-dark"  onclick="setTheme('dark')"  style="flex:1;">🌙 มืด</button>
-          <button class="theme-btn" id="theme-light" onclick="setTheme('light')" style="flex:1;">☀️ สว่าง</button>
-          <button class="theme-btn" id="theme-auto"  onclick="setTheme('auto')"  style="flex:1;">🔄 ออโต้</button>
+          <button class="theme-btn" id="theme-dark"  onclick="setTheme('dark')"  style="flex:1;" data-i18n="theme-dark">🌙 มืด</button>
+          <button class="theme-btn" id="theme-light" onclick="setTheme('light')" style="flex:1;" data-i18n="theme-light">☀️ สว่าง</button>
+          <button class="theme-btn" id="theme-auto"  onclick="setTheme('auto')"  style="flex:1;" data-i18n="theme-auto">🔄 ออโต้</button>
         </div>
-        <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">ออโต้ = ตามการตั้งค่าของอุปกรณ์</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;" data-i18n="theme-auto-desc">ออโต้ = ตามการตั้งค่าของอุปกรณ์</div>
       </div>
 
       <!-- LANGUAGE -->
       <div style="background:#0a0d1a;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:0.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">🌐 ภาษา / Language</div>
+        <div style="font-size:0.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;" data-i18n="language-label">🌐 ภาษา / Language</div>
         <div style="display:flex;gap:10px;">
           <button class="lang-btn" id="lang-en" onclick="setLanguage('en')" style="flex:1;">🇺🇸 English</button>
           <button class="lang-btn" id="lang-th" onclick="setLanguage('th')" style="flex:1;">🇹🇭 ไทย</button>
         </div>
       </div>
 
-      <button class="btn btn-secondary" onclick="closeUserSettings()" style="width:100%;padding:12px;">ปิด</button>
+      <button class="btn btn-secondary" onclick="closeUserSettings()" style="width:100%;padding:12px;" data-i18n="close-btn">ปิด</button>
     </div><!-- end stab-content-display -->
     </div>
 
@@ -3407,10 +3407,132 @@
 
   // ===== LANGUAGE =====
   const LANGUAGES = ['en','th'];
+  const TRANSLATIONS = {
+    en: {
+      // Settings tabs
+      'stab-verify': '🛡️ Verification',
+      'stab-account': '👤 Account',
+      'stab-display': '🎨 Display',
+      // Display section
+      'font-size-label': '🔤 Font Size',
+      'fs-small': 'A<span style="font-size:0.65rem;">Small</span>',
+      'fs-medium': 'A<span style="font-size:0.65rem;">Medium</span>',
+      'fs-large': 'A<span style="font-size:0.65rem;">Large</span>',
+      'theme-label': '🌗 Theme',
+      'theme-dark': '🌙 Dark',
+      'theme-light': '☀️ Light',
+      'theme-auto': '🔄 Auto',
+      'theme-auto-desc': 'Auto = Follow device settings',
+      'language-label': '🌐 Language',
+      'close-btn': 'Close',
+      // Verify section
+      'phone-label': 'Phone',
+      'phone-verified': '✓ Verified',
+      'send-otp': 'Send OTP',
+      'otp-placeholder': '6-digit OTP code',
+      'verify': 'Verify',
+      'email-label': 'Email',
+      'send-link': 'Send Link',
+      'address-label': 'Current Address',
+      // Account section
+      'username-label': 'Username',
+      'save': 'Save',
+      // Rank section
+      'rank-section-title': 'RANK',
+      'rank-bronze': 'Bronze',
+      'rank-silver': 'Silver',
+      'rank-gold': 'Gold',
+      'rank-platinum': 'Platinum',
+      'rank-diamond': 'Diamond',
+      'rank-premium': 'Premium MAX',
+      'rank-perk-1': 'Access to basic features',
+      'rank-perk-2': 'Priority support',
+      'rank-perk-3': 'Exclusive avatar frames',
+      'rank-perk-4': 'Custom profile themes',
+      'rank-perk-5': 'Early access to new features',
+      'rank-perk-6': 'All premium benefits',
+      // Avatar frames
+      'frame-none': 'No Frame',
+      'frame-bronze': 'Bronze Frame',
+      'frame-silver': 'Silver Frame',
+      'frame-gold': 'Gold Frame',
+      'frame-platinum': 'Platinum Frame',
+      'frame-diamond': 'Diamond Frame',
+      'frame-premium': 'Premium Frame',
+      'frame-locked': 'Must reach ' + f.label + ' rank to use this frame',
+    },
+    th: {
+      // Settings tabs
+      'stab-verify': '🛡️ ยืนยันตัวตน',
+      'stab-account': '👤 ข้อมูลบัญชี',
+      'stab-display': '🎨 การแสดงผล',
+      // Display section
+      'font-size-label': '🔤 ขนาดตัวอักษร',
+      'fs-small': 'A<span style="font-size:0.65rem;">เล็ก</span>',
+      'fs-medium': 'A<span style="font-size:0.65rem;">กลาง</span>',
+      'fs-large': 'A<span style="font-size:0.65rem;">ใหญ่</span>',
+      'theme-label': '🌗 ธีม',
+      'theme-dark': '🌙 มืด',
+      'theme-light': '☀️ สว่าง',
+      'theme-auto': '🔄 ออโต้',
+      'theme-auto-desc': 'ออโต้ = ตามการตั้งค่าของอุปกรณ์',
+      'language-label': '🌐 ภาษา / Language',
+      'close-btn': 'ปิด',
+      // Verify section
+      'phone-label': 'เบอร์โทรศัพท์',
+      'phone-verified': '✓ ยืนยันแล้ว',
+      'send-otp': 'ส่ง OTP',
+      'otp-placeholder': 'รหัส OTP 6 หลัก',
+      'verify': 'ยืนยัน',
+      'email-label': 'อีเมล',
+      'send-link': 'ส่งลิงก์ยืนยัน',
+      'address-label': 'ที่อยู่ปัจจุบัน',
+      // Account section
+      'username-label': 'ชื่อผู้ใช้',
+      'save': 'บันทึก',
+      // Rank section
+      'rank-section-title': 'แรงค์',
+      'rank-bronze': 'บรอนซ์',
+      'rank-silver': 'ซิลเวอร์',
+      'rank-gold': 'โกลด์',
+      'rank-platinum': 'แพลตตินัม',
+      'rank-diamond': 'ไดมอนด์',
+      'rank-premium': 'พรีเมียม MAX',
+      'rank-perk-1': 'เข้าถึงฟีเจอร์พื้นฐาน',
+      'rank-perk-2': 'การสนับสนุนเป็นพิเศษ',
+      'rank-perk-3': 'กรอบอวาตาร์พิเศษ',
+      'rank-perk-4': 'ธีมโปรไฟล์แบบกำหนดเอง',
+      'rank-perk-5': 'เข้าถึงฟีเจอร์ใหม่ก่อนใคร',
+      'rank-perk-6': 'สิทธิประโยชน์พรีเมียมทั้งหมด',
+      // Avatar frames
+      'frame-none': 'ไม่ใช้กรอบ',
+      'frame-bronze': 'กรอบบรอนซ์',
+      'frame-silver': 'กรอบซิลเวอร์',
+      'frame-gold': 'กรอบโกลด์',
+      'frame-platinum': 'กรอบแพลตตินัม',
+      'frame-diamond': 'กรอบไดมอนด์',
+      'frame-premium': 'กรอบพรีเมียม',
+      'frame-locked': 'ต้องเลื่อนขั้นถึงแรงค์ ' + f.label + ' ก่อนจึงจะใช้กรอบนี้ได้',
+    }
+  };
+  
   function applyLanguage(pref) {
     LANGUAGES.forEach(l => {
       const btn = document.getElementById('lang-' + l);
       if (btn) btn.classList.toggle('active', l === pref);
+    });
+    
+    // Apply translations to elements with data-i18n attribute
+    const translations = TRANSLATIONS[pref] || TRANSLATIONS['en'];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (translations[key]) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.placeholder = translations[key];
+        } else {
+          el.innerHTML = translations[key];
+        }
+      }
     });
   }
   window.setLanguage = (pref) => {
