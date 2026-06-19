@@ -2805,7 +2805,18 @@
       }
       signInWithEmailAndPassword(auth, targetEmail, password)
         .then(() => showToast('ยินดีต้อนรับกลับมา!'))
-        .catch(() => showToast('อีเมล/รหัสผ่านไม่ถูกต้อง', true));
+        .catch((e) => {
+          const code = e && e.code ? e.code : '';
+          let msg = 'อีเมล/รหัสผ่านไม่ถูกต้อง';
+          if (code === 'auth/invalid-email') msg = 'รูปแบบอีเมลไม่ถูกต้อง';
+          else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') msg = 'อีเมล/รหัสผ่านไม่ถูกต้อง';
+          else if (code === 'auth/too-many-requests') msg = 'พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่';
+          else if (code === 'auth/network-request-failed') msg = 'การเชื่อมต่อมีปัญหา กรุณาลองใหม่';
+          else if (code === 'auth/user-disabled') msg = 'บัญชีนี้ถูกระงับการใช้งาน';
+          else if (code) msg = 'เข้าสู่ระบบไม่สำเร็จ: ' + code;
+          console.error('Login error:', e);
+          showToast(msg, true);
+        });
     }
   };
 
@@ -2840,7 +2851,7 @@
       mainWrapper.style.display='flex'; footer.style.display='block'; sidebar.style.display='flex'; topNavbar.style.display='flex';
       let name = user.email ? user.email.split('@')[0] : 'User';
       let uhandle = ''; // @username (handle), separate from display name
-      let userRank = 'Bronze';
+      let userRank = 'Free';
       try {
         const ud = await get(ref(db,`users/${user.uid}`));
         if (ud.exists()) {
@@ -2848,7 +2859,7 @@
           // displayName = ชื่อที่แสดงใน navbar, fallback to username
           name = d.displayName || d.username || name;
           uhandle = d.username || '';
-          userRank = d.rank || 'Bronze';
+          userRank = d.rank || 'Free';
         }
       } catch {}
       const av = user.photoURL || 'https://api.dicebear.com/7.x/bottts/svg?seed='+user.uid;
