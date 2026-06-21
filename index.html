@@ -2178,14 +2178,70 @@
       </div>
     </div>
 
-    <!-- QR Code / Bank Info -->
+    <!-- Payment Method Selector + Account Info -->
     <div class="topup-qr-section">
-      <div class="topup-qr-label" data-i18n="topup-qr-label">สแกน QR โอนเงิน หรือโอนผ่านบัญชีด้านล่าง</div>
-      <img class="topup-qr-img" src="https://miaoda-conversation-file.s3cdn.medo.dev/user-cfci6rngo2rk/app-cfngaz0idon5/20260619/IMG_9912.jpeg" alt="QR Code โอนเงิน" />
-      <div class="topup-account-info">
-        <span data-i18n="topup-bank-label">ธนาคาร:</span> <span data-i18n="topup-bank-val">กรุณาติดต่อ Admin</span><br>
-        <span data-i18n="topup-acct-label">ชื่อบัญชี:</span> <span>Xsoul Script Hub</span><br>
-        <span data-i18n="topup-note-acct">หมายเหตุ:</span> <span data-i18n="topup-note-val">ระบุ Username ของคุณเมื่อโอน</span>
+      <div class="topup-qr-label" data-i18n="topup-method-label">เลือกช่องทางเติมเงิน</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;justify-content:center;">
+        <button type="button" id="payTabBank" class="btn" onclick="selectPayMethod('bank')"
+          style="flex:1;max-width:160px;padding:10px 14px;font-size:0.85rem;font-weight:700;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">
+          🏦 <span data-i18n="topup-pay-bank">ธนาคาร</span>
+        </button>
+        <button type="button" id="payTabWallet" class="btn" onclick="selectPayMethod('wallet')"
+          style="flex:1;max-width:160px;padding:10px 14px;font-size:0.85rem;font-weight:700;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">
+          📱 <span data-i18n="topup-pay-wallet">วอเล็ท</span>
+        </button>
+      </div>
+
+      <!-- Bank view -->
+      <div id="payInfoBank" class="topup-account-info" style="display:block;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span data-i18n="topup-bank-label">ธนาคาร:</span>
+          <span style="font-weight:700;">KPLUS (Kasikorn)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <span data-i18n="topup-accno-label">เลขบัญชี:</span>
+          <span id="bankAccNo" style="font-family:var(--mono);font-weight:700;letter-spacing:1px;">1243301900</span>
+          <button type="button" onclick="copyText('1243301900', this)"
+            style="padding:4px 10px;font-size:0.72rem;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;"
+            data-i18n="topup-copy">คัดลอก</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span data-i18n="topup-acct-label">ชื่อบัญชี:</span>
+          <span style="font-weight:700;">นายอนุชา ผดาวัลย์</span>
+        </div>
+      </div>
+
+      <!-- Wallet view -->
+      <div id="payInfoWallet" class="topup-account-info" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span data-i18n="topup-wallet-label">ช่องทาง:</span>
+          <span style="font-weight:700;">TrueMoney Wallet</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <span data-i18n="topup-walletno-label">เบอร์วอเล็ท:</span>
+          <span id="walletNo" style="font-family:var(--mono);font-weight:700;letter-spacing:1px;">0642042467</span>
+          <button type="button" onclick="copyText('0642042467', this)"
+            style="padding:4px 10px;font-size:0.72rem;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;"
+            data-i18n="topup-copy">คัดลอก</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span data-i18n="topup-acct-label">ชื่อบัญชี:</span>
+          <span style="font-weight:700;">นายอนุชา ผดาวัลย์</span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;font-size:0.75rem;color:var(--muted);" data-i18n="topup-note-val">ระบุ Username ของคุณเมื่อโอน</div>
+    </div>
+
+    <!-- Transfer reference number -->
+    <div class="topup-slip-row">
+      <label data-i18n="topup-ref-label">🔢 เลขที่อ้างอิงโอน / Transaction ID</label>
+      <input class="form-input" id="topupTxRef" type="text" maxlength="64"
+        placeholder="เช่น 0123456789ABCDEF"
+        data-i18n-placeholder="topup-ref-ph"
+        style="font-size:0.85rem;font-family:var(--mono);letter-spacing:1px;" />
+      <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;" data-i18n="topup-ref-hint">
+        ใช้เลขอ้างอิงจากสลิปจริง ห้ามใช้ซ้ำกับครั้งก่อน (ระบบตรวจสอบอัตโนมัติ)
       </div>
     </div>
 
@@ -2194,6 +2250,9 @@
       <label data-i18n="topup-slip-label">📎 แนบสลิปหลักฐานการโอน (URL รูปสลิป)</label>
       <input class="form-input" id="topupSlipUrl" type="url" placeholder="https://... (ลิงก์รูปสลิปโอนเงิน)" data-i18n-placeholder="topup-slip-ph" oninput="previewSlip(this.value)" style="font-size:0.85rem;" />
       <img id="topupSlipPreview" class="topup-slip-preview" alt="สลิป preview" />
+      <div style="font-size:0.7rem;color:var(--muted);margin-top:6px;" data-i18n="topup-slip-where">
+        🔒 สลิปจะถูกบันทึกในระบบ (Firebase Realtime DB: users/&lt;uid&gt;/topupRequests) แอดมินจะตรวจสอบและอนุมัติ • ระบบป้องกันการใช้สลิปซ้ำอัตโนมัติ
+      </div>
     </div>
 
     <!-- Note -->
@@ -4406,6 +4465,21 @@
       'topup-note-val': 'Include your Username in the transfer memo',
       'topup-slip-label': '📎 Attach Transfer Slip (Image URL)',
       'topup-slip-ph': 'https://... (link to your transfer slip image)',
+      'topup-method-label': 'Select payment method',
+      'topup-pay-bank': 'Bank',
+      'topup-pay-wallet': 'Wallet',
+      'topup-accno-label': 'Account No.:',
+      'topup-wallet-label': 'Channel:',
+      'topup-walletno-label': 'Wallet No.:',
+      'topup-copy': 'Copy',
+      'topup-copied': 'Copied!',
+      'topup-ref-label': '🔢 Transaction Reference / Slip ID',
+      'topup-ref-ph': 'e.g. 0123456789ABCDEF',
+      'topup-ref-hint': 'Use the real reference from your slip. Duplicates are auto-rejected.',
+      'topup-slip-where': '🔒 Your slip is stored at Firebase Realtime DB (users/<uid>/topupRequests). Admin will review and approve. Duplicate slips are blocked automatically.',
+      'err-topup-no-ref': 'Please enter the transaction reference from your slip',
+      'err-topup-dup-ref': 'This transaction reference has already been used — duplicate slips are not allowed',
+      'err-topup-dup-slip': 'This slip URL has already been submitted — duplicate slips are not allowed',
       'topup-remarklabel': '📝 Remark (Optional)',
       'topup-remark-ph': 'e.g. Transferred via KBank xxx',
       'topup-submit-btn': 'Submit Top-Up Request',
@@ -4730,6 +4804,21 @@
       'topup-note-val': 'ระบุ Username ของคุณเมื่อโอน',
       'topup-slip-label': '📎 แนบสลิปหลักฐานการโอน (URL รูปสลิป)',
       'topup-slip-ph': 'https://... (ลิงก์รูปสลิปโอนเงิน)',
+      'topup-method-label': 'เลือกช่องทางเติมเงิน',
+      'topup-pay-bank': 'ธนาคาร',
+      'topup-pay-wallet': 'วอเล็ท',
+      'topup-accno-label': 'เลขบัญชี:',
+      'topup-wallet-label': 'ช่องทาง:',
+      'topup-walletno-label': 'เบอร์วอเล็ท:',
+      'topup-copy': 'คัดลอก',
+      'topup-copied': 'คัดลอกแล้ว!',
+      'topup-ref-label': '🔢 เลขที่อ้างอิงโอน / Transaction ID',
+      'topup-ref-ph': 'เช่น 0123456789ABCDEF',
+      'topup-ref-hint': 'ใช้เลขอ้างอิงจากสลิปจริง ห้ามใช้ซ้ำกับครั้งก่อน (ระบบตรวจสอบอัตโนมัติ)',
+      'topup-slip-where': '🔒 สลิปจะถูกบันทึกในระบบ (Firebase Realtime DB: users/<uid>/topupRequests) แอดมินจะตรวจสอบและอนุมัติ • ระบบป้องกันการใช้สลิปซ้ำอัตโนมัติ',
+      'err-topup-no-ref': 'กรุณากรอกเลขอ้างอิงจากสลิป',
+      'err-topup-dup-ref': 'เลขอ้างอิงนี้ถูกใช้ไปแล้ว — ห้ามใช้สลิปซ้ำ',
+      'err-topup-dup-slip': 'URL สลิปนี้ถูกส่งไปแล้ว — ห้ามใช้สลิปซ้ำ',
       'topup-remarklabel': '📝 หมายเหตุ (ไม่บังคับ)',
       'topup-remark-ph': 'เช่น โอนจาก KBank xxx',
       'topup-submit-btn': 'ส่งคำขอเติมเครดิต',
@@ -5255,8 +5344,13 @@
     const btn = document.getElementById('topupSubmitBtn');
     const slipUrl = document.getElementById('topupSlipUrl').value.trim();
     const note = document.getElementById('topupNote').value.trim();
+    const txRef = (document.getElementById('topupTxRef')?.value || '').trim();
+    const method = window._topupMethod || 'bank';
     if (!_topupSelectedPkg) {
       msg.style.color = 'var(--error)'; msg.textContent = '❌ ' + t('err-topup-no-pkg'); return;
+    }
+    if (!txRef || txRef.length < 6) {
+      msg.style.color = 'var(--error)'; msg.textContent = '❌ ' + t('err-topup-no-ref'); return;
     }
     if (!slipUrl) {
       msg.style.color = 'var(--error)'; msg.textContent = '❌ ' + t('err-topup-no-slip'); return;
@@ -5266,6 +5360,26 @@
     }
     btn.disabled = true; btn.textContent = '⏳ ' + t('status-submitting');
     try {
+      // ===== Anti-fraud: prevent duplicate slips (by tx reference + by slip URL hash) =====
+      const normRef  = txRef.toUpperCase().replace(/\s+/g,'');
+      const normUrl  = slipUrl.trim();
+      const slipHash = await sha256Hex(normUrl.toLowerCase());
+      const refKey   = normRef.replace(/[.#$\[\]\/]/g,'_'); // Firebase-safe key
+      // Check global slip index (requires DB rule allowing read/write on /slipIndex)
+      try {
+        const [dupRef, dupSlip] = await Promise.all([
+          get(ref(db, `slipIndex/byRef/${refKey}`)),
+          get(ref(db, `slipIndex/byHash/${slipHash}`)),
+        ]);
+        if (dupRef.exists())  throw new Error('__DUP_REF__');
+        if (dupSlip.exists()) throw new Error('__DUP_SLIP__');
+      } catch(e) {
+        if (e.message === '__DUP_REF__')  { msg.style.color='var(--error)'; msg.textContent='❌ '+t('err-topup-dup-ref');  btn.disabled=false; btn.textContent='📤 '+t('topup-submit-btn'); return; }
+        if (e.message === '__DUP_SLIP__') { msg.style.color='var(--error)'; msg.textContent='❌ '+t('err-topup-dup-slip'); btn.disabled=false; btn.textContent='📤 '+t('topup-submit-btn'); return; }
+        // If permission denied, fall back to per-user check only (logged for admin)
+        console.warn('[topup] slipIndex check skipped:', e.message);
+      }
+
       const ts = Date.now();
       const uhandle = (document.getElementById('dropdownEmail').textContent || '').replace('@','');
       const entry = {
@@ -5273,18 +5387,25 @@
         username: uhandle,
         credits: _topupSelectedPkg.credits,
         price: _topupSelectedPkg.price,
-        slipUrl, note: note || '', status: 'pending', createdAt: ts
+        slipUrl, note: note || '', status: 'pending', createdAt: ts,
+        method, txRef: normRef, slipHash
       };
       // Write under user's own path (within their uid — ensures Firebase rules allow it)
       await set(ref(db, `users/${user.uid}/topupRequests/${ts}`), entry);
       // Also write history entry
       await set(ref(db, `users/${user.uid}/topupHistory/${ts}`), entry);
+      // Best-effort: register in global slip index for cross-user duplicate prevention
+      try {
+        await set(ref(db, `slipIndex/byRef/${refKey}`),   { uid: user.uid, ts });
+        await set(ref(db, `slipIndex/byHash/${slipHash}`), { uid: user.uid, ts });
+      } catch(e) { console.warn('[topup] slipIndex write failed (add DB rules):', e.message); }
       msg.style.color = 'var(--success)';
       msg.textContent = '✅ ' + t('toast-topup-sent');
       _topupSelectedPkg = null;
       document.querySelectorAll('.topup-pkg').forEach(p => p.classList.remove('selected'));
       document.getElementById('topupSlipUrl').value = '';
       document.getElementById('topupNote').value = '';
+      if (document.getElementById('topupTxRef')) document.getElementById('topupTxRef').value = '';
       document.getElementById('topupSlipPreview').style.display = 'none';
       loadTopupHistory(user.uid);
     } catch (e) {
@@ -5293,6 +5414,59 @@
     }
     btn.disabled = false; btn.textContent = '📤 ' + t('topup-submit-btn');
   };
+
+  // ===== Helpers: payment method tabs, clipboard copy, slip hash =====
+  window._topupMethod = 'bank';
+  window.selectPayMethod = (m) => {
+    window._topupMethod = m;
+    const tabBank   = document.getElementById('payTabBank');
+    const tabWallet = document.getElementById('payTabWallet');
+    const infoBank  = document.getElementById('payInfoBank');
+    const infoWal   = document.getElementById('payInfoWallet');
+    const active   = 'background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent;box-shadow:0 4px 16px var(--glow);';
+    const inactive = 'background:transparent;color:var(--text);border:1px solid var(--border);';
+    if (m === 'bank') {
+      tabBank.style.cssText   = 'flex:1;max-width:160px;padding:10px 14px;font-size:0.85rem;font-weight:700;border-radius:10px;cursor:pointer;' + active;
+      tabWallet.style.cssText = 'flex:1;max-width:160px;padding:10px 14px;font-size:0.85rem;font-weight:700;border-radius:10px;cursor:pointer;' + inactive;
+      infoBank.style.display = 'block'; infoWal.style.display = 'none';
+    } else {
+      tabWallet.style.cssText = 'flex:1;max-width:160px;padding:10px 14px;font-size:0.85rem;font-weight:700;border-radius:10px;cursor:pointer;' + active;
+      tabBank.style.cssText   = 'flex:1;max-width:160px;padding:10px 14px;font-size:0.85rem;font-weight:700;border-radius:10px;cursor:pointer;' + inactive;
+      infoBank.style.display = 'none'; infoWal.style.display = 'block';
+    }
+  };
+  window.copyText = async (text, btn) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+      }
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = '✓ ' + (typeof t === 'function' ? t('topup-copied') : 'Copied!');
+        setTimeout(() => { btn.textContent = orig; }, 1400);
+      }
+    } catch(e) { console.warn('copy failed', e); }
+  };
+  async function sha256Hex(str) {
+    const buf = new TextEncoder().encode(str);
+    const hash = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+  // Default the tabs to "bank" whenever the topup modal opens
+  (function(){
+    const _origOpen = window.openTopup;
+    if (typeof _origOpen === 'function') {
+      window.openTopup = function(){
+        const r = _origOpen.apply(this, arguments);
+        try { selectPayMethod(window._topupMethod || 'bank'); } catch(e){}
+        return r;
+      };
+    }
+  })();
 
   async function loadTopupHistory(uid) {
     const tbody = document.getElementById('topupHistoryBody');
