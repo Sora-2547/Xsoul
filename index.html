@@ -2546,8 +2546,10 @@
         </div>
       </div>
       <div class="frame-grid" id="frameGrid"></div>
-      <div style="display:flex;gap:10px;margin-top:16px;">
-        <button class="btn btn-primary" onclick="closeProfileFrame()" style="flex:1;" data-i18n="frame-done-btn">เสร็จสิ้น</button>
+      <div id="frameSaveMsg" style="font-size:0.75rem;min-height:16px;margin-top:8px;text-align:center;"></div>
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button class="btn btn-primary" onclick="saveFrameSelection()" style="flex:1;" data-i18n="frame-save-btn">💾 บันทึกกรอบ</button>
+        <button class="btn btn-secondary" onclick="cancelFrameSelection()" style="flex:0 0 auto;padding:12px 20px;" data-i18n="close-btn">ปิด</button>
       </div>
     </div>
 
@@ -2973,7 +2975,7 @@
           const u = uc.user;
           await set(ref(db,'users/'+u.uid), {
             username, email:loginOrEmail, phone, phoneVerified:true,
-            birthdate:birth, referrer:refCode||'none', rank:'Free'
+            birthdate:birth, referrer:refCode||'none', rank:'Free', credits:0
           });
           await set(ref(db,'usernames/'+username.toLowerCase()), { uid: u.uid, email: loginOrEmail });
           await set(ref(db,'phones/'+phoneIdxKey), { uid: u.uid });
@@ -3035,7 +3037,7 @@
         const cu = await get(ref(db,`users/${u.uid}`));
         if (!cu.exists()) {
           const dn = u.displayName ? u.displayName.replace(/[^a-zA-Z0-9_-]/g,'') || 'User_'+u.uid.substring(0,5) : 'User_'+u.uid.substring(0,5);
-          await set(ref(db,'users/'+u.uid), { username:dn, email:u.email, phone:'Social', birthdate:'Social', referrer:'none', rank:'Free' });
+          await set(ref(db,'users/'+u.uid), { username:dn, email:u.email, phone:'Social', birthdate:'Social', referrer:'none', rank:'Free', credits:0 });
           await set(ref(db,'usernames/'+dn.toLowerCase()), { uid: u.uid, email: u.email || '' });
           if (u.email) { try { await set(ref(db,'emails/'+emailKey(u.email)), { uid: u.uid }); } catch {} }
         }
@@ -3068,6 +3070,10 @@
           name = d.displayName || d.username || name;
           uhandle = d.username || '';
           userRank = d.rank || 'Free';
+          // Backfill credits=0 for existing users who don't have this field yet
+          if (d.credits === undefined) {
+            try { await set(ref(db, `users/${user.uid}/credits`), 0); } catch {}
+          }
           // Backfill emails/phones indexes if missing (for users registered before indexes existed)
           try {
             if (d.email) {
@@ -3148,17 +3154,52 @@
           if (ac) ac.textContent = credits.toLocaleString();
         });
       } catch {}
-      // Detect rank-up and show congratulations popup
+      // ===== Rank-up detection (fixed) =====
+      // Uses per-user localStorage key + sessionStorage guard to prevent
+      // duplicate popups on re-login or token-refresh callbacks.
+      // A real-time onValue listener handles live rank changes while the
+      // user is already on the page (e.g. admin upgrades rank remotely).
       try {
-        const cachedRank = localStorage.getItem('xsoul_cachedRank');
-        if (cachedRank) {
+        const cacheKey   = 'xsoul_cachedRank_' + user.uid;
+        const sessionKey = 'xsoul_rankup_shown_' + user.uid;
+        const cachedRank = localStorage.getItem(cacheKey);
+        const shownThisSession = sessionStorage.getItem(sessionKey);
+
+        if (cachedRank && !shownThisSession) {
           const prevVal = RANK_ORDER[cachedRank.toLowerCase().replace(/\s+/g,'')] ?? -1;
-          const curVal = RANK_ORDER[userRank.toLowerCase().replace(/\s+/g,'')] ?? -1;
+          const curVal  = RANK_ORDER[userRank.toLowerCase().replace(/\s+/g,'')]  ?? -1;
           if (curVal > prevVal) {
+            sessionStorage.setItem(sessionKey, '1');
             setTimeout(() => showRankUp(userRank), 600);
           }
         }
-        localStorage.setItem('xsoul_cachedRank', userRank);
+        // Always persist latest rank so next login comparison is accurate
+        localStorage.setItem(cacheKey, userRank);
+
+        // Real-time listener: detects rank change while user is on the page
+        // (e.g. admin changes rank from dashboard without user refreshing)
+        let _rankListenerReady = false;
+        onValue(ref(db, `users/${user.uid}/rank`), (snap) => {
+          if (!snap.exists()) { _rankListenerReady = true; return; }
+          const liveRank = snap.val() || 'Free';
+          if (_rankListenerReady) {
+            // Only compare after first silent callback (initial value load)
+            const prevVal = RANK_ORDER[(window.__currentRank || 'free').toLowerCase().replace(/\s+/g,'')] ?? -1;
+            const newVal  = RANK_ORDER[liveRank.toLowerCase().replace(/\s+/g,'')] ?? -1;
+            if (newVal > prevVal) {
+              sessionStorage.setItem(sessionKey, '1');
+              localStorage.setItem(cacheKey, liveRank);
+              window.__currentRank = liveRank;
+              setTimeout(() => showRankUp(liveRank), 300);
+            } else {
+              window.__currentRank = liveRank;
+            }
+          } else {
+            // First callback = current value, just update silently
+            _rankListenerReady = true;
+            window.__currentRank = liveRank;
+          }
+        });
       } catch {}
       let savedFrame = 'none';
       try {
@@ -3250,6 +3291,10 @@
     const grid = document.getElementById('frameGrid');
     if (!grid) return;
     const rank = (window.__currentRank || 'Bronze');
+    // Reset pending selection every time the frame tab opens
+    window.__pendingFrame = undefined;
+    const msg = document.getElementById('frameSaveMsg');
+    if (msg) msg.textContent = '';
     const current = window.__currentFrame || 'none';
     grid.innerHTML = '';
 
@@ -3335,27 +3380,48 @@
 
       // Hover → show live preview
       div.addEventListener('mouseenter', () => updatePreview(f.key));
-      div.addEventListener('mouseleave', () => updatePreview(window.__currentFrame || 'none'));
+      div.addEventListener('mouseleave', () => updatePreview(window.__pendingFrame !== undefined ? window.__pendingFrame : (window.__currentFrame || 'none')));
 
-      div.addEventListener('click', async () => {
+      div.addEventListener('click', () => {
         if (!window.canUseFrame(f.key, window.__currentRank)) {
           showToast(t('err-frame-rank-required') + ' ' + f.label, true);
           return;
         }
-        window.applyAvatarFrame(f.key);
+        // Only mark as pending — do NOT apply to navbar or save yet
+        window.__pendingFrame = f.key;
         grid.querySelectorAll('.frame-option').forEach(el => el.classList.remove('selected'));
         div.classList.add('selected');
         updatePreview(f.key);
-        try {
-          const user = auth.currentUser;
-          if (user) {
-            await set(ref(db, `users/${user.uid}/avatarFrame`), f.key);
-            showToast(t('toast-frame-saved') + ' ' + f.label);
-          }
-        } catch (err) { showToast(t('toast-save-fail'), true); }
+        // Show hint that user needs to save
+        const msg = document.getElementById('frameSaveMsg');
+        if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = t('frame-select-hint') || '👆 กดบันทึกกรอบเพื่อใช้งาน'; }
       });
       grid.appendChild(div);
     });
+  };
+
+  // Save pending frame selection to Firebase + apply to navbar
+  window.saveFrameSelection = async () => {
+    const msg = document.getElementById('frameSaveMsg');
+    const frameKey = window.__pendingFrame !== undefined ? window.__pendingFrame : (window.__currentFrame || 'none');
+    const user = auth.currentUser;
+    if (!user) return;
+    if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = t('status-saving'); }
+    try {
+      await set(ref(db, `users/${user.uid}/avatarFrame`), frameKey);
+      window.applyAvatarFrame(frameKey);
+      window.__pendingFrame = undefined;
+      if (msg) { msg.style.color = 'var(--success)'; msg.textContent = '✓ ' + t('toast-frame-saved') + ' ' + (FRAMES.find(f => f.key === frameKey)?.label || ''); }
+      showToast(t('toast-frame-saved') + ' ' + (FRAMES.find(f => f.key === frameKey)?.label || ''));
+    } catch { if (msg) { msg.style.color = 'var(--error)'; msg.textContent = t('toast-save-fail'); } }
+  };
+
+  // Cancel: discard pending selection, restore current frame in grid UI
+  window.cancelFrameSelection = () => {
+    window.__pendingFrame = undefined;
+    const msg = document.getElementById('frameSaveMsg');
+    if (msg) msg.textContent = '';
+    closeProfileFrame();
   };
 
   // ===== CARTOON AVATARS (12 DiceBear) =====
@@ -3416,6 +3482,8 @@
     try {
       await set(ref(db, `users/${user.uid}/customAvatar`), _selectedAvatarUrl);
       document.getElementById('userAvatar').src = _selectedAvatarUrl;
+      // Re-apply current frame so it isn't lost when avatar image changes
+      window.applyAvatarFrame(window.__currentFrame || 'none');
       msg.style.color='var(--success)'; msg.textContent='✓ ' + t('toast-avatar-saved');
       showToast('✓ ' + t('toast-avatar-saved'));
     } catch { msg.style.color='var(--error)'; msg.textContent=t('toast-save-fail'); }
@@ -4407,8 +4475,10 @@
       'ptab-name': '✏️ Change Name',
       'avatar-desc': 'Choose a cartoon avatar or upload your own image',
       'avatar-save-btn': '💾 Save Avatar',
-      'frame-hint': 'Hover over a frame to preview it live · Click to select',
+      'frame-hint': 'Hover over a frame to preview it live · Click to select · Press Save to apply',
       'frame-done-btn': 'Done',
+      'frame-save-btn': '💾 Save Frame',
+      'frame-select-hint': '👆 Press Save Frame to apply',
       'displayname-label': 'Display Name',
       'displayname-cooldown-hint': 'can be changed every <b>7 days</b>',
       'username-cooldown-hint': 'is your unique account name, changeable every <b>30 days</b>',
@@ -4729,8 +4799,10 @@
       'ptab-name': '✏️ เปลี่ยนชื่อ',
       'avatar-desc': 'เลือกรูปโปรไฟล์การ์ตูนสำเร็จรูป หรืออัปโหลดรูปของคุณเอง',
       'avatar-save-btn': '💾 บันทึกรูปโปรไฟล์',
-      'frame-hint': 'เลื่อนเมาส์บนกรอบเพื่อดูตัวอย่างสด · กดเลือกเพื่อใช้งาน',
+      'frame-hint': 'เลื่อนเมาส์บนกรอบเพื่อดูตัวอย่างสด · คลิกเพื่อเลือก · กดบันทึกเพื่อใช้งาน',
       'frame-done-btn': 'เสร็จสิ้น',
+      'frame-save-btn': '💾 บันทึกกรอบ',
+      'frame-select-hint': '👆 กดบันทึกกรอบเพื่อใช้งาน',
       'displayname-label': 'ชื่อที่แสดง',
       'displayname-cooldown-hint': 'เปลี่ยนได้ทุก <b>7 วัน</b>',
       'username-cooldown-hint': 'คือชื่อบัญชีไม่ซ้ำกัน เปลี่ยนได้ทุก <b>30 วัน</b>',
