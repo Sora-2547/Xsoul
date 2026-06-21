@@ -2150,24 +2150,10 @@
     <div class="topup-section-label" data-i18n="topup-select-pkg">เลือกจำนวนเงินที่ต้องการเติม</div>
     <div class="topup-packages" id="topupPackages"></div>
 
-    <!-- Bonus config (per-rank) -->
-    <details style="margin: 4px 0 18px; border:1px dashed var(--border); border-radius:12px; padding:10px 14px; background:rgba(255,255,255,0.02);">
-      <summary style="cursor:pointer; font-size:0.82rem; color:var(--muted); user-select:none;">
-        ⚙️ ตั้งค่าโบนัสตามแรงค์ (บาท หรือ %)
-      </summary>
-      <div id="bonusConfigBody" style="display:grid; grid-template-columns: 1fr auto auto; gap:8px 10px; align-items:center; margin-top:12px; font-size:0.8rem;"></div>
-      <div style="display:flex; gap:8px; margin-top:10px;">
-        <button type="button" class="btn" onclick="saveBonusConfig()"
-          style="flex:1;padding:8px 12px;font-size:0.8rem;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;">
-          💾 บันทึก
-        </button>
-        <button type="button" class="btn" onclick="resetBonusConfig()"
-          style="flex:1;padding:8px 12px;font-size:0.8rem;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">
-          ↺ ค่าเริ่มต้น
-        </button>
-      </div>
-      <div id="bonusConfigMsg" style="margin-top:6px;font-size:0.75rem;color:var(--muted);min-height:16px;"></div>
-    </details>
+    <!-- Rank bonus info (read-only, auto by rank) -->
+    <div id="rankBonusInfo" style="margin: 4px 0 18px; border:1px solid var(--border); border-radius:12px; padding:10px 14px; background:rgba(255,255,255,0.03); font-size:0.8rem; color:var(--muted); text-align:center;">
+      โบนัสตามแรงค์: <span id="rankBonusInfoText" style="color:#ffe566;font-weight:700;">—</span>
+    </div>
 
     <!-- Confirm button (always visible; reveals payment section) -->
     <div id="topupConfirmRow" style="margin-bottom:18px;">
@@ -2253,13 +2239,14 @@
       </div>
     </div>
 
-    <!-- Slip Upload -->
+    <!-- Slip Upload (image file) -->
     <div class="topup-slip-row">
-      <label data-i18n="topup-slip-label">📎 แนบสลิปหลักฐานการโอน (URL รูปสลิป)</label>
-      <input class="form-input" id="topupSlipUrl" type="url" placeholder="https://... (ลิงก์รูปสลิปโอนเงิน)" data-i18n-placeholder="topup-slip-ph" oninput="previewSlip(this.value)" style="font-size:0.85rem;" />
+      <label data-i18n="topup-slip-label">📎 แนบสลิปหลักฐานการโอน (อัปโหลดรูปภาพ)</label>
+      <input class="form-input" id="topupSlipFile" type="file" accept="image/*" onchange="handleSlipFile(this)" style="font-size:0.85rem;padding:8px;" />
       <img id="topupSlipPreview" class="topup-slip-preview" alt="สลิป preview" />
       <div style="font-size:0.7rem;color:var(--muted);margin-top:6px;" data-i18n="topup-slip-where">
-        🔒 สลิปจะถูกบันทึกในระบบ (Firebase Realtime DB: users/&lt;uid&gt;/topupRequests) แอดมินจะตรวจสอบและอนุมัติ • ระบบป้องกันการใช้สลิปซ้ำอัตโนมัติ
+        🔒 สลิปจะถูกบันทึกเป็นรูปภาพในระบบ แอดมินจะตรวจสอบและอนุมัติ • ระบบป้องกันการใช้สลิปซ้ำอัตโนมัติ
+      </div>
       </div>
       <div id="topupOcrStatus" style="margin-top:8px;font-size:0.78rem;color:var(--muted);min-height:18px;"></div>
       <div id="topupOcrRef" style="margin-top:4px;font-size:0.8rem;font-family:var(--mono);color:var(--accent);word-break:break-all;"></div>
@@ -5321,7 +5308,8 @@
     document.querySelectorAll('.topup-pkg').forEach(p => p.classList.remove('selected'));
     const _pay = document.getElementById('topupPaymentSection'); if (_pay) _pay.style.display = 'none';
     const _hint = document.getElementById('topupConfirmHint'); if (_hint) { _hint.style.color = 'var(--muted)'; _hint.textContent = 'เลือกจำนวนเงินด้านบนแล้วกด “ยืนยัน” เพื่อรับเลขบัญชีสำหรับโอน'; }
-    document.getElementById('topupSlipUrl').value = '';
+    { const _sf = document.getElementById('topupSlipFile'); if (_sf) _sf.value = ''; }
+    window._topupSlipDataUrl = '';
     document.getElementById('topupMsg').textContent = '';
     document.getElementById('topupSlipPreview').style.display = 'none';
     const _os = document.getElementById('topupOcrStatus'); if (_os) _os.textContent = '';
@@ -5356,126 +5344,71 @@
     if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันจำนวนที่เลือก'; }
   };
 
-  // ===== Rank-based bonus config =====
+  // ===== Rank-based bonus (LOCKED — auto-detected per rank, not user-editable) =====
   const TOPUP_BASE_AMOUNTS = [10, 35, 99, 159, 379, 799, 1279, 1750, 2399];
-  const RANK_BONUS_DEFAULTS = {
-    free:       { type: 'pct', value: 0     },
-    bronze:     { type: 'pct', value: 0     },
-    silver:     { type: 'pct', value: 1.75  },
-    gold:       { type: 'pct', value: 4.5   },
-    platinum:   { type: 'pct', value: 7     },
-    diamond:    { type: 'pct', value: 15.57 },
-    premium:    { type: 'pct', value: 24    },
-    premiummax: { type: 'pct', value: 32.97 },
-  };
+  // Bonus is a percentage of the topup price, added on top of base credits.
+  // Decimal percentages are supported. These values are the single source of truth.
+  const RANK_BONUS_PCT = Object.freeze({
+    free:       0,
+    bronze:     0,
+    silver:     1.75,
+    gold:       4.5,
+    platinum:   7,
+    diamond:    15.57,
+    premium:    24,
+    premiummax: 32.97,
+  });
   const RANK_LABELS = {
     free: 'Free', bronze: 'Bronze', silver: 'Silver', gold: 'Gold',
     platinum: 'Platinum', diamond: 'Diamond', premium: 'Premium', premiummax: 'PremiumMax'
   };
-  const BONUS_LS_KEY = 'xsoul_topup_bonus_cfg_v1';
 
-  window.getBonusConfig = function() {
-    try {
-      const raw = localStorage.getItem(BONUS_LS_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return Object.assign({}, RANK_BONUS_DEFAULTS, parsed || {});
-      }
-    } catch(_) {}
-    return Object.assign({}, RANK_BONUS_DEFAULTS);
+  function _rankKey(r) { return (r || 'free').toLowerCase().replace(/\s+/g,''); }
+  function _round2(n) { return Math.round(n * 100) / 100; }
+  function _fmt(n) {
+    return Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  window.getRankBonusPct = function(rankKey) {
+    const k = _rankKey(rankKey);
+    return Object.prototype.hasOwnProperty.call(RANK_BONUS_PCT, k) ? RANK_BONUS_PCT[k] : 0;
   };
 
+  // Returns { credits, bonus, pct } — supports decimals (2dp).
   window.computeCredits = function(priceTHB, rankKey) {
-    const cfg = window.getBonusConfig();
-    const r = (rankKey || 'free').toLowerCase().replace(/\s+/g,'');
-    const rule = cfg[r] || cfg.free || { type: 'pct', value: 0 };
-    let bonus = 0;
-    if (rule.type === 'pct') bonus = priceTHB * (Number(rule.value) || 0) / 100;
-    else bonus = Number(rule.value) || 0;
-    return Math.round(priceTHB + bonus);
+    const pct = window.getRankBonusPct(rankKey);
+    const bonus = _round2(priceTHB * pct / 100);
+    const credits = _round2(priceTHB + bonus);
+    return { credits, bonus, pct };
   };
 
   window.renderTopupPackages = function() {
     const host = document.getElementById('topupPackages');
     if (!host) return;
     const rank = (window.__currentRank || 'Free');
-    const rankKey = rank.toLowerCase().replace(/\s+/g,'');
-    const cfg = window.getBonusConfig();
-    const rule = cfg[rankKey] || cfg.free;
+    const rankKey = _rankKey(rank);
+    const pct = window.getRankBonusPct(rankKey);
+    // Update info banner
+    const info = document.getElementById('rankBonusInfoText');
+    if (info) {
+      info.textContent = `${RANK_LABELS[rankKey] || rank} +${_fmt(pct)}%`;
+    }
     host.innerHTML = '';
     TOPUP_BASE_AMOUNTS.forEach(price => {
-      const credits = window.computeCredits(price, rankKey);
-      const extra = credits - price;
+      const { credits, bonus } = window.computeCredits(price, rankKey);
       const div = document.createElement('div');
       div.className = 'topup-pkg';
       div.dataset.credits = credits;
       div.dataset.price = price;
       div.onclick = function(){ window.selectTopupPkg(this); };
       div.innerHTML =
-        (extra > 0 ? `<span class="topup-pkg-bonus">+${extra}</span>` : '') +
-        `<div class="topup-pkg-amount">${credits.toLocaleString()}</div>` +
-        `<div class="topup-pkg-price">฿${price.toLocaleString()}</div>`;
+        (bonus > 0 ? `<span class="topup-pkg-bonus">+${_fmt(bonus)}</span>` : '') +
+        `<div class="topup-pkg-amount">${_fmt(credits)}</div>` +
+        `<div class="topup-pkg-price">฿${_fmt(price)}</div>`;
       host.appendChild(div);
     });
-    // Also render bonus config editor
-    window.renderBonusConfigEditor();
   };
 
-  window.renderBonusConfigEditor = function() {
-    const body = document.getElementById('bonusConfigBody');
-    if (!body) return;
-    const cfg = window.getBonusConfig();
-    const curRank = (window.__currentRank || 'Free').toLowerCase().replace(/\s+/g,'');
-    body.innerHTML = '';
-    // Header
-    body.insertAdjacentHTML('beforeend',
-      `<div style="color:var(--muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">Rank</div>
-       <div style="color:var(--muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">โบนัส</div>
-       <div style="color:var(--muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">หน่วย</div>`);
-    Object.keys(RANK_BONUS_DEFAULTS).forEach(rk => {
-      const rule = cfg[rk] || RANK_BONUS_DEFAULTS[rk];
-      const hi = rk === curRank ? 'color:#ffe566;font-weight:700;' : '';
-      body.insertAdjacentHTML('beforeend',
-        `<div style="${hi}">${RANK_LABELS[rk]}${rk===curRank?' ★':''}</div>
-         <input type="number" min="0" step="0.5" value="${rule.value}" data-bonus-rank="${rk}" data-bonus-field="value"
-           style="width:80px;padding:6px 8px;font-family:var(--mono);font-size:0.82rem;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);" />
-         <select data-bonus-rank="${rk}" data-bonus-field="type"
-           style="padding:6px 8px;font-size:0.78rem;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);">
-           <option value="pct" ${rule.type==='pct'?'selected':''}>%</option>
-           <option value="thb" ${rule.type==='thb'?'selected':''}>บาท</option>
-         </select>`);
-    });
-  };
-
-  window.saveBonusConfig = function() {
-    const cfg = window.getBonusConfig();
-    document.querySelectorAll('#bonusConfigBody [data-bonus-rank]').forEach(inp => {
-      const rk = inp.dataset.bonusRank;
-      const f  = inp.dataset.bonusField;
-      cfg[rk] = cfg[rk] || { type: 'pct', value: 0 };
-      if (f === 'value') cfg[rk].value = Number(inp.value) || 0;
-      if (f === 'type')  cfg[rk].type  = inp.value === 'thb' ? 'thb' : 'pct';
-    });
-    try { localStorage.setItem(BONUS_LS_KEY, JSON.stringify(cfg)); } catch(_) {}
-    // Best-effort sync to Firebase shared config
-    try {
-      if (window.fbRef && window.fbSet && window.__db) {
-        window.fbSet(window.fbRef(window.__db, 'config/topupBonus'), cfg).catch(()=>{});
-      } else if (typeof db !== 'undefined' && typeof set === 'function' && typeof ref === 'function') {
-        set(ref(db, 'config/topupBonus'), cfg).catch(()=>{});
-      }
-    } catch(_) {}
-    const m = document.getElementById('bonusConfigMsg');
-    if (m) { m.style.color = 'var(--success)'; m.textContent = '✅ บันทึกแล้ว — อัปเดตแพ็คเก็จตามแรงค์'; setTimeout(()=>{ m.textContent=''; }, 2200); }
-    window.renderTopupPackages();
-  };
-
-  window.resetBonusConfig = function() {
-    try { localStorage.removeItem(BONUS_LS_KEY); } catch(_) {}
-    const m = document.getElementById('bonusConfigMsg');
-    if (m) { m.style.color = 'var(--muted)'; m.textContent = '↺ คืนค่าเริ่มต้นแล้ว'; setTimeout(()=>{ m.textContent=''; }, 1800); }
-    window.renderTopupPackages();
-  };
 
   window.confirmTopupSelection = function() {
     const msg  = document.getElementById('topupConfirmHint');
@@ -5488,35 +5421,60 @@
     if (sec) sec.style.display = 'block';
     const av = document.getElementById('topupAmountValue');
     const cv = document.getElementById('topupCreditsValue');
-    if (av) av.textContent = _topupSelectedPkg.price.toLocaleString();
-    if (cv) cv.textContent = _topupSelectedPkg.credits.toLocaleString();
+    if (av) av.textContent = _fmt(_topupSelectedPkg.price);
+    if (cv) cv.textContent = _fmt(_topupSelectedPkg.credits);
     // Show username for transfer note
     const uh = document.getElementById('topupUserHandle');
     if (uh) {
       const handle = (document.getElementById('dropdownEmail')?.textContent || '').replace('@','');
       uh.textContent = handle || (auth.currentUser?.email || '-');
     }
-    if (msg) { msg.style.color = 'var(--success)'; msg.textContent = `✅ ยืนยัน ฿${_topupSelectedPkg.price.toLocaleString()} แล้ว — โปรดโอนตามเลขบัญชีด้านล่าง`; }
+    if (msg) { msg.style.color = 'var(--success)'; msg.textContent = `✅ ยืนยัน ฿${_fmt(_topupSelectedPkg.price)} แล้ว — โปรดโอนตามเลขบัญชีด้านล่าง`; }
     // Smooth scroll into view
     setTimeout(() => { sec?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
   };
 
-  window.previewSlip = (url) => {
+  // Holds the slip image as a data URL (base64) once the user picks a file.
+  window._topupSlipDataUrl = '';
+
+  window.handleSlipFile = (input) => {
     const img = document.getElementById('topupSlipPreview');
     const stEl = document.getElementById('topupOcrStatus');
     const refEl = document.getElementById('topupOcrRef');
     window._topupDetectedRef = '';
+    window._topupSlipDataUrl = '';
     if (stEl) stEl.textContent = '';
     if (refEl) refEl.textContent = '';
-    if (url && url.startsWith('http')) {
-      img.src = url;
-      img.style.display = 'block';
-      img.onerror = () => { img.style.display = 'none'; if (stEl) stEl.textContent = '❌ ' + t('ocr-img-fail'); };
-      img.onload = () => { runSlipOcr(url); };
-    } else {
+    const file = input && input.files && input.files[0];
+    if (!file) { img.style.display = 'none'; return; }
+    if (!file.type.startsWith('image/')) {
+      if (stEl) { stEl.style.color = 'var(--error)'; stEl.textContent = '❌ กรุณาเลือกไฟล์รูปภาพเท่านั้น'; }
+      input.value = '';
       img.style.display = 'none';
+      return;
     }
+    // Soft limit ~5MB (base64 ~6.7MB) to keep Realtime DB write reasonable
+    if (file.size > 5 * 1024 * 1024) {
+      if (stEl) { stEl.style.color = 'var(--error)'; stEl.textContent = '❌ ไฟล์ใหญ่เกิน 5MB กรุณาเลือกรูปที่เล็กลง'; }
+      input.value = '';
+      img.style.display = 'none';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = String(e.target.result || '');
+      window._topupSlipDataUrl = dataUrl;
+      img.src = dataUrl;
+      img.style.display = 'block';
+      runSlipOcr(dataUrl);
+    };
+    reader.onerror = () => {
+      if (stEl) { stEl.style.color = 'var(--error)'; stEl.textContent = '❌ ' + t('ocr-img-fail'); }
+    };
+    reader.readAsDataURL(file);
   };
+  // Back-compat: keep previewSlip available but no-op for URL input
+  window.previewSlip = () => {};
 
   // ===== OCR: auto-detect transaction reference from slip image =====
   window._topupDetectedRef = '';
@@ -5567,27 +5525,25 @@
     if (!user) return;
     const msg = document.getElementById('topupMsg');
     const btn = document.getElementById('topupSubmitBtn');
-    const slipUrl = document.getElementById('topupSlipUrl').value.trim();
+    const slipDataUrl = (window._topupSlipDataUrl || '').trim();
     const txRef = (window._topupDetectedRef || '').trim();
     const method = window._topupMethod || 'bank';
     if (!_topupSelectedPkg) {
       msg.style.color = 'var(--error)'; msg.textContent = '❌ ' + t('err-topup-no-pkg'); return;
     }
-    if (!slipUrl) {
+    if (!slipDataUrl || !slipDataUrl.startsWith('data:image/')) {
       msg.style.color = 'var(--error)'; msg.textContent = '❌ ' + t('err-topup-no-slip'); return;
-    }
-    if (!slipUrl.startsWith('http')) {
-      msg.style.color = 'var(--error)'; msg.textContent = '❌ ' + t('err-topup-bad-url'); return;
     }
     if (!txRef || txRef.length < 8) {
       msg.style.color = 'var(--error)'; msg.textContent = '❌ ' + t('err-topup-no-ref-ocr'); return;
     }
     btn.disabled = true; btn.textContent = '⏳ ' + t('status-submitting');
     try {
-      // ===== Anti-fraud: prevent duplicate slips (by tx reference + by slip URL hash) =====
+      // ===== Anti-fraud: prevent duplicate slips (by tx reference + by image content hash) =====
       const normRef  = txRef.toUpperCase().replace(/\s+/g,'');
-      const normUrl  = slipUrl.trim();
-      const slipHash = await sha256Hex(normUrl.toLowerCase());
+      // Hash the base64 payload (the actual image bytes), not a URL
+      const b64Body  = slipDataUrl.split(',')[1] || slipDataUrl;
+      const slipHash = await sha256Hex(b64Body);
       const refKey   = normRef.replace(/[.#$\[\]\/]/g,'_'); // Firebase-safe key
       // Check global slip index (requires DB rule allowing read/write on /slipIndex)
       try {
@@ -5615,7 +5571,8 @@
         price: _topupSelectedPkg.price,
         amountTHB: _topupSelectedPkg.price,
         currency: 'THB',
-        slipUrl, status: 'pending', createdAt: ts, createdAtStr: dateStr,
+        slipImage: slipDataUrl,
+        status: 'pending', createdAt: ts, createdAtStr: dateStr,
         method, txRef: normRef, slipHash
       };
       // Write under user's own path (within their uid — ensures Firebase rules allow it)
@@ -5640,12 +5597,12 @@
           currency: 'THB',
           method,
           txRef: normRef,
-          slipUrl,
+          slipImage: slipDataUrl,
           slipHash,
           status: 'pending',
           createdAt: ts,
           createdAtStr: dateStr,
-          message: `💰 ${uhandle} แนบสลิปเติมเครดิต ${_topupSelectedPkg.price} บาท (${_topupSelectedPkg.credits} เครดิต) เวลา ${dateStr}`,
+          message: `💰 ${uhandle} แนบสลิปเติมเครดิต ${_fmt(_topupSelectedPkg.price)} บาท (${_fmt(_topupSelectedPkg.credits)} เครดิต) เวลา ${dateStr}`,
         });
       } catch(e) { console.warn('[topup] adminNotifications write failed:', e.message); }
       msg.style.color = 'var(--success)';
@@ -5654,7 +5611,8 @@
       const _pay2 = document.getElementById('topupPaymentSection'); if (_pay2) _pay2.style.display = 'none';
       if (typeof window.renderTopupPackages === 'function') window.renderTopupPackages();
       document.querySelectorAll('.topup-pkg').forEach(p => p.classList.remove('selected'));
-      document.getElementById('topupSlipUrl').value = '';
+      { const _sf2 = document.getElementById('topupSlipFile'); if (_sf2) _sf2.value = ''; }
+      window._topupSlipDataUrl = '';
       document.getElementById('topupSlipPreview').style.display = 'none';
       window._topupDetectedRef = '';
       const _os2 = document.getElementById('topupOcrStatus'); if (_os2) _os2.textContent = '';
