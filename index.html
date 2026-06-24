@@ -2354,6 +2354,7 @@
       </div>
       <div id="topupOcrStatus" style="margin-top:8px;font-size:0.78rem;color:var(--muted);min-height:18px;"></div>
       <div id="topupOcrRef" style="margin-top:4px;font-size:0.8rem;font-family:var(--mono);color:var(--accent);word-break:break-all;"></div>
+      <div id="topupOcrBank" style="margin-top:4px;font-size:0.75rem;color:var(--muted);font-weight:500;"></div>
     </div>
 
     <div id="topupMsg" style="font-size:0.82rem;min-height:18px;margin-bottom:6px;"></div>
@@ -5512,7 +5513,10 @@
     document.getElementById('topupSlipPreview').style.display = 'none';
     const _os = document.getElementById('topupOcrStatus'); if (_os) _os.textContent = '';
     const _or = document.getElementById('topupOcrRef'); if (_or) _or.textContent = '';
+    const _ob = document.getElementById('topupOcrBank'); if (_ob) _ob.textContent = '';
     window._topupDetectedRef = '';
+    window._topupDetectedBank = '';
+    window._topupDetectedBankType = '';
     // show current credits (already kept real-time via onValue listener)
     const c = window.__currentCredits || 0;
     document.getElementById('topupBalanceDisplay').textContent = c.toLocaleString();
@@ -5643,6 +5647,7 @@
     const img = document.getElementById('topupSlipPreview');
     const stEl = document.getElementById('topupOcrStatus');
     const refEl = document.getElementById('topupOcrRef');
+    const bankEl = document.getElementById('topupOcrBank');
     const nameEl = document.getElementById('topupSlipFileName');
     const setName = (txt, i18nKey) => {
       if (!nameEl) return;
@@ -5650,9 +5655,12 @@
       else { nameEl.removeAttribute('data-i18n'); nameEl.textContent = txt; }
     };
     window._topupDetectedRef = '';
+    window._topupDetectedBank = '';
+    window._topupDetectedBankType = '';
     window._topupSlipDataUrl = '';
     if (stEl) stEl.textContent = '';
     if (refEl) refEl.textContent = '';
+    if (bankEl) bankEl.textContent = '';
     const file = input && input.files && input.files[0];
     if (!file) { img.style.display = 'none'; setName('', 'topup-slip-nofile'); return; }
     if (!file.type.startsWith('image/')) {
@@ -5689,7 +5697,102 @@
 
   // ===== OCR: auto-detect transaction reference from slip image =====
   window._topupDetectedRef = '';
+  window._topupDetectedBank = '';
+  window._topupDetectedBankType = '';
   window._topupSlipNameOk = false; // STRICT: must be positively verified by OCR
+  
+  // Bank and wallet detection patterns
+  const BANK_PATTERNS = {
+    kbank: {
+      name: 'KBank (Kasikorn)',
+      patterns: [/kasi[kc]orn/i, /k[\s\-]?bank/i, /kplus/i, /kb[\s\-]?ank/i, /กรุงไทย/i],
+      refPatterns: [/ref(?:erence)?[:\s]*([a-z0-9]{10,20})/i, /เลขที่รายการ[:\s]*([a-z0-9]{10,20})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+    },
+    scb: {
+      name: 'SCB (Siam Commercial)',
+      patterns: [/siam[\s\-]?commercial/i, /scb[\s\-]?easy/i, /ไทยพาณิชย์/i],
+      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,25})/i, /เลขที่อ้างอิง[:\s]*([a-z0-9]{10,25})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /ยอดเงิน[:\s]*([0-9.,]+)/i]
+    },
+    bbl: {
+      name: 'BBL (Bangkok Bank)',
+      patterns: [/bangkok[\s\-]?bank/i, /bbl[\s\-]?online/i, /กรุงเทพ/i],
+      refPatterns: [/ref(?:erence)?[:\s]*([a-z0-9]{10,20})/i, /trace[:\s]*([a-z0-9]{10,20})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวน[:\s]*([0-9.,]+)/i]
+    },
+    krungthai: {
+      name: 'Krungthai (KTB)',
+      patterns: [/krungthai/i, /ktb[\s\-]?netbank/i, /กรุงไทย/i],
+      refPatterns: [/transaction[\s\-]?no[:\s]*([a-z0-9]{10,20})/i, /รหัสรายการ[:\s]*([a-z0-9]{10,20})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /ยอดโอน[:\s]*([0-9.,]+)/i]
+    },
+    bay: {
+      name: 'BAY (Bank of Ayudhya)',
+      patterns: [/bank[\s\-]?of[\s\-]?ayudhya/i, /krungsri/i, /กรุงศรี/i],
+      refPatterns: [/ref(?:erence)?[:\s]*([a-z0-9]{10,20})/i, /เลขอ้างอิง[:\s]*([a-z0-9]{10,20})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+    },
+    gsb: {
+      name: 'GSB (Government Savings)',
+      patterns: [/government[\s\-]?savings/i, /ออมสิน/i],
+      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,20})/i, /เลขที่รายการ[:\s]*([a-z0-9]{10,20})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /ยอดเงิน[:\s]*([0-9.,]+)/i]
+    }
+  };
+
+  const WALLET_PATTERNS = {
+    truemoney: {
+      name: 'TrueMoney Wallet',
+      patterns: [/truemoney/i, /tm[\s\-]?wallet/i, /ทรูมันนี่/i],
+      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,25})/i, /ref[:\s]*([a-z0-9]{10,25})/i, /เลขที่รายการ[:\s]*([a-z0-9]{10,25})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+    },
+    promptpay: {
+      name: 'PromptPay',
+      patterns: [/promptpay/i, /พร้อมเพย์/i],
+      refPatterns: [/ref[:\s]*([a-z0-9]{10,30})/i, /เลขอ้างอิง[:\s]*([a-z0-9]{10,30})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /ยอดชำระ[:\s]*([0-9.,]+)/i]
+    },
+    shopeepay: {
+      name: 'ShopeePay',
+      patterns: [/shopeepay/i, /shopee[\s\-]?pay/i],
+      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,30})/i, /ref[:\s]*([a-z0-9]{10,30})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+    },
+    rabbit_line_pay: {
+      name: 'Rabbit LINE Pay',
+      patterns: [/rabbit[\s\-]?line[\s\-]?pay/i, /line[\s\-]?pay/i],
+      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,30})/i, /ref[:\s]*([a-z0-9]{10,30})/i],
+      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+    }
+  };
+
+  // Detect bank or wallet type from OCR text
+  function detectBankOrWallet(text) {
+    const lower = text.toLowerCase();
+    
+    // Check banks
+    for (const [key, bank] of Object.entries(BANK_PATTERNS)) {
+      for (const pattern of bank.patterns) {
+        if (pattern.test(lower)) {
+          return { type: 'bank', key, name: bank.name, patterns: bank };
+        }
+      }
+    }
+    
+    // Check wallets
+    for (const [key, wallet] of Object.entries(WALLET_PATTERNS)) {
+      for (const pattern of wallet.patterns) {
+        if (pattern.test(lower)) {
+          return { type: 'wallet', key, name: wallet.name, patterns: wallet };
+        }
+      }
+    }
+    
+    return null;
+  }
+
   // Preprocess slip image: upscale small images + grayscale + contrast + binarize.
   // Helps Tesseract handle blurry / low-resolution phone screenshots.
   async function _preprocessSlipImage(url, opts) {
@@ -5770,27 +5873,31 @@
   async function runSlipOcr(url) {
     const stEl = document.getElementById('topupOcrStatus');
     const refEl = document.getElementById('topupOcrRef');
+    const bankEl = document.getElementById('topupOcrBank');
     if (typeof Tesseract === 'undefined') {
       if (stEl) stEl.textContent = '⚠️ OCR not loaded';
       return;
     }
     try {
       if (stEl) { stEl.style.color = 'var(--muted)'; stEl.textContent = '🔎 ' + t('ocr-scanning'); }
+      if (bankEl) bankEl.textContent = '';
       const expectedAmt = _topupSelectedPkg && _topupSelectedPkg.price;
 
-      // Multi-pass OCR — try several preprocessing variants until we have a good signal.
-      // Stops as soon as we get BOTH a tx ref and a usable amount.
+      // Enhanced multi-pass OCR with bank-specific optimizations
       const passes = [
-        { lang: 'tha+eng', pre: { targetMin: 1800, contrast: true,  binarize: false, sharpen: true }, opts: { tessedit_pageseg_mode: 6 } },
-        { lang: 'tha+eng', pre: { targetMin: 2200, contrast: true,  binarize: true,  sharpen: true }, opts: { tessedit_pageseg_mode: 6 } },
-        { lang: 'eng',     pre: { targetMin: 2200, contrast: true,  binarize: true,  sharpen: true }, opts: { tessedit_pageseg_mode: 6, tessedit_char_whitelist: '0123456789.,/-:฿BahtTHB Amount' } },
-        { lang: 'tha',     pre: { targetMin: 2000, contrast: true,  binarize: false, sharpen: true }, opts: { tessedit_pageseg_mode: 6 } },
-        { lang: 'eng',     pre: { targetMin: 2400, contrast: true,  binarize: true              }, opts: { tessedit_pageseg_mode: 11 } },
+        { lang: 'tha+eng', pre: { targetMin: 2000, contrast: true,  binarize: false, sharpen: true }, opts: { tessedit_pageseg_mode: 6 } },
+        { lang: 'tha+eng', pre: { targetMin: 2400, contrast: true,  binarize: true,  sharpen: true }, opts: { tessedit_pageseg_mode: 6 } },
+        { lang: 'eng',     pre: { targetMin: 2400, contrast: true,  binarize: true,  sharpen: true }, opts: { tessedit_pageseg_mode: 6, tessedit_char_whitelist: '0123456789.,/-:฿BahtTHB Amount' } },
+        { lang: 'tha',     pre: { targetMin: 2200, contrast: true,  binarize: false, sharpen: true }, opts: { tessedit_pageseg_mode: 6 } },
+        { lang: 'eng',     pre: { targetMin: 2600, contrast: true,  binarize: true,  sharpen: true }, opts: { tessedit_pageseg_mode: 11 } },
+        { lang: 'tha+eng', pre: { targetMin: 2800, contrast: true,  binarize: true,  invert: true }, opts: { tessedit_pageseg_mode: 6 } },
       ];
 
       let bestText = '';
       let bestRef = '';
       let bestAmt = null;
+      let detectedBank = null;
+      
       for (const p of passes) {
         let src = url;
         try { src = await _preprocessSlipImage(url, p.pre); } catch {}
@@ -5804,29 +5911,54 @@
         }
         // Accumulate text so name/ref/amount can match across passes
         bestText = bestText ? (bestText + '\n' + text) : text;
+        
+        // Detect bank/wallet type
+        if (!detectedBank) {
+          detectedBank = detectBankOrWallet(bestText);
+        }
+        
+        // Use bank-specific patterns if detected
         if (!bestRef) {
-          const r = extractSlipRef(text) || extractSlipRef(bestText);
+          const r = extractSlipRef(bestText, detectedBank);
           if (r) bestRef = r;
         }
         if (bestAmt == null) {
-          const a = extractSlipAmount(bestText, expectedAmt);
+          const a = extractSlipAmount(bestText, expectedAmt, detectedBank);
           if (a != null) bestAmt = a;
         }
         if (bestRef && bestAmt != null && verifySlipName(bestText)) break;
       }
 
-
       window._topupSlipOcrText = bestText;
       window._topupSlipNameOk = verifySlipName(bestText);
-      window._topupSlipAmount = bestAmt != null ? bestAmt : extractSlipAmount(bestText, expectedAmt);
-      const ref = bestRef || extractSlipRef(bestText);
+      window._topupSlipAmount = bestAmt != null ? bestAmt : extractSlipAmount(bestText, expectedAmt, detectedBank);
+      
+      // Store detected bank info
+      if (detectedBank) {
+        window._topupDetectedBank = detectedBank.name;
+        window._topupDetectedBankType = detectedBank.type;
+      } else {
+        window._topupDetectedBank = '';
+        window._topupDetectedBankType = '';
+      }
+      
+      // Display bank/wallet info
+      if (detectedBank && bankEl) {
+        const icon = detectedBank.type === 'bank' ? '🏦' : '👛';
+        bankEl.textContent = `${icon} ${detectedBank.name}`;
+        bankEl.style.color = 'var(--success)';
+      }
+      
+      const ref = bestRef || extractSlipRef(bestText, detectedBank);
       if (ref) {
         window._topupDetectedRef = ref;
-        if (stEl) { stEl.style.color = 'var(--success)'; stEl.textContent = '✅ ' + t('ocr-found'); }
+        const bankInfo = detectedBank ? ` (${detectedBank.name})` : '';
+        if (stEl) { stEl.style.color = 'var(--success)'; stEl.textContent = '✅ ' + t('ocr-found') + bankInfo; }
         if (refEl) refEl.textContent = 'Ref: ' + ref;
       } else if (window._topupSlipAmount != null || (bestText && bestText.trim().length > 20)) {
         window._topupDetectedRef = '';
-        if (stEl) { stEl.style.color = 'var(--warning)'; stEl.textContent = '⚠️ ' + t('ocr-partial-found'); }
+        const bankInfo = detectedBank ? ` (${detectedBank.name})` : '';
+        if (stEl) { stEl.style.color = 'var(--warning)'; stEl.textContent = '⚠️ ' + t('ocr-partial-found') + bankInfo; }
         if (refEl) refEl.textContent = '';
       } else {
         window._topupDetectedRef = '';
@@ -5847,10 +5979,22 @@
       .replace(/[—–−]/g, '-')
       .replace(/[：]/g, ':');
   }
-  function extractSlipRef(text) {
+  function extractSlipRef(text, detectedBank = null) {
     if (!text) return '';
     const raw = _normalizeOcrText(text);
     const clean = raw.replace(/[\s\-:/.#]/g, '');
+    
+    // Use bank-specific patterns if detected
+    if (detectedBank && detectedBank.patterns && detectedBank.patterns.refPatterns) {
+      for (const pattern of detectedBank.patterns.refPatterns) {
+        const m = raw.match(pattern);
+        if (m && m[1]) {
+          const ref = m[1].replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+          if (ref.length >= 8 && ref.length <= 50) return ref;
+        }
+      }
+    }
+    
     // Common Thai bank + wallet slip references. Each provider labels it differently.
     const keywordPatterns = [
       /(?:Transaction\s*(?:ID|No\.?|Ref)|Trans(?:action)?\s*Ref|Ref(?:erence)?\.?\s*(?:No\.?|#)?|Trace\s*(?:No\.?|ID)?|Slip\s*(?:ID|No\.?)|Receipt\s*(?:No\.?|ID)|เลข(?:ที่)?(?:รายการ|ธุรกรรม|อ้างอิง|สลิป|ใบเสร็จ)|รหัส(?:รายการ|อ้างอิง|ธุรกรรม)|หมายเลข(?:รายการ|อ้างอิง)|เลขอ้างอิง|เลขที่อ้างอิง)[^A-Za-z0-9\u0e50-\u0e59]{0,25}([A-Za-z0-9][A-Za-z0-9\s\-:/.#]{7,48})/i,
@@ -5889,14 +6033,55 @@
     return _stripThaiMarks(s).replace(/[\s\u200b\u00a0\.,_\-]/g, '');
   }
   function verifySlipName(text) {
-    // STRICT: must positively match "นายอนุชา ผดาวัลย์" (Anucha Padawan).
-    // Requires BOTH first-name AND last-name evidence (Thai or English),
-    // OR a clear English transliteration of either token.
+    // STRICT: must positively match "นายอนุชา ผดาวัลย์" (Anucha Padawan) as RECEIVER only.
+    // Detects if อนุชา is the sender (ผู้โอน/จาก) and rejects the slip.
     if (!text) return false;
     const raw = String(text);
     const lower = raw.toLowerCase();
     const norm = _normalizeThai(raw);
 
+    // Detect sender/receiver keywords in Thai and English
+    const senderKeywords = [/ผู้โอน/i, /จาก/i, /from\s*:/i, /sender/i, /โอนโดย/i];
+    const receiverKeywords = [/ผู้รับ/i, /ถึง/i, /to\s*:/i, /receiver/i, /รับโดย/i, /บัญชีผู้รับ/i];
+    
+    let isSender = false;
+    let isReceiver = false;
+    
+    // Check if อนุชา appears near sender keywords
+    for (const kw of senderKeywords) {
+      const matches = raw.match(kw);
+      if (matches) {
+        // Check if อนุชา appears within 50 characters after sender keyword
+        for (const m of matches) {
+          const idx = raw.indexOf(m);
+          const after = raw.substring(idx, idx + 100).toLowerCase();
+          if (after.includes('อนุชา') || after.includes('anucha')) {
+            isSender = true;
+            break;
+          }
+        }
+      }
+    }
+    
+    // Check if อนุชา appears near receiver keywords
+    for (const kw of receiverKeywords) {
+      const matches = raw.match(kw);
+      if (matches) {
+        // Check if อนุชา appears within 50 characters after receiver keyword
+        for (const m of matches) {
+          const idx = raw.indexOf(m);
+          const after = raw.substring(idx, idx + 100).toLowerCase();
+          if (after.includes('อนุชา') || after.includes('anucha')) {
+            isReceiver = true;
+            break;
+          }
+        }
+      }
+    }
+    
+    // If อนุชา is clearly the sender, reject immediately
+    if (isSender && !isReceiver) return false;
+    
     const firstThai = ['อนุชา', 'อนชา', 'นุชา', 'อนุช', 'อนช'];
     const lastThai  = ['ผดาวัลย์', 'ผดาวลย', 'ผดวลย', 'ผดาวล', 'ดาวัลย', 'ดาวลย', 'ผดาว'];
     const hasFirstThai = firstThai.some(n => norm.includes(_normalizeThai(n)));
@@ -5906,13 +6091,24 @@
     const hasFirstEn = /\b(a?nucha|anuchar|anoucha|onucha)\b/i.test(lower);
     const hasLastEn  = /\b(ph?ad?aw?[ao]?[lvn]y?|padawan|padawal|padaval|phadawan)\b/i.test(lower);
 
-    // Strict combinations
-    if (hasFirstThai && hasLastThai) return true;
-    if (hasFirstEn && hasLastEn) return true;
-    if (hasFirstThai && hasLastEn) return true;
-    if (hasFirstEn && hasLastThai) return true;
+    // Strict combinations - require evidence that อนุชา is the receiver
+    if (hasFirstThai && hasLastThai) {
+      // If both names found, ensure it's not marked as sender
+      return !isSender || isReceiver;
+    }
+    if (hasFirstEn && hasLastEn) {
+      return !isSender || isReceiver;
+    }
+    if (hasFirstThai && hasLastEn) {
+      return !isSender || isReceiver;
+    }
+    if (hasFirstEn && hasLastThai) {
+      return !isSender || isReceiver;
+    }
     // Allow a single strong full-name English hit alone
-    if (/\banucha\s+(ph|p)?ada?w?[ao]?[lvn]/i.test(lower)) return true;
+    if (/\banucha\s+(ph|p)?ada?w?[ao]?[lvn]/i.test(lower)) {
+      return !isSender || isReceiver;
+    }
 
     return false;
   }
@@ -5920,7 +6116,8 @@
   // Extract numeric amount (THB) from slip text — robust against OCR noise.
   // `expected` (optional): selected package amount. If that number appears
   // anywhere on the slip we accept it (OCR commonly mangles the surrounding label).
-  function extractSlipAmount(text, expected) {
+  // `detectedBank` (optional): bank/wallet info for pattern-specific extraction
+  function extractSlipAmount(text, expected, detectedBank = null) {
     if (!text) return null;
     // Normalize: Thai digits → ASCII, OCR-confused chars, NBSP/zero-width
     let t = _normalizeOcrText(text);
@@ -5938,7 +6135,18 @@
       return parseFloat(v);
     };
 
-    // 1) Keyword-anchored (allow OCR to drop the decimal point: 5000 == 50.00)
+    // 1) Bank-specific patterns if detected
+    if (detectedBank && detectedBank.patterns && detectedBank.patterns.amountPatterns) {
+      for (const pattern of detectedBank.patterns.amountPatterns) {
+        const m = t.match(pattern);
+        if (m && m[1]) {
+          const n = normalizeMoneyCandidate(m[1]);
+          if (!isNaN(n) && n > 0 && n < 1000000) return n; // Sanity check
+        }
+      }
+    }
+
+    // 2) Keyword-anchored (allow OCR to drop the decimal point: 5000 == 50.00)
     const numRe = '([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:[\\.]\\s*[0-9]{1,2})?|[0-9]+(?:[\\.]\\s*[0-9]{1,2})?)';
     const kw = [
       new RegExp('(?:จำนวนเงิน|จำนวน|Amount|Amt|ยอด(?:เงิน|โอน|ที่โอน|ชำระ|จ่าย)?|โอนเงิน|ชำระเงิน|รับเงิน|รวม(?:ทั้งสิ้น)?|Total|Grand\\s*Total|Paid|Payment|Transfer\\s*Amount)[^\\d\\-]{0,35}' + numRe, 'i'),
@@ -5951,18 +6159,18 @@
       const m = t.match(re);
       if (m && m[1]) {
         const n = normalizeMoneyCandidate(m[1]);
-        if (!isNaN(n) && n > 0) candidates.push(n);
+        if (!isNaN(n) && n > 0 && n < 1000000) candidates.push(n); // Sanity check
       }
     }
 
-    // 2) If expected is provided, accept when it appears anywhere on the slip
+    // 3) If expected is provided, accept when it appears anywhere on the slip
     if (expected && expected > 0) {
       const exp = Number(expected);
       // exact match in candidates
       if (candidates.some(n => Math.abs(n - exp) <= 0.01)) return exp;
       // scan all numbers (with/without decimals/commas)
       const allNums = (t.match(/[0-9][0-9,\.\s]{0,15}[0-9]|[0-9]+/g) || [])
-        .map(normalizeMoneyCandidate).filter(n => !isNaN(n) && n > 0);
+        .map(normalizeMoneyCandidate).filter(n => !isNaN(n) && n > 0 && n < 1000000);
       if (allNums.some(n => Math.abs(n - exp) <= 0.01)) return exp;
       // OCR may drop the decimal: "50.00" → "5000"; also tolerate ".00" stripped
       const expCents = Math.round(exp * 100);
@@ -5976,10 +6184,10 @@
 
     if (candidates.length) return candidates[0];
 
-    // 3) Fallback: largest decimal-formatted number on the slip
+    // 4) Fallback: largest decimal-formatted number on the slip
     const all = t.match(/[0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2}/g) || [];
     if (all.length) {
-      const nums = all.map(toNum).filter(n => !isNaN(n));
+      const nums = all.map(toNum).filter(n => !isNaN(n) && n > 0 && n < 1000000);
       if (nums.length) return Math.max(...nums);
     }
     // No safe candidate — refuse to guess. Returning null marks the slip as
@@ -6009,9 +6217,11 @@
       msg.style.color = 'var(--error)'; msg.textContent = '❌ ' + t('err-topup-no-slip'); return;
     }
     const hasOcrRef = !!txRef && txRef.length >= 8;
-    // ===== Anti-fraud: verify recipient name on slip (STRICT — must be Anucha Padawan) =====
+    // ===== Anti-fraud: verify recipient name on slip (STRICT — must be Anucha Padawan as RECEIVER) =====
     if (!window._topupSlipNameOk) {
-      msg.style.color = 'var(--error)'; msg.textContent = '❌ ' + t('err-topup-bad-name'); return;
+      msg.style.color = 'var(--error)'; 
+      msg.textContent = '❌ สลิปไม่ถูกต้อง: ชื่อผู้รับเงินต้องเป็น "นายอนุชา ผดาวัลย์" เท่านั้น หากชื่ออนุชาปรากฏเป็นผู้โอนจะไม่ถูกอนุมัติ';
+      return;
     }
     // ===== Anti-fraud: verify the transferred amount matches the selected package (STRICT) =====
     {
@@ -6189,8 +6399,11 @@
       window._topupSlipDataUrl = '';
       document.getElementById('topupSlipPreview').style.display = 'none';
       window._topupDetectedRef = '';
+      window._topupDetectedBank = '';
+      window._topupDetectedBankType = '';
       const _os2 = document.getElementById('topupOcrStatus'); if (_os2) _os2.textContent = '';
       const _or2 = document.getElementById('topupOcrRef'); if (_or2) _or2.textContent = '';
+      const _ob2 = document.getElementById('topupOcrBank'); if (_ob2) _ob2.textContent = '';
       loadTopupHistory(user.uid);
       // Best-effort 15-day cleanup runs after each submission
       try { cleanupOldTopups(user.uid); } catch {}
