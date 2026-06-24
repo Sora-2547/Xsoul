@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-// https://sora-2547.github.io/Xsoul/AdminXsoul.html
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -436,28 +435,28 @@
   </div>
 
   <script>
-    // Firebase Configuration - UPDATE WITH YOUR CONFIG
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      databaseURL: "YOUR_DATABASE_URL",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // Hardcoded credentials
+    // Hardcoded credentials (must be defined first)
     const ADMIN_USERNAME = 'Admin';
     const ADMIN_PASSWORD = '254761';
 
     // State
     let allUsers = [];
     let currentEditingUser = null;
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBUPSUB6Ic8lqKYC7FTRa_szjQmTFeXYlQ",
+      authDomain: "xsoul-hud-21e3d.firebaseapp.com",
+      projectId: "xsoul-hud-21e3d",
+      storageBucket: "xsoul-hud-21e3d.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID",
+      databaseURL: "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
     // Login Handler
     function handleLogin() {
