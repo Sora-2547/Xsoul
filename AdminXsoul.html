@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-//https://sora-2547.github.io/Xsoul/AdminXsoul.html//
+// https://sora-2547.github.io/Xsoul/AdminXsoul.html
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -461,14 +461,19 @@
 
     // Login Handler
     function handleLogin() {
-      const username = document.getElementById('loginUsername').value;
+      const username = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value;
       const errorEl = document.getElementById('loginError');
 
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      console.log('Login attempt:', { username, passwordLength: password.length });
+
+      // Case-insensitive username check
+      if (username.toLowerCase() === ADMIN_USERNAME.toLowerCase() && password === ADMIN_PASSWORD) {
         localStorage.setItem('adminLoggedIn', 'true');
+        console.log('Login successful');
         showAdminPanel();
       } else {
+        console.log('Login failed');
         errorEl.textContent = '❌ Invalid username or password';
       }
     }
