@@ -138,16 +138,16 @@
   <div class="login-container" id="loginScreen">
     <div class="login-box">
       <h1>🔐 AdminXsoul</h1>
-      <p class="subtitle">เข้าสู่ระบบด้วยบัญชี Firebase ที่มีสิทธิ์ admin</p>
+      <p class="subtitle">เข้าสู่ระบบด้วย Admin/254761</p>
       <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@example.com" autocomplete="email">
+        <label>Username</label>
+        <input type="text" id="loginUsername" placeholder="Admin">
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+        <input type="password" id="loginPassword" placeholder="254761">
       </div>
-      <button class="login-btn" id="loginBtn" onclick="handleLogin()">เข้าสู่ระบบ</button>
+      <button class="login-btn" onclick="handleLogin()">Login</button>
       <div class="error-msg" id="loginError"></div>
     </div>
   </div>
@@ -204,8 +204,6 @@
 
   <script>
     // ===== Firebase Config =====
-    // หมายเหตุ: apiKey ของ Firebase ฝั่ง client ไม่ใช่ "ความลับ" — ความปลอดภัยจริง
-    // อยู่ที่ Firebase Authentication + Realtime Database Security Rules (ดูคู่มือท้ายไฟล์)
     const firebaseConfig = {
       apiKey: "AIzaSyBUPSUB6Ic8lqKYC7FTRa_szjQmTFeXYlQ",
       authDomain: "xsoul-hud-21e3d.firebaseapp.com",
@@ -215,12 +213,10 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.database();
 
     let allUsers = [];
     let currentEditingUser = null;
-    let currentAdminUid = null;
 
     // ===== Helpers =====
     const $ = (id) => document.getElementById(id);
@@ -229,84 +225,48 @@
         '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
       }[c]));
     }
-    function friendlyAuthError(code) {
-      const map = {
-        'auth/invalid-email': 'รูปแบบอีเมลไม่ถูกต้อง',
-        'auth/user-disabled': 'บัญชีนี้ถูกปิดใช้งาน',
-        'auth/user-not-found': 'ไม่พบบัญชีนี้',
-        'auth/wrong-password': 'รหัสผ่านไม่ถูกต้อง',
-        'auth/invalid-credential': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
-        'auth/too-many-requests': 'พยายามเข้าระบบบ่อยเกินไป กรุณารอสักครู่',
-        'auth/network-request-failed': 'เชื่อมต่อเครือข่ายไม่ได้'
-      };
-      return map[code] || code;
-    }
 
-    // ===== Auth =====
-    async function handleLogin() {
-      const email = $('loginEmail').value.trim();
+    // ===== Login (Hardcoded) =====
+    const ADMIN_USERNAME = 'Admin';
+    const ADMIN_PASSWORD = '254761';
+
+    function handleLogin() {
+      const username = $('loginUsername').value.trim();
       const password = $('loginPassword').value;
       const errorEl = $('loginError');
-      const btn = $('loginBtn');
-      errorEl.textContent = '';
 
-      if (!email || !password) {
-        errorEl.textContent = '❌ กรุณากรอกอีเมลและรหัสผ่าน';
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = 'กำลังเข้าสู่ระบบ...';
-      try {
-        await auth.signInWithEmailAndPassword(email, password);
-        // onAuthStateChanged จะตรวจสิทธิ์ admin ต่อ
-      } catch (err) {
-        errorEl.textContent = '❌ ' + friendlyAuthError(err.code);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'เข้าสู่ระบบ';
+      if (username.toLowerCase() === ADMIN_USERNAME.toLowerCase() && password === ADMIN_PASSWORD) {
+        localStorage.setItem('adminLoggedIn', 'true');
+        showAdminPanel();
+      } else {
+        errorEl.textContent = '❌ Username หรือ Password ไม่ถูกต้อง';
       }
     }
 
-    async function handleLogout() {
-      await auth.signOut();
+    function handleLogout() {
+      localStorage.removeItem('adminLoggedIn');
+      showLoginScreen();
     }
-
-    auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        showLoginScreen();
-        return;
-      }
-      // ตรวจสิทธิ์ admin จาก database (ต้องตั้ง rules ให้อ่าน users/$uid/isAdmin ของตัวเองได้)
-      try {
-        const snap = await db.ref(`users/${user.uid}/isAdmin`).once('value');
-        if (snap.val() === true) {
-          currentAdminUid = user.uid;
-          $('currentAdmin').textContent = `เข้าสู่ระบบในชื่อ: ${user.email}`;
-          showAdminPanel();
-        } else {
-          await auth.signOut();
-          $('loginError').textContent = '❌ บัญชีนี้ไม่มีสิทธิ์ admin';
-          showLoginScreen();
-        }
-      } catch (err) {
-        await auth.signOut();
-        $('loginError').textContent = '❌ ตรวจสิทธิ์ไม่สำเร็จ: ' + err.message;
-        showLoginScreen();
-      }
-    });
 
     function showLoginScreen() {
       $('loginScreen').style.display = 'flex';
       $('adminPanel').style.display = 'none';
       $('loginPassword').value = '';
+      $('loginError').textContent = '';
     }
 
     function showAdminPanel() {
       $('loginScreen').style.display = 'none';
       $('adminPanel').style.display = 'block';
+      $('currentAdmin').textContent = 'Admin';
       $('loginError').textContent = '';
       loadUsers();
+    }
+
+    function checkAuth() {
+      if (localStorage.getItem('adminLoggedIn') === 'true') {
+        showAdminPanel();
+      }
     }
 
     // ===== Data =====
@@ -362,19 +322,11 @@
           <td><span class="status-badge ${banned ? 'status-banned' : 'status-active'}">${banned ? 'Banned' : 'Active'}</span></td>
           <td style="font-size:12px;">${escapeHtml(formatDate(u.createdAt))}</td>
           <td>
-            <button class="action-btn edit-btn" data-uid="${escapeHtml(u.uid)}" data-act="edit">Edit</button>
-            <button class="action-btn delete-btn" data-uid="${escapeHtml(u.uid)}" data-act="ban">${banned ? 'Unban' : 'Ban'}</button>
+            <button class="action-btn edit-btn" onclick="editUser('${escapeHtml(u.uid)}')">Edit</button>
+            <button class="action-btn delete-btn" onclick="banUser('${escapeHtml(u.uid)}')">${banned ? 'Unban' : 'Ban'}</button>
           </td>
         </tr>`;
       }).join('');
-      // Bind events (ปลอดภัยกว่า inline onclick กับ uid ที่อาจมีอักขระพิเศษ)
-      tbody.querySelectorAll('button[data-act]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const uid = btn.getAttribute('data-uid');
-          if (btn.getAttribute('data-act') === 'edit') editUser(uid);
-          else banUser(uid);
-        });
-      });
     }
 
     function handleSearch() {
@@ -434,10 +386,6 @@
         isBanned: status === 'banned',
         banReason: $('editBanReason').value
       };
-      // กันแอดมินถอดสิทธิ์ตัวเองโดยไม่ตั้งใจ (ทำให้ล็อกออกจาก panel ทันที)
-      if (currentEditingUser.uid === currentAdminUid && !updates.isAdmin) {
-        if (!confirm('คุณกำลังถอดสิทธิ์ admin ของตัวเอง — จะถูกออกจากระบบทันที ดำเนินการต่อ?')) return;
-      }
       try {
         await db.ref(`users/${currentEditingUser.uid}`).update(updates);
         alert('✅ บันทึกสำเร็จ');
@@ -451,7 +399,6 @@
     async function banUser(uid) {
       const u = allUsers.find(x => x.uid === uid);
       if (!u) return;
-      if (uid === currentAdminUid) { alert('ไม่สามารถ ban ตัวเองได้'); return; }
       const willBan = !u.isBanned;
       if (!confirm(willBan ? `Ban ${u.username} ?` : `Unban ${u.username} ?`)) return;
       const reason = willBan ? (prompt('เหตุผลการ ban (ไม่บังคับ):') || '') : '';
@@ -479,73 +426,14 @@
     }
 
     // Enter key เพื่อ login
-    ['loginEmail','loginPassword'].forEach(id => {
+    ['loginUsername','loginPassword'].forEach(id => {
       document.getElementById(id).addEventListener('keypress', e => {
         if (e.key === 'Enter') handleLogin();
       });
     });
+
+    // Initialize
+    checkAuth();
   </script>
-
-  <!--
-  ============================================================
-   วิธีใช้งาน / Setup (อ่านให้ครบก่อนใช้งานจริง)
-  ============================================================
-
-  1) เปิดใช้ Email/Password ใน Firebase Console
-     - Authentication → Sign-in method → เปิด "Email/Password"
-
-  2) สร้างบัญชี admin ตัวแรก
-     - Authentication → Users → Add user → กรอก email + password
-     - คัดลอก UID ของผู้ใช้ที่เพิ่งสร้าง
-
-  3) ตั้งสิทธิ์ admin ใน Realtime Database
-     - ไปที่ Realtime Database → Data
-     - สร้างโหนด: users/<UID ที่คัดลอกมา>/isAdmin = true
-       (ตัวอย่าง path: users/abc123XYZ/isAdmin  ค่า: true)
-
-  4) ตั้ง Security Rules ของ Realtime Database (สำคัญที่สุด!)
-     ห้ามใช้ rules แบบเปิด ".read": true / ".write": true เด็ดขาด
-     คัดลอกชุดนี้ไปวางในแท็บ Rules:
-
-     {
-       "rules": {
-         "users": {
-           // เฉพาะ admin เท่านั้นที่อ่าน list ทั้งหมดได้
-           ".read": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
-           "$uid": {
-             // user อ่าน/แก้ข้อมูลตัวเองได้ ส่วน admin จัดการได้ทุกคน
-             ".read":  "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)",
-             ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)",
-             // user ห้ามตั้ง isAdmin ให้ตัวเอง — แก้ได้เฉพาะ admin
-             "isAdmin": {
-               ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
-             },
-             "role": {
-               ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
-             }
-           }
-         }
-       }
-     }
-
-  5) วิธีล็อกอิน
-     - เปิดไฟล์ AdminXsoul.html ในเบราว์เซอร์ (หรือ deploy บน hosting)
-     - กรอก email + password ของบัญชี admin ที่สร้างไว้
-     - ระบบจะตรวจว่า users/<uid>/isAdmin === true ถึงจะเข้าได้
-
-  ============================================================
-   สิ่งที่แก้จากไฟล์เดิม (สรุปด้านความปลอดภัย)
-  ============================================================
-   ❌ เดิม: hardcode username/password ใน JS (ใครเปิด DevTools ก็เห็น)
-   ❌ เดิม: ใช้ localStorage แค่ flag = ปลอมได้ใน 1 คลิก
-   ❌ เดิม: ไม่มีการตรวจสิทธิ์จริง อ่าน/เขียน users ทั้งหมดได้ถ้า rules เปิด
-   ❌ เดิม: ใส่ค่าผู้ใช้ลงใน innerHTML ตรง ๆ → เสี่ยง XSS
-
-   ✅ ใหม่: ใช้ Firebase Authentication (Email/Password) จริง
-   ✅ ใหม่: ตรวจสิทธิ์ผ่าน users/$uid/isAdmin + Security Rules
-   ✅ ใหม่: escape ทุกค่าที่ render ลง DOM (กัน XSS)
-   ✅ ใหม่: กัน admin ถอดสิทธิ์/แบนตัวเองโดยไม่ตั้งใจ
-   ✅ ใหม่: ข้อความ error แบบเข้าใจง่ายภาษาไทย
-  -->
 </body>
 </html>
