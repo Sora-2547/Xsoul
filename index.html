@@ -5701,70 +5701,83 @@
   window._topupDetectedBankType = '';
   window._topupSlipNameOk = false; // STRICT: must be positively verified by OCR
   
-  // Bank and wallet detection patterns
+  // Bank and wallet detection patterns - Enhanced for anti-fraud
   const BANK_PATTERNS = {
     kbank: {
       name: 'KBank (Kasikorn)',
-      patterns: [/kasi[kc]orn/i, /k[\s\-]?bank/i, /kplus/i, /kb[\s\-]?ank/i, /กรุงไทย/i],
-      refPatterns: [/ref(?:erence)?[:\s]*([a-z0-9]{10,20})/i, /เลขที่รายการ[:\s]*([a-z0-9]{10,20})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+      // More specific patterns to prevent fake slips
+      patterns: [/kasikornbank/i, /kasi[kc]orn[\s]+bank/i, /kplus[\s]+app/i, /kb[\s]*ank[\s]*th/i, /กรุงไทย[\s]*ธนาคาร/i],
+      // KBank refs are typically 10-13 digits
+      refPatterns: [/ref(?:erence)?[\s]*[:#\.]?[\s]*([0-9]{10,13})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,13})/i, /transaction[\s]*id[\s]*[:#\.]?[\s]*([0-9]{10,13})/i],
+      // KBank amount patterns with Thai currency symbols
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
     },
     scb: {
       name: 'SCB (Siam Commercial)',
-      patterns: [/siam[\s\-]?commercial/i, /scb[\s\-]?easy/i, /ไทยพาณิชย์/i],
-      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,25})/i, /เลขที่อ้างอิง[:\s]*([a-z0-9]{10,25})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /ยอดเงิน[:\s]*([0-9.,]+)/i]
+      patterns: [/siam[\s\-]?commercial[\s\-]?bank/i, /scb[\s\-]?easy[\s\-]?app/i, /ไทยพาณิชย์[\s]*ธนาคาร/i, /scb[\s]*online/i],
+      // SCB refs are typically 10-16 alphanumeric
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/i, /เลขที่อ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/i, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/i],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
     },
     bbl: {
       name: 'BBL (Bangkok Bank)',
-      patterns: [/bangkok[\s\-]?bank/i, /bbl[\s\-]?online/i, /กรุงเทพ/i],
-      refPatterns: [/ref(?:erence)?[:\s]*([a-z0-9]{10,20})/i, /trace[:\s]*([a-z0-9]{10,20})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวน[:\s]*([0-9.,]+)/i]
+      patterns: [/bangkok[\s\-]?bank/i, /bbl[\s\-]?online/i, /กรุงเทพ[\s]*ธนาคาร/i, /bualuang[\s]*bank/i],
+      // BBL refs are typically 10-12 digits
+      refPatterns: [/ref(?:erence)?[\s]*[:#\.]?[\s]*([0-9]{10,12})/i, /trace[\s]*[:#\.]?[\s]*([0-9]{10,12})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,12})/i],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
     },
     krungthai: {
       name: 'Krungthai (KTB)',
-      patterns: [/krungthai/i, /ktb[\s\-]?netbank/i, /กรุงไทย/i],
-      refPatterns: [/transaction[\s\-]?no[:\s]*([a-z0-9]{10,20})/i, /รหัสรายการ[:\s]*([a-z0-9]{10,20})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /ยอดโอน[:\s]*([0-9.,]+)/i]
+      patterns: [/krungthai[\s\-]?bank/i, /ktb[\s\-]?netbank/i, /กรุงไทย[\s]*ธนาคาร/i, /ktb[\s]*next/i],
+      // KTB refs are typically 10-14 digits
+      refPatterns: [/transaction[\s\-]?no[\s]*[:#\.]?[\s]*([0-9]{10,14})/i, /รหัสรายการ[\s]*[:#\.]?[\s]*([0-9]{10,14})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,14})/i],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
     },
     bay: {
       name: 'BAY (Bank of Ayudhya)',
-      patterns: [/bank[\s\-]?of[\s\-]?ayudhya/i, /krungsri/i, /กรุงศรี/i],
-      refPatterns: [/ref(?:erence)?[:\s]*([a-z0-9]{10,20})/i, /เลขอ้างอิง[:\s]*([a-z0-9]{10,20})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+      patterns: [/bank[\s\-]?of[\s\-]?ayudhya/i, /krungsri[\s\-]?bank/i, /กรุงศรี[\s]*ธนาคาร/i, /bay[\s]*mobile/i],
+      // BAY refs are typically 10-13 alphanumeric
+      refPatterns: [/ref(?:erence)?[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/i, /เลขอ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/i, /transaction[\s]*id[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/i],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
     },
     gsb: {
       name: 'GSB (Government Savings)',
-      patterns: [/government[\s\-]?savings/i, /ออมสิน/i],
-      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,20})/i, /เลขที่รายการ[:\s]*([a-z0-9]{10,20})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /ยอดเงิน[:\s]*([0-9.,]+)/i]
+      patterns: [/government[\s\-]?savings[\s\-]?bank/i, /ออมสิน[\s]*ธนาคาร/i, /gsb[\s]*online/i],
+      // GSB refs are typically 10-12 digits
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([0-9]{10,12})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,12})/i, /รหัสอ้างอิง[\s]*[:#\.]?[\s]*([0-9]{10,12})/i],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
     }
   };
 
   const WALLET_PATTERNS = {
     truemoney: {
       name: 'TrueMoney Wallet',
-      patterns: [/truemoney/i, /tm[\s\-]?wallet/i, /ทรูมันนี่/i],
-      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,25})/i, /ref[:\s]*([a-z0-9]{10,25})/i, /เลขที่รายการ[:\s]*([a-z0-9]{10,25})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+      patterns: [/truemoney[\s\-]?wallet/i, /tm[\s\-]?wallet[\s\-]?app/i, /ทรูมันนี่[\s]*วอเล็ท/i, /true[\s]*money/i],
+      // TrueMoney refs are typically 12-16 alphanumeric
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/i, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/i, /รหัสธุรกรรม[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/i],
+      // Enhanced amount patterns for wallet
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i, /thb[\s]*([0-9.,]{1,10})/i]
     },
     promptpay: {
       name: 'PromptPay',
-      patterns: [/promptpay/i, /พร้อมเพย์/i],
-      refPatterns: [/ref[:\s]*([a-z0-9]{10,30})/i, /เลขอ้างอิง[:\s]*([a-z0-9]{10,30})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /ยอดชำระ[:\s]*([0-9.,]+)/i]
+      patterns: [/promptpay[\s\-]?qr/i, /พร้อมเพย์[\s]*คิวอาร์/i, /prompt[\s]*pay/i, /qr[\s]*promptpay/i],
+      // PromptPay refs are typically 13-15 digits (mobile or tax ID)
+      refPatterns: [/ref[\s]*[:#\.]?[\s]*([0-9]{13,15})/i, /เลขอ้างอิง[\s]*[:#\.]?[\s]*([0-9]{13,15})/i, /bill[\s]*payment[\s]*ref[\s]*[:#\.]?[\s]*([0-9]{13,15})/i],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i, /thb[\s]*([0-9.,]{1,10})/i]
     },
     shopeepay: {
       name: 'ShopeePay',
-      patterns: [/shopeepay/i, /shopee[\s\-]?pay/i],
-      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,30})/i, /ref[:\s]*([a-z0-9]{10,30})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+      patterns: [/shopeepay[\s\-]?wallet/i, /shopee[\s\-]?pay[\s\-]?app/i, /ช้อปปี้[\s]*เพย์/i],
+      // ShopeePay refs are typically 16-20 alphanumeric
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/i, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/i, /order[\s]*id[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/i],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i, /thb[\s]*([0-9.,]{1,10})/i]
     },
     rabbit_line_pay: {
       name: 'Rabbit LINE Pay',
-      patterns: [/rabbit[\s\-]?line[\s\-]?pay/i, /line[\s\-]?pay/i],
-      refPatterns: [/transaction[\s\-]?id[:\s]*([a-z0-9]{10,30})/i, /ref[:\s]*([a-z0-9]{10,30})/i],
-      amountPatterns: [/amount[:\s]*([0-9.,]+)/i, /จำนวนเงิน[:\s]*([0-9.,]+)/i]
+      patterns: [/rabbit[\s\-]?line[\s\-]?pay/i, /line[\s\-]?pay[\s\-]?rabbit/i, /ไลน์[\s]*เพย์[\s]*แรบบิท/i],
+      // Rabbit LINE Pay refs are typically 12-18 alphanumeric
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/i, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/i, /payment[\s]*id[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/i],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i, /thb[\s]*([0-9.,]{1,10})/i]
     }
   };
 
@@ -5870,6 +5883,83 @@
   }
 
 
+  // Anti-fraud validation for slip authenticity
+  function validateSlipAuthenticity(text, detectedBank, ref, amount) {
+    const issues = [];
+    
+    // 1) Check if bank/wallet was detected
+    if (!detectedBank) {
+      issues.push('Cannot identify bank or wallet type');
+    }
+    
+    // 2) Validate reference number format
+    if (ref) {
+      // Ref should be alphanumeric, not all same character
+      if (/^([A-Za-z0-9])\1+$/.test(ref)) {
+        issues.push('Reference number appears invalid (repeated characters)');
+      }
+      // Ref should not be all zeros
+      if (/^0+$/.test(ref)) {
+        issues.push('Reference number appears invalid (all zeros)');
+      }
+      // Ref length validation
+      if (ref.length < 10 || ref.length > 20) {
+        issues.push('Reference number length is unusual');
+      }
+    } else {
+      issues.push('No reference number detected');
+    }
+    
+    // 3) Validate amount
+    if (amount == null || isNaN(amount)) {
+      issues.push('Amount could not be read');
+    } else if (amount <= 0) {
+      issues.push('Amount is invalid (zero or negative)');
+    } else if (amount > 1000000) {
+      issues.push('Amount is unusually high (possible fraud)');
+    }
+    
+    // 4) Check for suspicious patterns in OCR text
+    const suspiciousPatterns = [
+      /edit/i,
+      /photoshop/i,
+      /paint/i,
+      /modified/i,
+      /fake/i,
+      /sample/i,
+      /example/i,
+      /test/i,
+      /demo/i,
+    ];
+    const lowerText = text.toLowerCase();
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(lowerText)) {
+        issues.push('Suspicious text detected (possible edited slip)');
+        break;
+      }
+    }
+    
+    // 5) Check for multiple amounts (inconsistent data)
+    const amountMatches = text.match(/[0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2}/g) || [];
+    if (amountMatches.length > 5) {
+      issues.push('Too many monetary values detected (possible edited slip)');
+    }
+    
+    // 6) Check for bank-specific validation
+    if (detectedBank) {
+      // If bank detected but no bank-specific patterns match, suspicious
+      const bankKeywords = detectedBank.name.toLowerCase();
+      if (!lowerText.includes(bankKeywords.split(' ')[0].toLowerCase())) {
+        issues.push('Bank name detected but patterns do not match');
+      }
+    }
+    
+    return {
+      isValid: issues.length === 0,
+      issues: issues
+    };
+  }
+
   async function runSlipOcr(url) {
     const stEl = document.getElementById('topupOcrStatus');
     const refEl = document.getElementById('topupOcrRef');
@@ -5933,6 +6023,10 @@
       window._topupSlipNameOk = verifySlipName(bestText);
       window._topupSlipAmount = bestAmt != null ? bestAmt : extractSlipAmount(bestText, expectedAmt, detectedBank);
       
+      // Anti-fraud validation
+      const authenticityCheck = validateSlipAuthenticity(bestText, detectedBank, bestRef, bestAmt);
+      window._topupSlipAuthenticity = authenticityCheck;
+      
       // Store detected bank info
       if (detectedBank) {
         window._topupDetectedBank = detectedBank.name;
@@ -5984,34 +6078,76 @@
     const raw = _normalizeOcrText(text);
     const clean = raw.replace(/[\s\-:/.#]/g, '');
     
-    // Use bank-specific patterns if detected
+    // 1) Bank-specific patterns if detected (highest priority - fastest path)
     if (detectedBank && detectedBank.patterns && detectedBank.patterns.refPatterns) {
       for (const pattern of detectedBank.patterns.refPatterns) {
         const m = raw.match(pattern);
         if (m && m[1]) {
           const ref = m[1].replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-          if (ref.length >= 8 && ref.length <= 50) return ref;
+          // Validate ref length based on bank type
+          if (ref.length >= 10 && ref.length <= 20) return ref;
         }
       }
     }
     
-    // Common Thai bank + wallet slip references. Each provider labels it differently.
-    const keywordPatterns = [
-      /(?:Transaction\s*(?:ID|No\.?|Ref)|Trans(?:action)?\s*Ref|Ref(?:erence)?\.?\s*(?:No\.?|#)?|Trace\s*(?:No\.?|ID)?|Slip\s*(?:ID|No\.?)|Receipt\s*(?:No\.?|ID)|เลข(?:ที่)?(?:รายการ|ธุรกรรม|อ้างอิง|สลิป|ใบเสร็จ)|รหัส(?:รายการ|อ้างอิง|ธุรกรรม)|หมายเลข(?:รายการ|อ้างอิง)|เลขอ้างอิง|เลขที่อ้างอิง)[^A-Za-z0-9\u0e50-\u0e59]{0,25}([A-Za-z0-9][A-Za-z0-9\s\-:/.#]{7,48})/i,
-      /(?:พร้อมเพย์|PromptPay|TrueMoney|Wallet|วอเล็ท|ShopeePay|Rabbit\s*Line\s*Pay)[\s\S]{0,120}?(?:Ref|เลข|รหัส)[^A-Za-z0-9]{0,25}([A-Za-z0-9][A-Za-z0-9\s\-:/.#]{7,48})/i,
+    // 2) Enhanced Thai keyword patterns (more specific, faster matching)
+    const thaiPatterns = [
+      /(?:เลขที่(?:รายการ|อ้างอิง|ธุรกรรม|สลิป|ใบเสร็จ)|รหัส(?:รายการ|อ้างอิง|ธุรกรรม)|หมายเลข(?:รายการ|อ้างอิง))[\s:#\.]*([A-Za-z0-9]{10,20})/i,
+      /(?:รายการ|ธุรกรรม|อ้างอิง)[\s:#\.]*([A-Za-z0-9]{10,20})/i,
     ];
-    for (const re of keywordPatterns) {
+    for (const re of thaiPatterns) {
       const m = raw.match(re);
       if (m && m[1]) {
         const ref = m[1].replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-        if (ref.length >= 8 && ref.length <= 50) return ref;
+        if (ref.length >= 10 && ref.length <= 20) return ref;
       }
     }
-    // Fallback: longest plausible alphanumeric run; exclude phone/account-like short numbers later by hash fallback.
-    const matches = clean.match(/[A-Za-z0-9]{10,50}/g) || [];
+
+    // 3) Enhanced English keyword patterns
+    const engPatterns = [
+      /(?:Transaction[\s\-]*(?:ID|No|Ref)|Trans(?:action)?[\s\-]*Ref|Ref(?:erence)?[\s:#\.]*(?:No|#)?|Trace[\s:#\.]*(?:No|ID)|Slip[\s\-]*(?:ID|No)|Receipt[\s\-]*(?:No|ID))[\s:#\.]*([A-Za-z0-9]{10,20})/i,
+      /(?:Ref|Reference|ID|No)[\s:#\.]*([A-Za-z0-9]{10,20})/i,
+    ];
+    for (const re of engPatterns) {
+      const m = raw.match(re);
+      if (m && m[1]) {
+        const ref = m[1].replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        if (ref.length >= 10 && ref.length <= 20) return ref;
+      }
+    }
+
+    // 4) Wallet-specific patterns
+    const walletPatterns = [
+      /(?:พร้อมเพย์|PromptPay)[\s\S]{0,80}?(?:Ref|เลข|รหัส)[\s:#\.]*([0-9]{13,15})/i,
+      /(?:TrueMoney|TM[\s\-]?Wallet|ทรูมันนี่)[\s\S]{0,80}?(?:Ref|เลข|รหัส|รหัสธุรกรรม)[\s:#\.]*([A-Za-z0-9]{12,16})/i,
+      /(?:ShopeePay|ช้อปปี้[\s]*เพย์)[\s\S]{0,80}?(?:Ref|เลข|รหัส|Order[\s\-]?ID)[\s:#\.]*([A-Za-z0-9]{16,20})/i,
+      /(?:Rabbit[\s\-]?LINE[\s\-]?Pay|ไลน์[\s]*เพย์)[\s\S]{0,80}?(?:Ref|เลข|รหัส|Payment[\s\-]?ID)[\s:#\.]*([A-Za-z0-9]{12,18})/i,
+    ];
+    for (const re of walletPatterns) {
+      const m = raw.match(re);
+      if (m && m[1]) {
+        const ref = m[1].replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        if (ref.length >= 10 && ref.length <= 20) return ref;
+      }
+    }
+    
+    // 5) Fallback: longest plausible alphanumeric run with validation
+    const matches = clean.match(/[A-Za-z0-9]{10,20}/g) || [];
     if (matches.length) {
-      matches.sort((a, b) => b.length - a.length);
-      return matches[0].toUpperCase();
+      // Filter out obvious non-refs (all same digit, sequential, etc.)
+      const validRefs = matches.filter(ref => {
+        // Not all the same character
+        if (/^([A-Za-z0-9])\1+$/.test(ref)) return false;
+        // Not all zeros
+        if (/^0+$/.test(ref)) return false;
+        // Should have at least some variety
+        const uniqueChars = new Set(ref).size;
+        return uniqueChars >= 3;
+      });
+      if (validRefs.length) {
+        validRefs.sort((a, b) => b.length - a.length);
+        return validRefs[0].toUpperCase();
+      }
     }
     return '';
   }
@@ -6135,31 +6271,44 @@
       return parseFloat(v);
     };
 
-    // 1) Bank-specific patterns if detected
+    // 1) Bank-specific patterns if detected (highest priority)
     if (detectedBank && detectedBank.patterns && detectedBank.patterns.amountPatterns) {
       for (const pattern of detectedBank.patterns.amountPatterns) {
         const m = t.match(pattern);
         if (m && m[1]) {
           const n = normalizeMoneyCandidate(m[1]);
-          if (!isNaN(n) && n > 0 && n < 1000000) return n; // Sanity check
+          if (!isNaN(n) && n > 0 && n < 1000000) {
+            // Additional validation for wallet amounts
+            if (detectedBank.type === 'wallet' && n < 1) {
+              // Wallet transactions should be at least 1 THB
+              continue;
+            }
+            return n;
+          }
         }
       }
     }
 
-    // 2) Keyword-anchored (allow OCR to drop the decimal point: 5000 == 50.00)
+    // 2) Enhanced keyword-anchored patterns for better wallet detection
     const numRe = '([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:[\\.]\\s*[0-9]{1,2})?|[0-9]+(?:[\\.]\\s*[0-9]{1,2})?)';
     const kw = [
-      new RegExp('(?:จำนวนเงิน|จำนวน|Amount|Amt|ยอด(?:เงิน|โอน|ที่โอน|ชำระ|จ่าย)?|โอนเงิน|ชำระเงิน|รับเงิน|รวม(?:ทั้งสิ้น)?|Total|Grand\\s*Total|Paid|Payment|Transfer\\s*Amount)[^\\d\\-]{0,35}' + numRe, 'i'),
+      // Thai keywords first (more accurate for Thai banks/wallets)
+      new RegExp('(?:จำนวนเงิน|จำนวน|ยอด(?:เงิน|โอน|ที่โอน|ชำระ|จ่าย|ที่ชำระ)?|โอนเงิน|ชำระเงิน|รับเงิน|รวม(?:ทั้งสิ้น)?|ยอดรวม)[^\\d\\-]{0,20}' + numRe, 'i'),
+      // English keywords
+      new RegExp('(?:Amount|Amt|Total|Grand\\s*Total|Paid|Payment|Transfer\\s*Amount|Sent|Received)[^\\d\\-]{0,20}' + numRe, 'i'),
+      // Currency symbols
       new RegExp(numRe + '\\s*(?:บาท|THB|baht|฿)', 'i'),
       new RegExp('฿\\s*' + numRe, 'i'),
       new RegExp('(?:THB|Baht)\\s*' + numRe, 'i'),
     ];
     const candidates = [];
     for (const re of kw) {
-      const m = t.match(re);
-      if (m && m[1]) {
-        const n = normalizeMoneyCandidate(m[1]);
-        if (!isNaN(n) && n > 0 && n < 1000000) candidates.push(n); // Sanity check
+      const matches = t.matchAll(re);
+      for (const m of matches) {
+        if (m && m[1]) {
+          const n = normalizeMoneyCandidate(m[1]);
+          if (!isNaN(n) && n > 0 && n < 1000000) candidates.push(n);
+        }
       }
     }
 
@@ -6182,7 +6331,16 @@
       if (new RegExp('(^|[^0-9])' + expCentsText + '([^0-9]|$)').test(t)) return exp;
     }
 
-    if (candidates.length) return candidates[0];
+    if (candidates.length) {
+      // Return the most frequent amount (likely the correct one)
+      const freq = {};
+      candidates.forEach(n => {
+        const key = n.toFixed(2);
+        freq[key] = (freq[key] || 0) + 1;
+      });
+      const mostFrequent = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
+      return parseFloat(mostFrequent[0]);
+    }
 
     // 4) Fallback: largest decimal-formatted number on the slip
     const all = t.match(/[0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2}/g) || [];
@@ -6245,6 +6403,15 @@
         return;
       }
       window._topupAmountNeedsManualReview = false;
+    }
+    // ===== Anti-fraud: validate slip authenticity (detect fake/manipulated slips) =====
+    {
+      if (window._topupSlipAuthenticity && !window._topupSlipAuthenticity.isValid) {
+        const issues = window._topupSlipAuthenticity.issues || [];
+        msg.style.color = 'var(--error)';
+        msg.textContent = '❌ สลิปไม่ถูกต้อง: ' + (issues[0] || 'ข้อมูลสลิปมีความน่าสงสัย');
+        return;
+      }
     }
     btn.disabled = true; btn.textContent = '⏳ ' + t('status-submitting');
     try {
