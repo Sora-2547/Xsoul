@@ -3255,6 +3255,15 @@
         const ud = await get(ref(db,`users/${user.uid}`));
         if (ud.exists()) {
           const d = ud.val();
+          // Check if user is banned
+          if (d.isBanned || d.status === 'banned') {
+            await signOut(auth);
+            alert('❌ บัญชีของคุณถูกระงับใช้งาน (Banned)\nเหตุผล: ' + (d.banReason || 'ไม่ระบุ'));
+            gate.style.opacity='1'; gate.style.visibility='visible';
+            mainWrapper.style.display='none'; footer.style.display='none'; sidebar.style.display='none'; topNavbar.style.display='none';
+            mobileMenuBtn.style.display='none';
+            return;
+          }
           // displayName = ชื่อที่แสดงใน navbar, fallback to username
           name = d.displayName || d.username || name;
           uhandle = d.username || '';
@@ -5705,79 +5714,114 @@
   const BANK_PATTERNS = {
     kbank: {
       name: 'KBank (Kasikorn)',
-      // More specific patterns to prevent fake slips
-      patterns: [/kasikornbank/i, /kasi[kc]orn[\s]+bank/i, /kplus[\s]+app/i, /kb[\s]*ank[\s]*th/i, /กรุงไทย[\s]*ธนาคาร/i],
-      // KBank refs are typically 10-13 digits
-      refPatterns: [/ref(?:erence)?[\s]*[:#\.]?[\s]*([0-9]{10,13})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,13})/i, /transaction[\s]*id[\s]*[:#\.]?[\s]*([0-9]{10,13})/i],
-      // KBank amount patterns with Thai currency symbols
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
+      patterns: [/kasikornbank/i, /kasi[kc]orn[\s]+bank/i, /kplus[\s]+app/i, /kb[\s]*ank[\s]*th/i, /กรุงไทย[\s]*ธนาคาร/i, /ธนาคาร[\s]*กรุงไทย/i, /kbank/i],
+      refPatterns: [/ref(?:erence)?[\s]*[:#\.]?[\s]*([0-9]{10,13})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,13})/gi, /transaction[\s]*id[\s]*[:#\.]?[\s]*([0-9]{10,13})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([0-9]{10,13})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
     },
     scb: {
       name: 'SCB (Siam Commercial)',
-      patterns: [/siam[\s\-]?commercial[\s\-]?bank/i, /scb[\s\-]?easy[\s\-]?app/i, /ไทยพาณิชย์[\s]*ธนาคาร/i, /scb[\s]*online/i],
-      // SCB refs are typically 10-16 alphanumeric
-      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/i, /เลขที่อ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/i, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/i],
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
+      patterns: [/siam[\s\-]?commercial[\s\-]?bank/i, /scb[\s\-]?easy[\s\-]?app/i, /ไทยพาณิชย์[\s]*ธนาคาร/i, /scb[\s]*online/i, /ธนาคาร[\s]*ไทยพาณิชย์/i, /scb[\s]*mobile/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/gi, /เลขที่อ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/gi, /รหัสอ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
     },
     bbl: {
       name: 'BBL (Bangkok Bank)',
-      patterns: [/bangkok[\s\-]?bank/i, /bbl[\s\-]?online/i, /กรุงเทพ[\s]*ธนาคาร/i, /bualuang[\s]*bank/i],
-      // BBL refs are typically 10-12 digits
-      refPatterns: [/ref(?:erence)?[\s]*[:#\.]?[\s]*([0-9]{10,12})/i, /trace[\s]*[:#\.]?[\s]*([0-9]{10,12})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,12})/i],
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
+      patterns: [/bangkok[\s\-]?bank/i, /bbl[\s\-]?online/i, /กรุงเทพ[\s]*ธนาคาร/i, /bualuang[\s]*bank/i, /ธนาคาร[\s]*กรุงเทพ/i, /bbl[\s]*mobile/i],
+      refPatterns: [/ref(?:erence)?[\s]*[:#\.]?[\s]*([0-9]{10,12})/gi, /trace[\s]*[:#\.]?[\s]*([0-9]{10,12})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,12})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([0-9]{10,12})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
     },
     krungthai: {
       name: 'Krungthai (KTB)',
-      patterns: [/krungthai[\s\-]?bank/i, /ktb[\s\-]?netbank/i, /กรุงไทย[\s]*ธนาคาร/i, /ktb[\s]*next/i],
-      // KTB refs are typically 10-14 digits
-      refPatterns: [/transaction[\s\-]?no[\s]*[:#\.]?[\s]*([0-9]{10,14})/i, /รหัสรายการ[\s]*[:#\.]?[\s]*([0-9]{10,14})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,14})/i],
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
+      patterns: [/krungthai[\s\-]?bank/i, /ktb[\s\-]?netbank/i, /กรุงไทย[\s]*ธนาคาร/i, /ktb[\s]*next/i, /ธนาคาร[\s]*กรุงไทย/i, /ktb[\s]*mobile/i],
+      refPatterns: [/transaction[\s\-]?no[\s]*[:#\.]?[\s]*([0-9]{10,14})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([0-9]{10,14})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,14})/gi, /ref[\s]*[:#\.]?[\s]*([0-9]{10,14})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
     },
     bay: {
       name: 'BAY (Bank of Ayudhya)',
-      patterns: [/bank[\s\-]?of[\s\-]?ayudhya/i, /krungsri[\s\-]?bank/i, /กรุงศรี[\s]*ธนาคาร/i, /bay[\s]*mobile/i],
-      // BAY refs are typically 10-13 alphanumeric
-      refPatterns: [/ref(?:erence)?[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/i, /เลขอ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/i, /transaction[\s]*id[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/i],
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
+      patterns: [/bank[\s\-]?of[\s\-]?ayudhya/i, /krungsri[\s\-]?bank/i, /กรุงศรี[\s]*ธนาคาร/i, /bay[\s]*mobile/i, /ธนาคาร[\s]*กรุงศรี/i, /krungsri[\s]*mobile/i],
+      refPatterns: [/ref(?:erence)?[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/gi, /เลขอ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/gi, /transaction[\s]*id[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
     },
     gsb: {
       name: 'GSB (Government Savings)',
-      patterns: [/government[\s\-]?savings[\s\-]?bank/i, /ออมสิน[\s]*ธนาคาร/i, /gsb[\s]*online/i],
-      // GSB refs are typically 10-12 digits
-      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([0-9]{10,12})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,12})/i, /รหัสอ้างอิง[\s]*[:#\.]?[\s]*([0-9]{10,12})/i],
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i]
+      patterns: [/government[\s\-]?savings[\s\-]?bank/i, /ออมสิน[\s]*ธนาคาร/i, /gsb[\s]*online/i, /ธนาคาร[\s]*ออมสิน/i, /gsb[\s]*mobile/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([0-9]{10,12})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{10,12})/gi, /รหัสอ้างอิง[\s]*[:#\.]?[\s]*([0-9]{10,12})/gi, /ref[\s]*[:#\.]?[\s]*([0-9]{10,12})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
+    },
+    ttb: {
+      name: 'TTB (Thai Thanachart)',
+      patterns: [/thai[\s\-]?thanachart[\s\-]?bank/i, /ttb[\s\-]?bank/i, /ธนาคาร[\s]*ทิสโก/i, /ttb[\s]*mobile/i, /tmb[\s\-]?bank/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
+    },
+    cimb: {
+      name: 'CIMB Thai',
+      patterns: [/cimb[\s\-]?thai[\s\-]?bank/i, /cimb[\s\-]?bank/i, /ธนาคาร[\s]*ซีไอเอ็มบี/i, /cimb[\s]*click/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
+    },
+    uob: {
+      name: 'UOB (United Overseas)',
+      patterns: [/uob[\s\-]?bank/i, /united[\s\-]?overseas[\s\-]?bank/i, /ธนาคาร[\s]*ยูโอบี/i, /uob[\s]*mobile/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
+    },
+    standard_chartered: {
+      name: 'Standard Chartered',
+      patterns: [/standard[\s\-]?chartered[\s\-]?bank/i, /sc[\s\-]?bank/i, /ธนาคาร[\s]*สแตนดาร์ด/i, /standard[\s]*chartered/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
+    },
+    hsbc: {
+      name: 'HSBC',
+      patterns: [/hsbc[\s\-]?bank/i, /hongkong[\s\-]?shanghai[\s\-]?bank/i, /ธนาคาร[\s]*เอชเอสบีซี/i, /hsbc[\s]*mobile/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
     }
   };
 
   const WALLET_PATTERNS = {
     truemoney: {
       name: 'TrueMoney Wallet',
-      patterns: [/truemoney[\s\-]?wallet/i, /tm[\s\-]?wallet[\s\-]?app/i, /ทรูมันนี่[\s]*วอเล็ท/i, /true[\s]*money/i],
-      // TrueMoney refs are typically 12-16 alphanumeric
-      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/i, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/i, /รหัสธุรกรรม[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/i],
-      // Enhanced amount patterns for wallet
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i, /thb[\s]*([0-9.,]{1,10})/i]
+      patterns: [/truemoney[\s\-]?wallet/i, /tm[\s\-]?wallet[\s\-]?app/i, /ทรูมันนี่[\s]*วอเล็ท/i, /true[\s]*money/i, /ทรู[\s]*มันนี่/i, /tm[\s]*wallet/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/gi, /รหัสธุรกรรม[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/gi, /เลขอ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{12,16})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi, /thb[\s]*([0-9.,]{1,10})/gi]
     },
     promptpay: {
       name: 'PromptPay',
-      patterns: [/promptpay[\s\-]?qr/i, /พร้อมเพย์[\s]*คิวอาร์/i, /prompt[\s]*pay/i, /qr[\s]*promptpay/i],
-      // PromptPay refs are typically 13-15 digits (mobile or tax ID)
-      refPatterns: [/ref[\s]*[:#\.]?[\s]*([0-9]{13,15})/i, /เลขอ้างอิง[\s]*[:#\.]?[\s]*([0-9]{13,15})/i, /bill[\s]*payment[\s]*ref[\s]*[:#\.]?[\s]*([0-9]{13,15})/i],
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i, /thb[\s]*([0-9.,]{1,10})/i]
+      patterns: [/promptpay[\s\-]?qr/i, /พร้อมเพย์[\s]*คิวอาร์/i, /prompt[\s]*pay/i, /qr[\s]*promptpay/i, /พร้อมเพย์/i, /promptpay/i, /พ[\s]*พ[\s]*ย/i],
+      refPatterns: [/ref[\s]*[:#\.]?[\s]*([0-9]{13,15})/gi, /เลขอ้างอิง[\s]*[:#\.]?[\s]*([0-9]{13,15})/gi, /bill[\s]*payment[\s]*ref[\s]*[:#\.]?[\s]*([0-9]{13,15})/gi, /รหัสอ้างอิง[\s]*[:#\.]?[\s]*([0-9]{13,15})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([0-9]{13,15})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi, /thb[\s]*([0-9.,]{1,10})/gi]
     },
     shopeepay: {
       name: 'ShopeePay',
-      patterns: [/shopeepay[\s\-]?wallet/i, /shopee[\s\-]?pay[\s\-]?app/i, /ช้อปปี้[\s]*เพย์/i],
-      // ShopeePay refs are typically 16-20 alphanumeric
-      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/i, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/i, /order[\s]*id[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/i],
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i, /thb[\s]*([0-9.,]{1,10})/i]
+      patterns: [/shopeepay[\s\-]?wallet/i, /shopee[\s\-]?pay[\s\-]?app/i, /ช้อปปี้[\s]*เพย์/i, /shopee[\s]*pay/i, /ช้อปปี้[\s]*เพย์[\s]*วอเล็ท/i, /shopeepay/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/gi, /order[\s]*id[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/gi, /รหัสอ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{16,20})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi, /thb[\s]*([0-9.,]{1,10})/gi]
     },
     rabbit_line_pay: {
       name: 'Rabbit LINE Pay',
-      patterns: [/rabbit[\s\-]?line[\s\-]?pay/i, /line[\s\-]?pay[\s\-]?rabbit/i, /ไลน์[\s]*เพย์[\s]*แรบบิท/i],
-      // Rabbit LINE Pay refs are typically 12-18 alphanumeric
-      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/i, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/i, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/i, /payment[\s]*id[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/i],
-      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/i, /฿[\s]*([0-9.,]{1,10})/i, /thb[\s]*([0-9.,]{1,10})/i]
+      patterns: [/rabbit[\s\-]?line[\s\-]?pay/i, /line[\s\-]?pay[\s\-]?rabbit/i, /ไลน์[\s]*เพย์[\s]*แรบบิท/i, /line[\s]*pay/i, /แรบบิท[\s]*ไลน์[\s]*เพย์/i, /rabbit[\s]*pay/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/gi, /payment[\s]*id[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/gi, /รหัสอ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{12,18})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi, /thb[\s]*([0-9.,]{1,10})/gi]
+    },
+    kplus: {
+      name: 'KPlus Mobile Banking',
+      patterns: [/kplus[\s\-]?app/i, /kplus[\s]*mobile/i, /k[\s]*plus[\s]*banking/i, /กรุงไทย[\s]*kplus/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,13})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
+    },
+    scb_easy: {
+      name: 'SCB Easy App',
+      patterns: [/scb[\s\-]?easy[\s\-]?app/i, /scb[\s]*easy/i, /ไทยพาณิชย์[\s]*easy/i, /scb[\s]*mobile/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/gi, /รหัสอ้างอิง[\s]*[:#\.]?[\s]*([a-z0-9]{10,16})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
+    },
+    krungthai_next: {
+      name: 'KTB Next',
+      patterns: [/ktb[\s\-]?next/i, /krungthai[\s]*next/i, /กรุงไทย[\s]*next/i, /ktb[\s]*mobile/i],
+      refPatterns: [/transaction[\s\-]?id[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /ref[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /เลขที่รายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi, /รหัสรายการ[\s]*[:#\.]?[\s]*([a-z0-9]{10,14})/gi],
+      amountPatterns: [/amount[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /จำนวนเงิน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดชำระ[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /ยอดโอน[\s]*[:#\.]?[\s]*([0-9.,]{1,10})/gi, /฿[\s]*([0-9.,]{1,10})/gi, /บาท[\s]*([0-9.,]{1,10})/gi]
     }
   };
 
@@ -5883,9 +5927,10 @@
   }
 
 
-  // Anti-fraud validation for slip authenticity (relaxed - warnings only)
+  // Anti-fraud validation for slip authenticity (stricter validation)
   function validateSlipAuthenticity(text, detectedBank, ref, amount) {
     const issues = [];
+    const lowerText = text.toLowerCase();
     
     // 1) Check for suspicious patterns in OCR text (critical - block these)
     const criticalPatterns = [
@@ -5898,8 +5943,11 @@
       /example/i,
       /test/i,
       /demo/i,
+      /template/i,
+      /draft/i,
+      /screenshot/i,
+      /copy/i,
     ];
-    const lowerText = text.toLowerCase();
     for (const pattern of criticalPatterns) {
       if (pattern.test(lowerText)) {
         issues.push('Suspicious text detected (possible edited slip)');
@@ -5907,15 +5955,22 @@
       }
     }
     
-    // 2) Check for multiple amounts (inconsistent data) - warning only
-    const amountMatches = text.match(/[0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2}/g) || [];
-    if (amountMatches.length > 5) {
-      // Don't block, just log warning
-      console.warn('[slip] Many monetary values detected:', amountMatches.length);
+    // 2) Check for bank/wallet detection (required for stricter validation)
+    if (!detectedBank) {
+      issues.push('Cannot identify bank or wallet type');
+    } else {
+      // Verify bank name appears in text
+      const bankName = detectedBank.name.toLowerCase();
+      const bankKeywords = bankName.split(' ')[0].replace(/[()]/g, '');
+      if (!lowerText.includes(bankKeywords) && !lowerText.includes(bankName)) {
+        issues.push('Bank name detected but not found in OCR text');
+      }
     }
     
-    // 3) Validate reference number format (if detected)
-    if (ref) {
+    // 3) Validate reference number format (required)
+    if (!ref) {
+      issues.push('No reference number detected');
+    } else {
       // Ref should be alphanumeric, not all same character
       if (/^([A-Za-z0-9])\1+$/.test(ref)) {
         issues.push('Reference number appears invalid (repeated characters)');
@@ -5924,19 +5979,46 @@
       if (/^0+$/.test(ref)) {
         issues.push('Reference number appears invalid (all zeros)');
       }
-    }
-    
-    // 4) Validate amount (if detected)
-    if (amount != null && !isNaN(amount)) {
-      if (amount <= 0) {
-        issues.push('Amount is invalid (zero or negative)');
-      } else if (amount > 1000000) {
-        issues.push('Amount is unusually high (possible fraud)');
+      // Ref length validation
+      if (ref.length < 10 || ref.length > 20) {
+        issues.push('Reference number length is unusual');
+      }
+      // Ref should have sufficient character variety
+      const uniqueChars = new Set(ref.toUpperCase()).size;
+      if (uniqueChars < 3) {
+        issues.push('Reference number has insufficient variety');
       }
     }
     
-    // Only block if critical issues found (suspicious text, invalid ref/amount)
-    // Don't block just because bank/wallet not detected or ref missing
+    // 4) Validate amount (required)
+    if (amount == null || isNaN(amount)) {
+      issues.push('Amount could not be read');
+    } else if (amount <= 0) {
+      issues.push('Amount is invalid (zero or negative)');
+    } else if (amount > 1000000) {
+      issues.push('Amount is unusually high (possible fraud)');
+    } else if (amount < 1) {
+      issues.push('Amount is too low (minimum 1 THB)');
+    }
+    
+    // 5) Check for multiple amounts (inconsistent data)
+    const amountMatches = text.match(/[0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2}/g) || [];
+    if (amountMatches.length > 8) {
+      issues.push('Too many monetary values detected (possible edited slip)');
+    }
+    
+    // 6) Check for date/time consistency (slips should have date)
+    const hasDate = /\d{1,2}[\s\/\-\.]\d{1,2}[\s\/\-\.]\d{2,4}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|มกรา|กุมภา|มีนา|เมษา|พฤษภา|มิถุนา|กรกฎา|สิงหา|ตุลา|พฤศจิกา|ธันว/i.test(lowerText);
+    if (!hasDate) {
+      issues.push('No date detected on slip');
+    }
+    
+    // 7) Check for transaction time (slips should have time)
+    const hasTime = /\d{1,2}:\d{2}|am|pm|นาฬิกา/i.test(lowerText);
+    if (!hasTime) {
+      issues.push('No time detected on slip');
+    }
+    
     return {
       isValid: issues.length === 0,
       issues: issues
@@ -6280,13 +6362,13 @@
     const numRe = '([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:[\\.]\\s*[0-9]{1,2})?|[0-9]+(?:[\\.]\\s*[0-9]{1,2})?)';
     const kw = [
       // Thai keywords first (more accurate for Thai banks/wallets)
-      new RegExp('(?:จำนวนเงิน|จำนวน|ยอด(?:เงิน|โอน|ที่โอน|ชำระ|จ่าย|ที่ชำระ)?|โอนเงิน|ชำระเงิน|รับเงิน|รวม(?:ทั้งสิ้น)?|ยอดรวม)[^\\d\\-]{0,20}' + numRe, 'i'),
+      new RegExp('(?:จำนวนเงิน|จำนวน|ยอด(?:เงิน|โอน|ที่โอน|ชำระ|จ่าย|ที่ชำระ)?|โอนเงิน|ชำระเงิน|รับเงิน|รวม(?:ทั้งสิ้น)?|ยอดรวม)[^\\d\\-]{0,20}' + numRe, 'gi'),
       // English keywords
-      new RegExp('(?:Amount|Amt|Total|Grand\\s*Total|Paid|Payment|Transfer\\s*Amount|Sent|Received)[^\\d\\-]{0,20}' + numRe, 'i'),
+      new RegExp('(?:Amount|Amt|Total|Grand\\s*Total|Paid|Payment|Transfer\\s*Amount|Sent|Received)[^\\d\\-]{0,20}' + numRe, 'gi'),
       // Currency symbols
-      new RegExp(numRe + '\\s*(?:บาท|THB|baht|฿)', 'i'),
-      new RegExp('฿\\s*' + numRe, 'i'),
-      new RegExp('(?:THB|Baht)\\s*' + numRe, 'i'),
+      new RegExp(numRe + '\\s*(?:บาท|THB|baht|฿)', 'gi'),
+      new RegExp('฿\\s*' + numRe, 'gi'),
+      new RegExp('(?:THB|Baht)\\s*' + numRe, 'gi'),
     ];
     const candidates = [];
     for (const re of kw) {
