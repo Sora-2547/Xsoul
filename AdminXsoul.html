@@ -142,6 +142,30 @@
     .image-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index: 2000; cursor: zoom-out; }
     .image-viewer.active { display: flex; }
     .image-viewer img { max-width: 95vw; max-height: 95vh; border-radius: 8px; }
+    /* Bell */
+    .bell-wrap { position: relative; display: inline-block; margin-right: 12px; }
+    .bell-btn { position: relative; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #ffc107; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 20px; transition: all 0.2s; }
+    .bell-btn:hover { background: rgba(255,193,7,0.2); transform: scale(1.05); }
+    .bell-btn.has-unread { animation: bell-shake 1.2s ease-in-out infinite; }
+    @keyframes bell-shake { 0%,100%{transform:rotate(0)} 10%,30%{transform:rotate(-15deg)} 20%,40%{transform:rotate(15deg)} 50%{transform:rotate(0)} }
+    .bell-badge { position: absolute; top: -4px; right: -4px; background: #ff3b3b; color: #fff; font-size: 11px; font-weight: 700; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 6px; border: 2px solid #1a1a2e; }
+    .bell-badge.hidden { display: none; }
+    .bell-dropdown { display: none; position: absolute; top: 54px; right: 0; width: 380px; max-height: 480px; overflow-y: auto; background: rgba(20,20,40,0.98); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); z-index: 500; }
+    .bell-dropdown.active { display: block; }
+    .bell-dropdown-header { display:flex; justify-content:space-between; align-items:center; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top:0; background: rgba(20,20,40,0.98); }
+    .bell-dropdown-header h3 { color:#00d4ff; font-size:15px; }
+    .bell-dropdown-header button { background:none; border:none; color:#aaa; font-size:12px; cursor:pointer; }
+    .bell-dropdown-header button:hover { color:#00d4ff; }
+    .notif-item { display:grid; grid-template-columns: 50px 1fr; gap:10px; padding:12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor:pointer; transition: background 0.2s; }
+    .notif-item:hover { background: rgba(255,255,255,0.05); }
+    .notif-item.unread { background: rgba(0,212,255,0.08); border-left: 3px solid #00d4ff; }
+    .notif-item img, .notif-item .notif-noimg { width:50px; height:50px; border-radius:6px; object-fit:cover; background:#000; }
+    .notif-item .notif-noimg { display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.05); color:#666; font-size: 20px; }
+    .notif-item .notif-body { font-size: 13px; line-height: 1.5; }
+    .notif-item .notif-user { color:#fff; font-weight:600; }
+    .notif-item .notif-amount { color:#4caf50; font-weight:700; }
+    .notif-item .notif-when { color:#888; font-size: 11px; }
+    .notif-empty { padding: 30px; text-align:center; color:#888; font-size:13px; }
   </style>
 </head>
 <body>
@@ -170,8 +194,21 @@
         <h1>👑 AdminXsoul Panel</h1>
         <div class="who" id="currentAdmin"></div>
       </div>
-      <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      <div style="display:flex;align-items:center;">
+        <div class="bell-wrap">
+          <button class="bell-btn" id="bellBtn" onclick="toggleBellDropdown(event)" title="แจ้งเตือนเติมเงิน">🔔<span class="bell-badge hidden" id="bellBadge">0</span></button>
+          <div class="bell-dropdown" id="bellDropdown" onclick="event.stopPropagation()">
+            <div class="bell-dropdown-header">
+              <h3>🧾 การเติมเงินล่าสุด</h3>
+              <button onclick="markAllNotifsRead()">อ่านทั้งหมด</button>
+            </div>
+            <div id="notifList"><div class="notif-empty">กำลังโหลด...</div></div>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
     </div>
+
 
     <div class="stats-grid">
       <div class="stat-card"><h3>Total Users</h3><div class="value" id="totalUsers">0</div></div>
@@ -320,6 +357,7 @@
       $('adminPanel').style.display = 'block';
       $('loginError').textContent = '';
       loadUsers();
+      setupTopupNotifications();
     }
 
     // ===== Data =====
@@ -583,6 +621,153 @@
         if (e.key === 'Enter') handleLogin();
       });
     });
+
+    // ===== Top-up Notifications (Bell) =====
+    // เก็บรายการเติมเงินทั้งหมดจากหลาย path + ฟังแบบ realtime
+    let allTopups = []; // [{id, uid, path, ...data}]
+    let seenIds = new Set(JSON.parse(localStorage.getItem('seenTopupIds') || '[]'));
+    const NOTIF_PATHS = ['topups', 'slips']; // root nodes ที่จะสแกน
+    let notifInitialized = false;
+
+    function persistSeen() {
+      // เก็บแค่ 500 ล่าสุดกัน localStorage บวม
+      const arr = Array.from(seenIds).slice(-500);
+      localStorage.setItem('seenTopupIds', JSON.stringify(arr));
+    }
+
+    async function setupTopupNotifications() {
+      if (notifInitialized) return;
+      notifInitialized = true;
+      // 1) โหลดทั้งหมดที่มีอยู่ก่อน
+      for (const root of NOTIF_PATHS) {
+        try {
+          const snap = await db.ref(root).once('value');
+          const val = snap.val();
+          if (!val) continue;
+          // โครงสร้างเป็นได้ 2 แบบ: {uid: {id: data}} หรือ {id: {uid, ...}}
+          Object.entries(val).forEach(([k1, v1]) => {
+            if (v1 && typeof v1 === 'object' && !v1.amount && !v1.slipUrl && !v1.slip) {
+              // n: per-user nested
+              Object.entries(v1).forEach(([id, data]) => {
+                if (data && typeof data === 'object') {
+                  allTopups.push({ id, uid: k1, path: `${root}/${k1}/${id}`, ...data });
+                }
+              });
+            } else if (v1 && typeof v1 === 'object') {
+              allTopups.push({ id: k1, uid: v1.uid || v1.userId || '', path: `${root}/${k1}`, ...v1 });
+            }
+          });
+        } catch (e) { console.warn('scan', root, e); }
+      }
+      renderNotifs();
+
+      // 2) ฟัง realtime
+      for (const root of NOTIF_PATHS) {
+        const ref = db.ref(root);
+        // child_added ที่ระดับ root
+        ref.on('child_added', (snap) => {
+          const k1 = snap.key; const v1 = snap.val();
+          if (!v1 || typeof v1 !== 'object') return;
+          if (!v1.amount && !v1.slipUrl && !v1.slip) {
+            // per-user → ฟัง child ภายใน
+            db.ref(`${root}/${k1}`).on('child_added', (s2) => {
+              const id = s2.key; const data = s2.val();
+              if (!data) return;
+              addTopupRealtime({ id, uid: k1, path: `${root}/${k1}/${id}`, ...data });
+            });
+            db.ref(`${root}/${k1}`).on('child_removed', (s2) => {
+              allTopups = allTopups.filter(t => !(t.id === s2.key && t.uid === k1));
+              renderNotifs();
+            });
+          } else {
+            addTopupRealtime({ id: k1, uid: v1.uid || v1.userId || '', path: `${root}/${k1}`, ...v1 });
+          }
+        });
+        ref.on('child_removed', (snap) => {
+          allTopups = allTopups.filter(t => !t.path.startsWith(`${root}/${snap.key}`));
+          renderNotifs();
+        });
+      }
+    }
+
+    function addTopupRealtime(item) {
+      // กันซ้ำ
+      if (allTopups.some(t => t.path === item.path)) return;
+      allTopups.push(item);
+      renderNotifs();
+    }
+
+    function getUnreadCount() {
+      return allTopups.filter(t => !seenIds.has(t.path)).length;
+    }
+
+    function renderNotifs() {
+      const unread = getUnreadCount();
+      const badge = $('bellBadge');
+      const btn = $('bellBtn');
+      if (unread > 0) {
+        badge.textContent = unread > 99 ? '99+' : unread;
+        badge.classList.remove('hidden');
+        btn.classList.add('has-unread');
+      } else {
+        badge.classList.add('hidden');
+        btn.classList.remove('has-unread');
+      }
+      // sort ใหม่สุดก่อน
+      const sorted = [...allTopups].sort((a, b) => {
+        const ta = new Date(a.timestamp || a.createdAt || a.date || 0).getTime();
+        const tb = new Date(b.timestamp || b.createdAt || b.date || 0).getTime();
+        return tb - ta;
+      }).slice(0, 50);
+      const list = $('notifList');
+      if (!sorted.length) {
+        list.innerHTML = '<div class="notif-empty">ยังไม่มีรายการเติมเงิน</div>';
+        return;
+      }
+      list.innerHTML = sorted.map(t => {
+        const isUnread = !seenIds.has(t.path);
+        const slip = t.slipUrl || t.slip || t.imageUrl || t.image || t.slipBase64 || t.url || '';
+        const isImg = slip && (slip.startsWith('http') || slip.startsWith('data:'));
+        const user = allUsers.find(u => u.uid === t.uid);
+        const name = user ? user.username : (t.uid ? t.uid.substring(0,10)+'…' : 'unknown');
+        const amount = t.amount ?? t.credits ?? t.price ?? 0;
+        const when = formatDate(t.timestamp || t.createdAt || t.date);
+        const thumb = isImg
+          ? `<img src="${escapeHtml(slip)}" alt="" onerror="this.outerHTML='<div class=&quot;notif-noimg&quot;>📄</div>'">`
+          : `<div class="notif-noimg">📄</div>`;
+        return `<div class="notif-item ${isUnread?'unread':''}" onclick="openNotif('${escapeHtml(t.uid)}','${escapeHtml(t.path)}')">
+          ${thumb}
+          <div class="notif-body">
+            <div><span class="notif-user">${escapeHtml(name)}</span> เติม <span class="notif-amount">฿${Number(amount).toLocaleString()}</span></div>
+            <div class="notif-when">${escapeHtml(when)}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function toggleBellDropdown(e) {
+      e.stopPropagation();
+      $('bellDropdown').classList.toggle('active');
+    }
+    document.addEventListener('click', (e) => {
+      const dd = $('bellDropdown');
+      if (dd && dd.classList.contains('active') && !e.target.closest('.bell-wrap')) {
+        dd.classList.remove('active');
+      }
+    });
+
+    function openNotif(uid, path) {
+      if (path) { seenIds.add(path); persistSeen(); renderNotifs(); }
+      $('bellDropdown').classList.remove('active');
+      if (uid) viewSlips(uid);
+    }
+
+    function markAllNotifsRead() {
+      allTopups.forEach(t => seenIds.add(t.path));
+      persistSeen();
+      renderNotifs();
+    }
   </script>
+
 </body>
 </html>
