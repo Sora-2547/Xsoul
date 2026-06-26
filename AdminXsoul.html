@@ -559,7 +559,7 @@
         return tb - ta;
       });
       const html = items.map(it => {
-        const slip = it.slipUrl || it.slip || it.imageUrl || it.image || it.slipBase64 || it.url || '';
+        const slip = it.slipImage || it.slipUrl || it.slip || it.imageUrl || it.image || it.slipBase64 || it.url || '';
         const isImg = slip && (slip.startsWith('http') || slip.startsWith('data:'));
         const amount = it.amount ?? it.credits ?? it.price ?? 0;
         const status = it.status || 'pending';
@@ -741,7 +741,7 @@
       }
       list.innerHTML = sorted.map(t => {
         const isUnread = !seenIds.has(t.path);
-        const slip = t.slipUrl || t.slip || t.imageUrl || t.image || t.slipBase64 || t.url || '';
+        const slip = t.slipImage || t.slipUrl || t.slip || t.imageUrl || t.image || t.slipBase64 || t.url || '';
         const isImg = slip && (slip.startsWith('http') || slip.startsWith('data:'));
         const user = allUsers.find(u => u.uid === t.uid);
         const name = user ? user.username : (t.uid ? t.uid.substring(0,10)+'…' : 'unknown');
