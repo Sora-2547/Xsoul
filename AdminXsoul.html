@@ -861,10 +861,20 @@
       tbody.innerHTML = '<tr><td colspan="8" class="loading">กำลังโหลด Keys...</td></tr>';
       
       try {
-        const snapshot = await db.ref('keys').once('value');
+        // Read from userKeys/{userId}/* structure
+        const snapshot = await db.ref('userKeys').once('value');
+        const allKeysData = snapshot.val() || {};
         const keys = [];
-        snapshot.forEach(child => {
-          keys.push({ id: child.key, ...child.val() });
+        
+        // Flatten the nested structure
+        Object.entries(allKeysData).forEach(([userId, userKeys]) => {
+          if (userKeys && typeof userKeys === 'object') {
+            Object.entries(userKeys).forEach(([keyId, keyData]) => {
+              if (keyData && typeof keyData === 'object') {
+                keys.push({ id: keyId, ...keyData });
+              }
+            });
+          }
         });
 
         if (keys.length === 0) {
@@ -888,21 +898,21 @@
             <td><span class="status-badge ${isExpired ? 'status-banned' : 'status-active'}">${isExpired ? '❌ หมดอายุ' : '✅ ใช้ได้'}</span></td>
             <td>${k.usedBy ? escapeHtml(k.usedBy) : '-'}</td>
             <td>
-              <button class="action-btn delete-btn" onclick="revokeAdminKey('${escapeHtml(k.id)}')">ยกเลิก</button>
+              <button class="action-btn delete-btn" onclick="revokeAdminKey('${escapeHtml(k.userId)}', '${escapeHtml(k.id)}')">ยกเลิก</button>
             </td>
           </tr>`;
         }).join('');
       } catch (err) {
         console.error('Load keys error:', err);
-        tbody.innerHTML = '<tr><td colspan="8" style="color:#ff6b6b;">Error loading keys</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="color:#ff6b6b;">Error loading keys: ' + err.message + '</td></tr>';
       }
     };
 
-    window.revokeAdminKey = async (keyId) => {
+    window.revokeAdminKey = async (userId, keyId) => {
       if (!confirm('ยืนยันการยกเลิกคีย์นี้?')) return;
       
       try {
-        await db.ref('keys/' + keyId).remove();
+        await db.ref('userKeys/' + userId + '/' + keyId).remove();
         loadAllKeys();
       } catch (err) {
         console.error('Revoke key error:', err);
