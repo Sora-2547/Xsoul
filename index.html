@@ -7235,15 +7235,15 @@
     const status = document.getElementById('keyGenerateStatus');
     const duration = parseInt(document.getElementById('keyDurationSelect').value);
     
-    if (!currentUser) {
-      status.textContent = t('err-must-login') || 'Please login first';
+    if (!auth.currentUser) {
+      status.textContent = 'Please login first';
       status.style.color = 'var(--error)';
       return;
     }
 
     try {
       btn.disabled = true;
-      status.textContent = t('key-generating') || 'Generating...';
+      status.textContent = 'Generating...';
       status.style.color = 'var(--muted)';
 
       // Generate random key
@@ -7256,19 +7256,19 @@
         createdAt: now,
         expiresAt: expiresAt,
         duration: duration,
-        userId: currentUser.uid,
-        username: currentUser.username || currentUser.email,
+        userId: auth.currentUser.uid,
+        username: auth.currentUser.displayName || auth.currentUser.email,
         used: false,
         usedBy: null,
         usedAt: null,
         active: true
       };
 
-      // Save to Firebase
-      const keyRef = db.ref('keys/' + keyStr);
-      await keyRef.set(keyData);
+      // Save to Firebase using modular SDK
+      const keyRefPath = ref(db, 'userKeys/' + auth.currentUser.uid + '/' + keyStr);
+      await set(keyRefPath, keyData);
 
-      status.textContent = t('key-generated') || 'Key generated successfully!';
+      status.textContent = 'Key generated successfully!';
       status.style.color = 'var(--success)';
 
       // Refresh keys list
@@ -7279,7 +7279,7 @@
       }, 500);
     } catch (err) {
       console.error('Key generation error:', err);
-      status.textContent = t('err-key-gen') || 'Error: ' + err.message;
+      status.textContent = 'Error: ' + err.message;
       status.style.color = 'var(--error)';
       btn.disabled = false;
     }
@@ -7297,23 +7297,24 @@
 
   // Load user's keys
   window.loadUserKeys = async () => {
-    if (!currentUser) return;
+    if (!auth.currentUser) return;
 
     const container = document.getElementById('keysListContainer');
     if (!container) return;
 
     try {
-      const snapshot = await db.ref('keys').orderByChild('userId').equalTo(currentUser.uid).once('value');
-      const keys = [];
-      snapshot.forEach(child => {
-        keys.push({ id: child.key, ...child.val() });
-      });
+      // Load from userKeys/{userId}/* structure for better security
+      const keysRefPath = ref(db, 'userKeys/' + auth.currentUser.uid);
+      const snapshot = await get(keysRefPath);
+      const keysData = snapshot.val() || {};
+      
+      const keys = Object.entries(keysData).map(([id, val]) => ({ id, ...val }));
 
       if (keys.length === 0) {
         container.innerHTML = `
           <div style="text-align:center;padding:32px 20px;color:var(--muted);">
             <div style="font-size:2rem;margin-bottom:8px;opacity:0.5;">🔑</div>
-            <div style="font-size:0.9rem;">${t('key-no-keys') || 'No keys yet'}</div>
+            <div style="font-size:0.9rem;">No keys yet</div>
           </div>
         `;
         return;
@@ -7323,8 +7324,8 @@
       keys.forEach(keyData => {
         const isExpired = Date.now() > keyData.expiresAt;
         const daysLeft = Math.ceil((keyData.expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
-        const createdDate = new Date(keyData.createdAt).toLocaleString(getLang() === 'TH' ? 'th-TH' : 'en-US');
-        const expiresDate = new Date(keyData.expiresAt).toLocaleString(getLang() === 'TH' ? 'th-TH' : 'en-US');
+        const createdDate = new Date(keyData.createdAt).toLocaleString('th-TH');
+        const expiresDate = new Date(keyData.expiresAt).toLocaleString('th-TH');
 
         const keyCard = document.createElement('div');
         keyCard.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:16px;display:grid;gap:12px;';
@@ -7337,7 +7338,7 @@
               </div>
               <div style="font-size:0.75rem;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;">
                 <span>📅 ${createdDate}</span>
-                <span>⏰ ${t('key-expires')} ${expiresDate}</span>
+                <span>⏰ Expires: ${expiresDate}</span>
               </div>
             </div>
             <div style="display:flex;gap:6px;">
@@ -7351,7 +7352,7 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.72rem;">
             <div style="padding:8px 10px;background:${isExpired ? '#f8717115' : '#4ade8015'};border-radius:8px;color:${isExpired ? '#fca5a5' : '#86efac'};border:1px solid ${isExpired ? '#f8717144' : '#4ade8044'};">
-              ${isExpired ? '❌ ' + (t('key-expired') || 'Expired') : '✅ ' + (t('key-active') || 'Active')} ${!isExpired ? '(' + daysLeft + ' ' + (t('key-days-left') || 'days left') + ')' : ''}
+              ${isExpired ? '❌ Expired' : '✅ Active'} ${!isExpired ? '(' + daysLeft + ' days left)' : ''}
             </div>
             <div style="padding:8px 10px;background:${keyData.used ? '#f8717115' : '#7c5cfc15'};border-radius:8px;color:${keyData.used ? '#fca5a5' : '#a78bfa'};border:1px solid ${keyData.used ? '#f8717144' : '#7c5cfc44'};">
               ${keyData.used ? '🔒 Used by: ' + (keyData.usedBy || 'Unknown') : '🔓 Unused'}
@@ -7369,7 +7370,7 @@
   window.copyKey = (keyText) => {
     navigator.clipboard.writeText(keyText).then(() => {
       const toast = document.getElementById('toast');
-      document.getElementById('toastText').textContent = t('copied') || 'Copied!';
+      document.getElementById('toastText').textContent = 'Copied!';
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2000);
     });
@@ -7377,27 +7378,24 @@
 
   // Delete key
   window.deleteKey = async (keyId) => {
-    if (!confirm(t('confirm-delete-key') || 'Are you sure?')) return;
+    if (!confirm('Delete this key?')) return;
+    
+    if (!auth.currentUser) return;
     
     try {
-      // Find key by userId
-      const snapshot = await db.ref('keys').orderByChild('userId').equalTo(currentUser.uid).once('value');
-      snapshot.forEach(child => {
-        if (child.key === keyId) {
-          db.ref('keys/' + keyId).remove();
-        }
-      });
-      
+      const keyRefPath = ref(db, 'userKeys/' + auth.currentUser.uid + '/' + keyId);
+      await remove(keyRefPath);
       loadUserKeys();
     } catch (err) {
       console.error('Delete key error:', err);
+      alert('Error: ' + err.message);
     }
   };
 
   // Load keys when user logs in and section is shown
   const origShowSection = window.showSection;
   window.showSection = function(sectionId) {
-    if (sectionId === 'keys' && currentUser) {
+    if (sectionId === 'keys' && auth.currentUser) {
       loadUserKeys();
     }
     return origShowSection.call(this, sectionId);
