@@ -221,6 +221,59 @@
       <input type="text" id="searchInput" placeholder="🔍 ค้นหาจาก username, email หรือ UID..." oninput="handleSearch()">
     </div>
 
+    <!-- Tabs for Users / Keys -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="tab-btn active" id="usersTabBtn" onclick="switchTab('users')" style="padding:10px 16px;border:none;border-bottom:2px solid #00d4ff;background:transparent;color:#aaa;cursor:pointer;font-weight:600;transition:all 0.2s;">
+        👥 Users
+      </button>
+      <button class="tab-btn" id="keysTabBtn" onclick="switchTab('keys')" style="padding:10px 16px;border:none;border-bottom:2px solid transparent;background:transparent;color:#aaa;cursor:pointer;font-weight:600;transition:all 0.2s;">
+        🔑 Keys
+      </button>
+    </div>
+
+    <!-- Users Table -->
+    <div id="usersTabContent">
+      <div class="users-table">
+        <table>
+          <thead>
+            <tr>
+              <th>UID</th><th>Username</th><th>Email</th><th>Credits</th>
+              <th>Role</th><th>Status</th><th>Created</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="8" class="loading">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Keys Table -->
+    <div id="keysTabContent" style="display:none;">
+      <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;">
+        <input type="text" id="keysSearchInput" placeholder="ค้นหา Key, Username..." style="flex:1;min-width:200px;padding:12px 16px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;outline:none;" />
+        <button onclick="loadAllKeys()" style="padding:12px 20px;background:linear-gradient(135deg,#00d4ff,#0099cc);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;">
+          🔄 รีเฟรช
+        </button>
+      </div>
+      <div class="users-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th><th>Owner (Username)</th><th>Created</th><th>Expires</th>
+              <th>Duration</th><th>Status</th><th>Used By</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="keysTableBody">
+            <tr><td colspan="8" class="loading">Loading keys...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Table (old, kept for reference) -->
+  <div style="display:none;">
     <div class="users-table">
       <table>
         <thead>
@@ -229,12 +282,11 @@
             <th>Role</th><th>Status</th><th>Created</th><th>Actions</th>
           </tr>
         </thead>
-        <tbody id="usersTableBody">
+        <tbody id="usersTableBodyOld">
           <tr><td colspan="8" class="loading">Loading users...</td></tr>
         </tbody>
       </table>
     </div>
-  </div>
 
   <!-- Slips Modal -->
   <div class="modal" id="slipsModal">
@@ -782,6 +834,88 @@
       persistSeen();
       renderNotifs();
     }
+
+    // ===== KEYS MANAGEMENT =====
+    window.switchTab = (tab) => {
+      const usersBtn = $('usersTabBtn');
+      const keysBtn = $('keysTabBtn');
+      const usersContent = $('usersTabContent');
+      const keysContent = $('keysTabContent');
+
+      if (tab === 'users') {
+        usersBtn.style.borderBottomColor = '#00d4ff';
+        keysBtn.style.borderBottomColor = 'transparent';
+        usersContent.style.display = 'block';
+        keysContent.style.display = 'none';
+      } else {
+        usersBtn.style.borderBottomColor = 'transparent';
+        keysBtn.style.borderBottomColor = '#00d4ff';
+        usersContent.style.display = 'none';
+        keysContent.style.display = 'block';
+        loadAllKeys();
+      }
+    };
+
+    window.loadAllKeys = async () => {
+      const tbody = $('keysTableBody');
+      tbody.innerHTML = '<tr><td colspan="8" class="loading">กำลังโหลด Keys...</td></tr>';
+      
+      try {
+        const snapshot = await db.ref('keys').once('value');
+        const keys = [];
+        snapshot.forEach(child => {
+          keys.push({ id: child.key, ...child.val() });
+        });
+
+        if (keys.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="no-results">ไม่มี Keys</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = keys.map(k => {
+          const isExpired = Date.now() > k.expiresAt;
+          const created = new Date(k.createdAt).toLocaleString('th-TH');
+          const expires = new Date(k.expiresAt).toLocaleString('th-TH');
+          const ownerUser = allUsers.find(u => u.uid === k.userId);
+          const ownerName = ownerUser ? ownerUser.username : (k.username || k.userId.substring(0,10)+'…');
+
+          return `<tr>
+            <td style="font-family:monospace;font-size:12px;word-break:break-all;">${escapeHtml(k.key)}</td>
+            <td>${escapeHtml(ownerName)}</td>
+            <td style="font-size:12px;">${created}</td>
+            <td style="font-size:12px;">${expires}</td>
+            <td>${k.duration} วัน</td>
+            <td><span class="status-badge ${isExpired ? 'status-banned' : 'status-active'}">${isExpired ? '❌ หมดอายุ' : '✅ ใช้ได้'}</span></td>
+            <td>${k.usedBy ? escapeHtml(k.usedBy) : '-'}</td>
+            <td>
+              <button class="action-btn delete-btn" onclick="revokeAdminKey('${escapeHtml(k.id)}')">ยกเลิก</button>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (err) {
+        console.error('Load keys error:', err);
+        tbody.innerHTML = '<tr><td colspan="8" style="color:#ff6b6b;">Error loading keys</td></tr>';
+      }
+    };
+
+    window.revokeAdminKey = async (keyId) => {
+      if (!confirm('ยืนยันการยกเลิกคีย์นี้?')) return;
+      
+      try {
+        await db.ref('keys/' + keyId).remove();
+        loadAllKeys();
+      } catch (err) {
+        console.error('Revoke key error:', err);
+        alert('Error: ' + err.message);
+      }
+    };
+
+    // Load keys on page load
+    setTimeout(() => {
+      if ($('keysTableBody').innerHTML.includes('Loading keys')) {
+        // Will be loaded when admin switches tab
+      }
+    }, 500);
   </script>
 
 </body>
