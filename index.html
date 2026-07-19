@@ -2152,18 +2152,46 @@
     </div>
     </div>
 
-    <!-- SCRIPTS SECTION -->
-    <!-- SCRIPTS SECTION -->
+    <!-- KEY MANAGEMENT SECTION -->
     <div class="content-section" id="section-keys">
       <header>
         <h1 data-i18n="nav-keys">Keys</h1>
-        <p class="subtitle" data-i18n="keys-subtitle">คีย์สำหรับปลดล็อกสคริปต์และฟีเจอร์พิเศษ</p>
+        <p class="subtitle" data-i18n="keys-subtitle">สร้างและจัดการคีย์สำหรับปลดล็อกสคริปต์และฟีเจอร์พิเศษ</p>
       </header>
-      <div class="scripts-grid">
-        <div class="script-card" style="text-align:center;padding:40px 20px;cursor:default;">
-          <div style="font-size:3rem;margin-bottom:16px;">🔑</div>
-          <div class="script-card-name" style="font-size:1rem;margin-bottom:8px;" data-i18n="keys-coming-soon">เร็วๆ นี้</div>
-          <p class="script-card-desc" data-i18n="keys-coming-desc">ระบบคีย์กำลังอยู่ในระหว่างการพัฒนา</p>
+
+      <!-- Generate Key Card -->
+      <div class="card" style="margin-bottom:28px;">
+        <div class="card-title">🔐 <span data-i18n="key-generator">สร้างคีย์ใหม่</span></div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <label style="font-size:0.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;" data-i18n="key-duration">ระยะเวลาใช้งาน</label>
+            <select id="keyDurationSelect" style="background:#0a0d1a;border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:0.9rem;cursor:pointer;transition:all 0.2s;">
+              <option value="1" data-i18n="key-dur-1day">1 วัน</option>
+              <option value="3" data-i18n="key-dur-3day">3 วัน</option>
+              <option value="7" data-i18n="key-dur-7day">7 วัน</option>
+              <option value="15" data-i18n="key-dur-15day">15 วัน</option>
+              <option value="30" data-i18n="key-dur-30day">30 วัน</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;justify-content:flex-end;">
+            <button id="generateKeyBtn" class="submit-btn" onclick="generateNewKey()" style="padding:11px 16px;font-size:0.9rem;margin:0;">
+              <span data-i18n="key-generate-btn">⚡ สร้างคีย์</span>
+            </button>
+          </div>
+        </div>
+        <div id="keyGenerateStatus" style="font-size:0.78rem;color:var(--muted);min-height:16px;"></div>
+      </div>
+
+      <!-- Keys List -->
+      <div class="card">
+        <div class="card-title">📋 <span data-i18n="key-list">รายการคีย์ของฉัน</span></div>
+        
+        <div id="keysListContainer" style="display:flex;flex-direction:column;gap:12px;">
+          <div style="text-align:center;padding:32px 20px;color:var(--muted);">
+            <div style="font-size:2rem;margin-bottom:8px;opacity:0.5;">🔑</div>
+            <div style="font-size:0.9rem;" data-i18n="key-no-keys">ยังไม่มีคีย์ สร้างตัวแรกเลย!</div>
+          </div>
         </div>
       </div>
     </div>
@@ -4650,6 +4678,42 @@
       'keys-subtitle': 'Keys for unlocking scripts and special features',
       'keys-coming-soon': 'Coming Soon',
       'keys-coming-desc': 'The key system is currently under development',
+      'key-generate-title': 'Generate New Key',
+      'key-duration-label': 'Duration',
+      'key-duration-1d': '1 Day',
+      'key-duration-3d': '3 Days',
+      'key-duration-7d': '7 Days',
+      'key-duration-15d': '15 Days',
+      'key-duration-30d': '30 Days',
+      'key-generate-btn': '🔑 Generate Key',
+      'key-list-title': 'Your Keys',
+      'key-copy-btn': '📋 Copy',
+      'key-delete-btn': '🗑️ Delete',
+      'key-created': 'Created',
+      'key-expires': 'Expires',
+      'key-status-active': '✅ Active',
+      'key-status-expired': '❌ Expired',
+      'key-unused': 'Unused',
+      'key-used-by': 'Used by',
+      'key-no-keys': 'No keys yet',
+      'key-generation-failed': 'Failed to generate key',
+      'key-copy-success': 'Key copied to clipboard!',
+      'key-delete-confirm': 'Delete this key?',
+      'key-delete-success': 'Key deleted',
+      'key-error-generate': 'Could not generate key',
+      // Admin Keys tab
+      'admin-keys-title': 'Keys Management',
+      'admin-keys-search': 'Search Key, Username...',
+      'admin-keys-refresh': '🔄 Refresh',
+      'admin-keys-owner': 'Owner (Username)',
+      'admin-keys-status': 'Status',
+      'admin-keys-used-by': 'Used By',
+      'admin-keys-revoke': 'Revoke',
+      'admin-keys-confirm-revoke': 'Confirm revoke this key?',
+      'admin-keys-revoke-success': 'Key revoked',
+      'admin-keys-error': 'Error loading keys',
+      'admin-keys-no-keys': 'No keys',
+
       // Dashboard
       'dash-subtitle': 'Welcome to the premium script management system',
       // Ranks section
@@ -5026,6 +5090,42 @@
       'keys-subtitle': 'คีย์สำหรับปลดล็อกสคริปต์และฟีเจอร์พิเศษ',
       'keys-coming-soon': 'เร็วๆ นี้',
       'keys-coming-desc': 'ระบบคีย์กำลังอยู่ในระหว่างการพัฒนา',
+      'key-generate-title': 'สร้างคีย์ใหม่',
+      'key-duration-label': 'ระยะเวลา',
+      'key-duration-1d': '1 วัน',
+      'key-duration-3d': '3 วัน',
+      'key-duration-7d': '7 วัน',
+      'key-duration-15d': '15 วัน',
+      'key-duration-30d': '30 วัน',
+      'key-generate-btn': '🔑 สร้างคีย์',
+      'key-list-title': 'คีย์ของคุณ',
+      'key-copy-btn': '📋 คัดลอก',
+      'key-delete-btn': '🗑️ ลบ',
+      'key-created': 'สร้าง',
+      'key-expires': 'หมดอายุ',
+      'key-status-active': '✅ ใช้ได้',
+      'key-status-expired': '❌ หมดอายุ',
+      'key-unused': 'ยังไม่ใช้',
+      'key-used-by': 'ใช้โดย',
+      'key-no-keys': 'ยังไม่มีคีย์',
+      'key-generation-failed': 'สร้างคีย์ไม่สำเร็จ',
+      'key-copy-success': 'คัดลอกคีย์สำเร็จ!',
+      'key-delete-confirm': 'ลบคีย์นี้?',
+      'key-delete-success': 'ลบคีย์สำเร็จ',
+      'key-error-generate': 'ไม่สามารถสร้างคีย์ได้',
+      // Admin Keys tab
+      'admin-keys-title': 'จัดการคีย์',
+      'admin-keys-search': 'ค้นหาคีย์ ชื่อผู้ใช้...',
+      'admin-keys-refresh': '🔄 รีเฟรช',
+      'admin-keys-owner': 'เจ้าของ (ชื่อผู้ใช้)',
+      'admin-keys-status': 'สถานะ',
+      'admin-keys-used-by': 'ใช้โดย',
+      'admin-keys-revoke': 'ยกเลิก',
+      'admin-keys-confirm-revoke': 'ยืนยันการยกเลิกคีย์นี้?',
+      'admin-keys-revoke-success': 'ยกเลิกคีย์สำเร็จ',
+      'admin-keys-error': 'โหลดคีย์ไม่สำเร็จ',
+      'admin-keys-no-keys': 'ไม่มีคีย์',
+
       // Dashboard
       'dash-subtitle': 'ยินดีต้อนรับเข้าสู่ระบบจัดการสคริปต์ระดับพรีเมียม',
       // Ranks section
@@ -7127,6 +7227,241 @@
   document.getElementById('rankUpOverlay').addEventListener('click', (e) => {
     if (e.target.id === 'rankUpOverlay') closeRankUp();
   });
+
+  /* ===== KEY MANAGEMENT SYSTEM ===== */
+  // Key generation & management functions
+  window.generateNewKey = async () => {
+    const btn = document.getElementById('generateKeyBtn');
+    const status = document.getElementById('keyGenerateStatus');
+    const duration = parseInt(document.getElementById('keyDurationSelect').value);
+    
+    if (!currentUser) {
+      status.textContent = t('err-must-login') || 'Please login first';
+      status.style.color = 'var(--error)';
+      return;
+    }
+
+    try {
+      btn.disabled = true;
+      status.textContent = t('key-generating') || 'Generating...';
+      status.style.color = 'var(--muted)';
+
+      // Generate random key
+      const keyStr = generateRandomKey(24);
+      const now = Date.now();
+      const expiresAt = now + (duration * 24 * 60 * 60 * 1000);
+
+      const keyData = {
+        key: keyStr,
+        createdAt: now,
+        expiresAt: expiresAt,
+        duration: duration,
+        userId: currentUser.uid,
+        username: currentUser.username || currentUser.email,
+        used: false,
+        usedBy: null,
+        usedAt: null,
+        active: true
+      };
+
+      // Save to Firebase
+      const keyRef = db.ref('keys/' + keyStr);
+      await keyRef.set(keyData);
+
+      status.textContent = t('key-generated') || 'Key generated successfully!';
+      status.style.color = 'var(--success)';
+
+      // Refresh keys list
+      setTimeout(() => {
+        loadUserKeys();
+        status.textContent = '';
+        btn.disabled = false;
+      }, 500);
+    } catch (err) {
+      console.error('Key generation error:', err);
+      status.textContent = t('err-key-gen') || 'Error: ' + err.message;
+      status.style.color = 'var(--error)';
+      btn.disabled = false;
+    }
+  };
+
+  // Generate random key string
+  function generateRandomKey(length = 24) {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return result;
+  }
+
+  // Load user's keys
+  window.loadUserKeys = async () => {
+    if (!currentUser) return;
+
+    const container = document.getElementById('keysListContainer');
+    if (!container) return;
+
+    try {
+      const snapshot = await db.ref('keys').orderByChild('userId').equalTo(currentUser.uid).once('value');
+      const keys = [];
+      snapshot.forEach(child => {
+        keys.push({ id: child.key, ...child.val() });
+      });
+
+      if (keys.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:32px 20px;color:var(--muted);">
+            <div style="font-size:2rem;margin-bottom:8px;opacity:0.5;">🔑</div>
+            <div style="font-size:0.9rem;">${t('key-no-keys') || 'No keys yet'}</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      keys.forEach(keyData => {
+        const isExpired = Date.now() > keyData.expiresAt;
+        const daysLeft = Math.ceil((keyData.expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
+        const createdDate = new Date(keyData.createdAt).toLocaleString(getLang() === 'TH' ? 'th-TH' : 'en-US');
+        const expiresDate = new Date(keyData.expiresAt).toLocaleString(getLang() === 'TH' ? 'th-TH' : 'en-US');
+
+        const keyCard = document.createElement('div');
+        keyCard.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:16px;display:grid;gap:12px;';
+        
+        keyCard.innerHTML = `
+          <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;">
+            <div>
+              <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:var(--accent);word-break:break-all;margin-bottom:4px;">
+                ${keyData.key}
+              </div>
+              <div style="font-size:0.75rem;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;">
+                <span>📅 ${createdDate}</span>
+                <span>⏰ ${t('key-expires')} ${expiresDate}</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="copyKey('${keyData.key}')" style="padding:6px 12px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;" title="Copy">
+                📋
+              </button>
+              <button onclick="deleteKey('${keyData.id}')" style="padding:6px 12px;border-radius:8px;border:1px solid var(--error);background:transparent;color:var(--error);font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;" title="Delete">
+                🗑️
+              </button>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.72rem;">
+            <div style="padding:8px 10px;background:${isExpired ? '#f8717115' : '#4ade8015'};border-radius:8px;color:${isExpired ? '#fca5a5' : '#86efac'};border:1px solid ${isExpired ? '#f8717144' : '#4ade8044'};">
+              ${isExpired ? '❌ ' + (t('key-expired') || 'Expired') : '✅ ' + (t('key-active') || 'Active')} ${!isExpired ? '(' + daysLeft + ' ' + (t('key-days-left') || 'days left') + ')' : ''}
+            </div>
+            <div style="padding:8px 10px;background:${keyData.used ? '#f8717115' : '#7c5cfc15'};border-radius:8px;color:${keyData.used ? '#fca5a5' : '#a78bfa'};border:1px solid ${keyData.used ? '#f8717144' : '#7c5cfc44'};">
+              ${keyData.used ? '🔒 Used by: ' + (keyData.usedBy || 'Unknown') : '🔓 Unused'}
+            </div>
+          </div>
+        `;
+        container.appendChild(keyCard);
+      });
+    } catch (err) {
+      console.error('Load keys error:', err);
+    }
+  };
+
+  // Copy key to clipboard
+  window.copyKey = (keyText) => {
+    navigator.clipboard.writeText(keyText).then(() => {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastText').textContent = t('copied') || 'Copied!';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+  };
+
+  // Delete key
+  window.deleteKey = async (keyId) => {
+    if (!confirm(t('confirm-delete-key') || 'Are you sure?')) return;
+    
+    try {
+      // Find key by userId
+      const snapshot = await db.ref('keys').orderByChild('userId').equalTo(currentUser.uid).once('value');
+      snapshot.forEach(child => {
+        if (child.key === keyId) {
+          db.ref('keys/' + keyId).remove();
+        }
+      });
+      
+      loadUserKeys();
+    } catch (err) {
+      console.error('Delete key error:', err);
+    }
+  };
+
+  // Load keys when user logs in and section is shown
+  const origShowSection = window.showSection;
+  window.showSection = function(sectionId) {
+    if (sectionId === 'keys' && currentUser) {
+      loadUserKeys();
+    }
+    return origShowSection.call(this, sectionId);
+  };
+
+  // Add translations
+  const i18nData = {
+    TH: {
+      'nav-keys': 'Keys',
+      'keys-subtitle': 'สร้างและจัดการคีย์สำหรับปลดล็อกสคริปต์และฟีเจอร์พิเศษ',
+      'key-generator': 'สร้างคีย์ใหม่',
+      'key-duration': 'ระยะเวลาใช้งาน',
+      'key-dur-1day': '1 วัน',
+      'key-dur-3day': '3 วัน',
+      'key-dur-7day': '7 วัน',
+      'key-dur-15day': '15 วัน',
+      'key-dur-30day': '30 วัน',
+      'key-generate-btn': '⚡ สร้างคีย์',
+      'key-list': 'รายการคีย์ของฉัน',
+      'key-no-keys': 'ยังไม่มีคีย์ สร้างตัวแรกเลย!',
+      'key-generating': 'กำลังสร้าง...',
+      'key-generated': 'สร้างคีย์สำเร็จ!',
+      'key-expires': 'หมดอายุ',
+      'key-expired': 'หมดอายุแล้ว',
+      'key-active': 'ใช้งานได้',
+      'key-days-left': 'วันเหลือ',
+      'copied': 'คัดลอกแล้ว!',
+      'confirm-delete-key': 'ยืนยันการลบคีย์นี้?',
+      'err-must-login': 'กรุณาเข้าสู่ระบบก่อน',
+      'err-key-gen': 'เกิดข้อผิดพลาดในการสร้างคีย์',
+    },
+    EN: {
+      'nav-keys': 'Keys',
+      'keys-subtitle': 'Generate and manage keys to unlock scripts and premium features',
+      'key-generator': 'Generate New Key',
+      'key-duration': 'Duration',
+      'key-dur-1day': '1 Day',
+      'key-dur-3day': '3 Days',
+      'key-dur-7day': '7 Days',
+      'key-dur-15day': '15 Days',
+      'key-dur-30day': '30 Days',
+      'key-generate-btn': '⚡ Generate Key',
+      'key-list': 'My Keys',
+      'key-no-keys': 'No keys yet. Create your first one!',
+      'key-generating': 'Generating...',
+      'key-generated': 'Key generated successfully!',
+      'key-expires': 'Expires',
+      'key-expired': 'Expired',
+      'key-active': 'Active',
+      'key-days-left': 'days left',
+      'copied': 'Copied!',
+      'confirm-delete-key': 'Confirm delete this key?',
+      'err-must-login': 'Please login first',
+      'err-key-gen': 'Error generating key',
+    }
+  };
+
+  // Merge with existing i18n
+  if (typeof i18n !== 'undefined') {
+    if (!i18n['TH']) i18n['TH'] = {};
+    if (!i18n['EN']) i18n['EN'] = {};
+    Object.assign(i18n['TH'], i18nData['TH']);
+    Object.assign(i18n['EN'], i18nData['EN']);
+  }
 </script>
 </body>
 </html>
