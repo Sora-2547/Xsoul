@@ -3123,21 +3123,63 @@ local function showKeyInput()
         statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
         submitButton.Enabled = false
         
-        -- Check key from Firebase
-        local success, result = pcall(function()
-            -- Connect to Firebase and check key
-            local keyRef = game:GetService("HttpService"):UrlEncode(inputKey)
-            print("[Xsoul] Checking key:", inputKey)
+        -- Query Firebase to validate key
+        local success, response = pcall(function()
+            local http = game:GetService("HttpService")
             
-            -- For now, accept any 24-character alphanumeric key
-            -- In production, would validate against Firebase
-            if #inputKey >= 20 then
-                return true
+            -- Firebase REST API endpoint
+            -- Try to get all keys from all users to find the specific key
+            local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json?orderBy=%22key%22&equalTo=%22" .. http:UrlEncode(inputKey) .. "%22"
+            
+            local response = http:GetAsync(url)
+            print("[Xsoul] Firebase response:", response)
+            
+            if response == "null" or response == "{}" then
+                return false, "Key not found"
             end
-            return false
+            
+            -- Parse the response to validate
+            local decoded = http:JSONDecode(response)
+            if decoded and type(decoded) == "table" then
+                for userId, userKeysData in pairs(decoded) do
+                    if userKeysData and type(userKeysData) == "table" then
+                        for keyId, keyData in pairs(userKeysData) do
+                            if keyData.key == inputKey then
+                                -- Found the key, check if valid
+                                local now = os.time() * 1000  -- Convert to milliseconds
+                                
+                                if keyData.expiresAt and now > keyData.expiresAt then
+                                    return false, "Key expired"
+                                end
+                                
+                                if keyData.used == true then
+                                    return false, "Key already used"
+                                end
+                                
+                                -- Key is valid! Mark as used
+                                local playerName = game.Players.LocalPlayer.Name
+                                local markUrl = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys/" .. 
+                                    http:UrlEncode(userId) .. "/" .. 
+                                    http:UrlEncode(keyId) .. ".json"
+                                
+                                local markData = http:JSONEncode({
+                                    used = true,
+                                    usedBy = playerName,
+                                    usedAt = os.time() * 1000
+                                })
+                                
+                                http:PutAsync(markUrl, markData)
+                                return true, "Valid"
+                            end
+                        end
+                    end
+                end
+            end
+            
+            return false, "Validation failed"
         end)
         
-        if success and result then
+        if success and response == "Valid" then
             statusLabel.Text = "✅ Key valid! Loading..."
             statusLabel.TextColor3 = Color3.fromRGB(76, 175, 80)
             keyValidated = true
@@ -3145,7 +3187,7 @@ local function showKeyInput()
             wait(1)
             screenGui:Destroy()
         else
-            statusLabel.Text = "❌ Invalid key"
+            statusLabel.Text = "❌ " .. (response or "Invalid key")
             statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
             submitButton.Enabled = true
             keyInput.Text = ""
