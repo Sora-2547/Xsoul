@@ -2506,6 +2506,7 @@
     <div style="display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:12px;flex-wrap:wrap;">
       <button class="settings-tab-btn active" id="stab-verify"   onclick="switchSettingsTab('verify')" data-i18n="stab-verify">🛡️ ยืนยันตัวตน</button>
       <button class="settings-tab-btn"        id="stab-account"  onclick="switchSettingsTab('account')" data-i18n="stab-account">👤 ข้อมูลบัญชี</button>
+      <button class="settings-tab-btn"        id="stab-keys"     onclick="switchSettingsTab('keys')" data-i18n="stab-keys">🔑 Keys</button>
       <button class="settings-tab-btn"        id="stab-display"  onclick="switchSettingsTab('display')" data-i18n="stab-display">🎨 การแสดงผล</button>
     </div>
 
@@ -2674,6 +2675,34 @@
       <button class="btn btn-primary" onclick="closeUserSettings(); openTopup();" style="width:100%;margin-bottom:10px;" data-i18n="acct-topup-btn">💰 เติมเครดิต</button>
       <button class="btn btn-secondary" onclick="closeUserSettings()" style="width:100%;padding:12px;" data-i18n="close-btn">ปิด</button>
     </div><!-- end stab-content-account -->
+
+    <!-- TAB: KEYS -->
+    <div id="stab-content-keys" style="display:none;">
+      <div style="background:#0a0d1a;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <h3 style="color:var(--accent);margin-bottom:16px;font-size:1.1rem;">🔑 สร้าง Key สำหรับ Xsoul Menu</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;line-height:1.6;">เลือกระยะเวลาที่ต้องการเพื่อสร้าง Key สำหรับใช้งาน Xsoul Menu</p>
+        
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
+          <button class="btn btn-primary" onclick="generateXsoulKey(1)" style="padding:12px;font-size:0.9rem;">1 วัน</button>
+          <button class="btn btn-primary" onclick="generateXsoulKey(3)" style="padding:12px;font-size:0.9rem;">3 วัน</button>
+          <button class="btn btn-primary" onclick="generateXsoulKey(7)" style="padding:12px;font-size:0.9rem;">7 วัน</button>
+          <button class="btn btn-primary" onclick="generateXsoulKey(15)" style="padding:12px;font-size:0.9rem;">15 วัน</button>
+          <button class="btn btn-primary" onclick="generateXsoulKey(30)" style="padding:12px;font-size:0.9rem;">1 เดือน</button>
+        </div>
+        
+        <div style="margin-bottom:12px;">
+          <label style="display:block;color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Key ที่สร้าง:</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="xsoulGeneratedKey" readonly placeholder="กดปุ่มสร้าง Key..." style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:0.85rem;">
+            <button class="btn btn-secondary" onclick="copyXsoulKey()" style="padding:10px 16px;">คัดลอก</button>
+          </div>
+        </div>
+        
+        <div id="xsoulKeyInfo" style="color:var(--muted);font-size:0.8rem;"></div>
+      </div>
+      
+      <button class="btn btn-secondary" onclick="closeUserSettings()" style="width:100%;padding:12px;" data-i18n="close-btn">ปิด</button>
+    </div><!-- end stab-content-keys -->
 
     <!-- TAB: DISPLAY -->
     <div id="stab-content-display" style="display:none;">
@@ -4500,6 +4529,64 @@
     if (content) content.style.display = 'block';
     if (tab === 'display') refreshDisplayTabUI();
     if (tab === 'account') loadAccountInfo();
+  };
+
+  // ===== XSOUL KEY GENERATOR =====
+  window.generateXsoulKey = (days) => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let random = '';
+    for (let i = 0; i < 16; i++) {
+      random += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const key = 'XSoul-' + random;
+    const expiry = Date.now() + (days * 24 * 60 * 60 * 1000);
+    const expiryDate = new Date(expiry).toLocaleString('th-TH', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const keyData = {
+      key: key,
+      expiry: expiry,
+      expiryDate: expiryDate,
+      days: days,
+      createdAt: Date.now(),
+      createdBy: user ? user.email : 'admin'
+    };
+
+    // Store in Firebase
+    db.ref('xsoulKeys/' + key).set(keyData).then(() => {
+      console.log('Key saved to Firebase:', key);
+    }).catch(err => {
+      console.error('Failed to save key:', err);
+    });
+
+    // Encode as JSON for use in Xsoul Menu
+    const encodedKey = JSON.stringify(keyData);
+
+    document.getElementById('xsoulGeneratedKey').value = encodedKey;
+    document.getElementById('xsoulKeyInfo').textContent = `หมดอายุ: ${expiryDate} (${days} วัน)`;
+
+    // Auto-copy to clipboard
+    copyXsoulKey();
+  };
+
+  window.copyXsoulKey = () => {
+    const keyInput = document.getElementById('xsoulGeneratedKey');
+    if (keyInput && keyInput.value) {
+      navigator.clipboard.writeText(keyInput.value).then(() => {
+        alert('คัดลอก Key แล้ว!');
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        // Fallback for older browsers
+        keyInput.select();
+        document.execCommand('copy');
+        alert('คัดลอก Key แล้ว!');
+      });
+    }
   };
 
   // ===== FONT SIZE =====
