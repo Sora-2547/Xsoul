@@ -2,7 +2,9 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <title>Xsoul Script Hub</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
   <style>
@@ -22,18 +24,23 @@
       --sans: 'Space Grotesk', sans-serif;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
     html {
       overflow-x: hidden;
       max-width: 100%;
+      -webkit-text-size-adjust: 100%;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     body {
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+      min-height: 100vh;
       background: var(--bg);
       color: var(--text);
       font-family: var(--sans);
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -754,27 +761,38 @@
     /* ===== RANK UP CONGRATULATIONS POPUP ===== */
     .rankup-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px); z-index: 3000;
       display: flex; align-items: center; justify-content: center;
       opacity: 0; visibility: hidden; transition: all 0.4s ease;
+      padding: 16px;
     }
     .rankup-overlay.active { opacity: 1; visibility: visible; }
     .rankup-overlay.active .rankup-modal { transform: scale(1) translateY(0); }
 
     .rankup-modal {
       position: relative; background: var(--card); border: 1px solid var(--border);
-      border-radius: 28px; padding: 36px 32px; width: min(480px, 92vw);
-      max-height: 90vh; overflow-y: auto;
+      border-radius: 24px; padding: 24px 20px; width: 100%;
+      max-width: 420px; max-height: 85vh; overflow-y: auto;
       transform: scale(0.85) translateY(30px); transition: all 0.4s cubic-bezier(.34,1.56,.64,1);
       text-align: center; overflow: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (min-width: 640px) {
+      .rankup-modal {
+        padding: 36px 32px; width: min(480px, 92vw);
+        border-radius: 28px;
+      }
     }
     .rankup-close {
-      position: absolute; top: 14px; right: 14px;
+      position: absolute; top: 12px; right: 12px;
       background: var(--border); border: none; border-radius: 10px;
-      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: all 0.2s; color: var(--text); font-size: 1rem; z-index: 2;
+      -webkit-tap-highlight-color: transparent;
     }
     .rankup-close:hover { background: var(--error); color: #fff; }
+    .rankup-close:active { transform: scale(0.95); }
 
     .rankup-particles {
       position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0;
@@ -793,12 +811,21 @@
 
     .rankup-glow {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      width: 300px; height: 300px; border-radius: 50%; filter: blur(80px); opacity: 0.25;
+      width: 200px; height: 200px; border-radius: 50%; filter: blur(60px); opacity: 0.25;
       pointer-events: none; z-index: 0;
     }
+    @media (min-width: 640px) {
+      .rankup-glow {
+        width: 300px; height: 300px; filter: blur(80px);
+      }
+    }
 
-    .rankup-header { position: relative; z-index: 1; margin-bottom: 20px; }
-    .rankup-star { font-size: 3rem; animation: rankupBounce 1.2s ease-in-out infinite; margin-bottom: 10px; }
+    .rankup-header { position: relative; z-index: 1; margin-bottom: 16px; }
+    .rankup-star { font-size: 2.5rem; animation: rankupBounce 1.2s ease-in-out infinite; margin-bottom: 8px; }
+    @media (min-width: 640px) {
+      .rankup-header { margin-bottom: 20px; }
+      .rankup-star { font-size: 3rem; margin-bottom: 10px; }
+    }
     @keyframes rankupBounce {
       0%,100% { transform: scale(1) rotate(0deg); }
       50% { transform: scale(1.15) rotate(8deg); }
@@ -2223,6 +2250,16 @@
 <div class="toast" id="toast">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
   <span id="toastText">คัดลอกแล้ว!</span>
+</div>
+
+<!-- ===== TOPUP SUCCESS POPUP ===== -->
+<div class="topup-overlay" id="topupSuccessOverlay" style="z-index:3100;">
+  <div class="topup-modal" style="text-align:center;padding:32px 24px;">
+    <div style="font-size:4rem;margin-bottom:16px;">✅</div>
+    <div class="topup-title" style="margin-bottom:8px;">เติมเครดิตสำเร็จ!</div>
+    <div class="topup-sub" id="topupSuccessMessage" style="margin-bottom:24px;">เงินเข้าแล้ว</div>
+    <button class="btn btn-primary" onclick="closeTopupSuccess()" style="width:100%;padding:14px;font-size:1rem;">ตกลง</button>
+  </div>
 </div>
 
 <!-- ===== TOPUP MODAL ===== -->
@@ -5539,6 +5576,24 @@
     if (e.target.id === 'topupOverlay') closeTopup();
   });
 
+  window.showTopupSuccessPopup = (credits, amount, autoApproved) => {
+    const msgEl = document.getElementById('topupSuccessMessage');
+    if (msgEl) {
+      msgEl.textContent = autoApproved 
+        ? `เติมเครดิตสำเร็จ +${credits} เครดิต (${amount} บาท)`
+        : `ส่งสลิปสำเร็จ ${amount} บาท (${credits} เครดิต) - รอการอนุมัติ`;
+    }
+    document.getElementById('topupSuccessOverlay').classList.add('active');
+  };
+
+  window.closeTopupSuccess = () => {
+    document.getElementById('topupSuccessOverlay').classList.remove('active');
+    closeTopup();
+  };
+  document.getElementById('topupSuccessOverlay').addEventListener('click', e => {
+    if (e.target.id === 'topupSuccessOverlay') closeTopupSuccess();
+  });
+
   window.selectTopupPkg = (el) => {
     document.querySelectorAll('.topup-pkg').forEach(p => p.classList.remove('selected'));
     el.classList.add('selected');
@@ -5658,6 +5713,7 @@
     const refEl = document.getElementById('topupOcrRef');
     const bankEl = document.getElementById('topupOcrBank');
     const nameEl = document.getElementById('topupSlipFileName');
+    const msgEl = document.getElementById('topupMsg');
     const setName = (txt, i18nKey) => {
       if (!nameEl) return;
       if (i18nKey) { nameEl.setAttribute('data-i18n', i18nKey); nameEl.textContent = (typeof t === 'function' ? t(i18nKey) : txt); }
@@ -5670,6 +5726,7 @@
     if (stEl) stEl.textContent = '';
     if (refEl) refEl.textContent = '';
     if (bankEl) bankEl.textContent = '';
+    if (msgEl) msgEl.textContent = ''; // Clear any previous error messages
     const file = input && input.files && input.files[0];
     if (!file) { img.style.display = 'none'; setName('', 'topup-slip-nofile'); return; }
     if (!file.type.startsWith('image/')) {
@@ -6592,10 +6649,10 @@
             : `💰 ${uhandle} แนบสลิปเติมเครดิต ${_fmt(_topupSelectedPkg.price)} บาท (${_fmt(_topupSelectedPkg.credits)} เครดิต) เวลา ${dateStr}`,
         });
       } catch(e) { console.warn('[topup] adminNotifications write failed:', e.message); }
-      msg.style.color = 'var(--success)';
-      msg.textContent = autoApprove
-        ? `✅ เติมเครดิตสำเร็จ +${_fmt(creditedAmount)} เครดิต`
-        : '✅ ' + t('toast-topup-sent');
+      
+      // Show success popup and auto-close
+      showTopupSuccessPopup(creditedAmount, _topupSelectedPkg.price, autoApprove);
+      
       _topupSelectedPkg = null;
       const _pay2 = document.getElementById('topupPaymentSection'); if (_pay2) _pay2.style.display = 'none';
       if (typeof window.renderTopupPackages === 'function') window.renderTopupPackages();
@@ -6610,7 +6667,7 @@
       const _or2 = document.getElementById('topupOcrRef'); if (_or2) _or2.textContent = '';
       const _ob2 = document.getElementById('topupOcrBank'); if (_ob2) _ob2.textContent = '';
       loadTopupHistory(user.uid);
-      // Best-effort 15-day cleanup runs after each submission
+      // Best-effort cleanup: keep only 50 most recent slips per user
       try { cleanupOldTopups(user.uid); } catch {}
     } catch (e) {
       msg.style.color = 'var(--error)';
@@ -6664,7 +6721,7 @@
   // We delete topupHistory, topupRequests, and the matching adminNotifications/topup
   // entry. We DO NOT delete slipIndex/{byHash,byRef} — those must persist so the
   // same slip can never be reused for a future top-up.
-  const TOPUP_RETENTION_MS = 15 * 24 * 60 * 60 * 1000; // 15 days
+  const MAX_SLIPS_PER_USER = 50; // Keep only 50 most recent slips
   window._topupCleanupRan = 0;
   async function cleanupOldTopups(uid) {
     if (!uid) return;
@@ -6673,29 +6730,44 @@
     if (now - (window._topupCleanupRan) < 6 * 3600 * 1000) return;
     window._topupCleanupRan = now;
     try {
-      const [, snap] = await Promise.all([
-        Promise.resolve(),
+      const [histSnap, reqSnap] = await Promise.all([
+        get(ref(db, `users/${uid}/topupHistory`)),
         get(ref(db, `users/${uid}/topupRequests`)),
       ]);
       const deletions = [];
-      const collectOld = (snap, base) => {
+      
+      // Collect all entries with timestamps
+      const allEntries = [];
+      const collectEntries = (snap, base) => {
         if (!snap.exists()) return;
         const obj = snap.val() || {};
         for (const key in obj) {
           const v = obj[key] || {};
           const ts = Number(v.createdAt || key);
-          if (Number.isFinite(ts) && ts < cutoff) {
-            deletions.push(remove(ref(db, `${base}/${key}`)));
-            // Also remove matching admin notification (best-effort, ignore errors)
-            deletions.push(remove(ref(db, `adminNotifications/topup/${key}_${uid}`)).catch(()=>{}));
+          if (Number.isFinite(ts)) {
+            allEntries.push({ key, ts, base });
           }
         }
       };
-      collectOld(histSnap, `users/${uid}/topupHistory`);
-      collectOld(reqSnap,  `users/${uid}/topupRequests`);
+      collectEntries(histSnap, `users/${uid}/topupHistory`);
+      collectEntries(reqSnap, `users/${uid}/topupRequests`);
+      
+      // Sort by timestamp (newest first)
+      allEntries.sort((a, b) => b.ts - a.ts);
+      
+      // Delete entries beyond the 50th
+      if (allEntries.length > MAX_SLIPS_PER_USER) {
+        const toDelete = allEntries.slice(MAX_SLIPS_PER_USER);
+        for (const entry of toDelete) {
+          deletions.push(remove(ref(db, `${entry.base}/${entry.key}`)));
+          // Also remove matching admin notification (best-effort, ignore errors)
+          deletions.push(remove(ref(db, `adminNotifications/topup/${entry.key}_${uid}`)).catch(()=>{}));
+        }
+      }
+      
       if (deletions.length) {
         await Promise.allSettled(deletions);
-        console.log(`[topup] cleanup removed ${deletions.length} entries older than 15 days`);
+        console.log(`[topup] cleanup removed ${deletions.length} old slips (keeping ${MAX_SLIPS_PER_USER} most recent)`);
       }
     } catch(e) {
       console.warn('[topup] cleanup failed:', e.message);
