@@ -7264,9 +7264,9 @@
         active: true
       };
 
-      // Save to Firebase using modular SDK
-      const keyRefPath = ref(db, 'userKeys/' + auth.currentUser.uid + '/' + keyStr);
-      await set(keyRefPath, keyData);
+      // Save to Firebase using modular SDK via window functions
+      const keyRefPath = window.fbRef(db, 'userKeys/' + auth.currentUser.uid + '/' + keyStr);
+      await window.fbSet(keyRefPath, keyData);
 
       status.textContent = 'Key generated successfully!';
       status.style.color = 'var(--success)';
@@ -7304,8 +7304,8 @@
 
     try {
       // Load from userKeys/{userId}/* structure for better security
-      const keysRefPath = ref(db, 'userKeys/' + auth.currentUser.uid);
-      const snapshot = await get(keysRefPath);
+      const keysRefPath = window.fbRef(db, 'userKeys/' + auth.currentUser.uid);
+      const snapshot = await window.fbGet(keysRefPath);
       const keysData = snapshot.val() || {};
       
       const keys = Object.entries(keysData).map(([id, val]) => ({ id, ...val }));
@@ -7383,8 +7383,8 @@
     if (!auth.currentUser) return;
     
     try {
-      const keyRefPath = ref(db, 'userKeys/' + auth.currentUser.uid + '/' + keyId);
-      await remove(keyRefPath);
+      const keyRefPath = window.fbRef(db, 'userKeys/' + auth.currentUser.uid + '/' + keyId);
+      await window.fbRemove(keyRefPath);
       loadUserKeys();
     } catch (err) {
       console.error('Delete key error:', err);
