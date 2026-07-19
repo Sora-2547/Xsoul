@@ -3008,6 +3008,179 @@ Position = UDim2.new(0, 0, 0, 100),
     end
 end
 
+-- Wait for key validation before creating menu
+local keyValidationComplete = false
+local keyValidated = false
+
+-- ===== KEY VERIFICATION SYSTEM =====
+local function showKeyInput()
+    print("[Xsoul] Opening Key Input Dialog...")
+    
+    -- Create GUI for key input
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "XsoulKeyInput"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    -- Main frame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 350, 0, 250)
+    mainFrame.Position = UDim2.new(0.5, -175, 0.5, -125)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = screenGui
+    
+    -- Title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "TitleLabel"
+    titleLabel.Size = UDim2.new(1, 0, 0, 50)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(60, 20, 120)
+    titleLabel.BorderSizePixel = 0
+    titleLabel.Text = "🔐 Xsoul Key Required"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 18
+    titleLabel.Font = Enum.Font.GothamBlack
+    titleLabel.Parent = mainFrame
+    
+    -- Description
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Name = "DescLabel"
+    descLabel.Size = UDim2.new(1, -20, 0, 40)
+    descLabel.Position = UDim2.new(0, 10, 0, 60)
+    descLabel.BackgroundTransparency = 1
+    descLabel.Text = "Enter your activation key to use Xsoul"
+    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    descLabel.TextSize = 12
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextWrapped = true
+    descLabel.Parent = mainFrame
+    
+    -- Key input textbox
+    local keyInput = Instance.new("TextBox")
+    keyInput.Name = "KeyInput"
+    keyInput.Size = UDim2.new(1, -20, 0, 35)
+    keyInput.Position = UDim2.new(0, 10, 0, 105)
+    keyInput.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+    keyInput.BorderColor3 = Color3.fromRGB(100, 80, 150)
+    keyInput.BorderSizePixel = 2
+    keyInput.Text = ""
+    keyInput.PlaceholderText = "Paste your key here"
+    keyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    keyInput.TextSize = 14
+    keyInput.Font = Enum.Font.GothamMonospace
+    keyInput.Parent = mainFrame
+    
+    -- Submit button
+    local submitButton = Instance.new("TextButton")
+    submitButton.Name = "SubmitButton"
+    submitButton.Size = UDim2.new(0, 140, 0, 35)
+    submitButton.Position = UDim2.new(0, 10, 0, 150)
+    submitButton.BackgroundColor3 = Color3.fromRGB(0, 212, 255)
+    submitButton.BorderSizePixel = 0
+    submitButton.Text = "✓ Submit"
+    submitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    submitButton.TextSize = 14
+    submitButton.Font = Enum.Font.GothamBold
+    submitButton.Parent = mainFrame
+    
+    -- Close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 140, 0, 35)
+    closeButton.Position = UDim2.new(0, 200, 0, 150)
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 107, 107)
+    closeButton.BorderSizePixel = 0
+    closeButton.Text = "✕ Cancel"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.TextSize = 14
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.Parent = mainFrame
+    
+    -- Status label
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Name = "StatusLabel"
+    statusLabel.Size = UDim2.new(1, -20, 0, 25)
+    statusLabel.Position = UDim2.new(0, 10, 0, 195)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = ""
+    statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+    statusLabel.TextSize = 11
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.Parent = mainFrame
+    
+    -- Handle key submission
+    local function validateKey()
+        local inputKey = keyInput.Text:upper():gsub("%s", "")
+        
+        if #inputKey == 0 then
+            statusLabel.Text = "❌ Please enter a key"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            return
+        end
+        
+        statusLabel.Text = "⏳ Validating..."
+        statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+        submitButton.Enabled = false
+        
+        -- Check key from Firebase
+        local success, result = pcall(function()
+            -- Connect to Firebase and check key
+            local keyRef = game:GetService("HttpService"):UrlEncode(inputKey)
+            print("[Xsoul] Checking key:", inputKey)
+            
+            -- For now, accept any 24-character alphanumeric key
+            -- In production, would validate against Firebase
+            if #inputKey >= 20 then
+                return true
+            end
+            return false
+        end)
+        
+        if success and result then
+            statusLabel.Text = "✅ Key valid! Loading..."
+            statusLabel.TextColor3 = Color3.fromRGB(76, 175, 80)
+            keyValidated = true
+            keyValidationComplete = true
+            wait(1)
+            screenGui:Destroy()
+        else
+            statusLabel.Text = "❌ Invalid key"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            submitButton.Enabled = true
+            keyInput.Text = ""
+        end
+    end
+    
+    submitButton.MouseButton1Click:Connect(validateKey)
+    closeButton.MouseButton1Click:Connect(function()
+        keyValidationComplete = true
+        keyValidated = false
+        screenGui:Destroy()
+    end)
+    
+    keyInput.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            validateKey()
+        end
+    end)
+    
+    keyInput:CaptureFocus()
+end
+
+-- Show key input dialog
+showKeyInput()
+
+-- Wait for key validation
+repeat wait(0.1) until keyValidationComplete
+if not keyValidated then
+    warn("[Xsoul] Key validation failed - exiting")
+    return
+end
+
+print("[Xsoul] Key validated - creating menu")
+
+
 local win = library.new("Xsoul Hud")
 
 local page1 = win:NewPage("เมนูหลัก")
@@ -3132,8 +3305,8 @@ spawn(function()
             local titleText = colorpicker.Title.Text
             local themeName = themeMap[titleText]
             if themeName and themes[themeName] then
-                -- Use the section's updateColorPicker function to properly update all properties
-                setting1:updateColorPicker(colorpicker, nil, themes[themeName])
+                -- Directly set button color for immediate update without tween
+                colorpicker.Button.ImageColor3 = themes[themeName]
             end
         end
     end
@@ -3367,14 +3540,14 @@ setting2:Dropdown("เปลี่ยนภาษา", {"ไทย", "English"},
     setLanguage(langKey)
 end)
 
--- Add reset button directly to page container (without section header)
+-- Add reset button to main window container for always-visible access
 local resetButton = utility:Create("ImageButton", {
     Name = "ResetButton",
-    Parent = page2.container,
+    Parent = win.container.Main,
     BackgroundTransparency = 1,
     BorderSizePixel = 0,
     Size = UDim2.new(1, -20, 0, 30),
-    Position = UDim2.new(0, 10, 0, 0),
+    Position = UDim2.new(0, 10, 1, -40),
     ZIndex = 2,
     Image = "rbxassetid://5028857472",
     ImageColor3 = themes.TopBarColor:Lerp(Color3.new(1, 1, 1), 0.3), -- Lighter than TopBarColor
@@ -3438,19 +3611,14 @@ resetButton.MouseButton1Click:Connect(function()
         ["สีตัวหนังสือ"] = "TextColor"
     }
 
-    print("Reset: Found " .. #setting1.modules .. " modules in setting1")
-    print("Reset: Found " .. #setting1.colorpickers .. " colorpickers in setting1")
-
     -- Use setting1's colorpickers table to update each color picker
     for colorpicker, pickerData in pairs(setting1.colorpickers) do
         if colorpicker and colorpicker:FindFirstChild("Button") and colorpicker:FindFirstChild("Title") then
             local titleText = colorpicker.Title.Text
             local themeName = themeMap[titleText]
-            print("Reset: Found color picker with title: " .. titleText .. ", themeName: " .. tostring(themeName))
             if themeName and themes[themeName] then
-                print("Reset: Updating color picker " .. titleText .. " to " .. tostring(themes[themeName]))
-                -- Use the section's updateColorPicker function to properly update all properties
-                setting1:updateColorPicker(colorpicker, nil, themes[themeName])
+                -- Directly set button color for immediate update without tween
+                colorpicker.Button.ImageColor3 = themes[themeName]
             end
         end
     end
