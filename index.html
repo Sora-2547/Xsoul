@@ -2175,42 +2175,41 @@
         <div style="margin-bottom:14px;">
           <label style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">เลือกระยะเวลา</label>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;">
-            <button type="button" onclick="selectDuration(1)" id="dur-1" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+            <button type="button" onclick="selectDuration(1)" id="dur-1" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
               <div style="font-weight:700;">1 วัน</div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-1-price">10 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(3)" id="dur-3" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+            <button type="button" onclick="selectDuration(3)" id="dur-3" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
               <div style="font-weight:700;">3 วัน</div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-3-price">30 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(5)" id="dur-5" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+            <button type="button" onclick="selectDuration(5)" id="dur-5" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
               <div style="font-weight:700;">5 วัน</div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-5-price">50 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(7)" id="dur-7" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+            <button type="button" onclick="selectDuration(7)" id="dur-7" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
               <div style="font-weight:700;">7 วัน</div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-7-price">70 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(15)" id="dur-15" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+            <button type="button" onclick="selectDuration(15)" id="dur-15" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
               <div style="font-weight:700;">15 วัน</div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-15-price">150 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(30)" id="dur-30" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+            <button type="button" onclick="selectDuration(30)" id="dur-30" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
               <div style="font-weight:700;">30 วัน</div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-30-price">300 เครดิต</div>
             </button>
           </div>
         </div>
 
-        <!-- Custom duration -->
+        <!-- Custom duration (days + hours combined, e.g. 2 วัน 3 ชม.) -->
         <div style="margin-bottom:14px;">
-          <label style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;">หรือระบุจำนวนเอง:</label>
-          <div style="display:flex;gap:8px;">
-            <input type="number" id="customDuration" min="1" max="365" placeholder="จำนวน" style="flex:1;padding:10px 14px;background:#0a0d1a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
-            <select id="durationUnit" style="padding:10px;background:#0a0d1a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
-              <option value="days">วัน</option>
-              <option value="hours">ชม.</option>
-            </select>
+          <label style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;">หรือระบุเอง (ผสมได้ เช่น 2 วัน 3 ชม.):</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="number" id="customDurationDays" min="0" max="365" placeholder="0" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
+            <span style="color:var(--muted);font-size:0.85rem;">วัน</span>
+            <input type="number" id="customDurationHours" min="0" max="23" placeholder="0" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
+            <span style="color:var(--muted);font-size:0.85rem;">ชม.</span>
           </div>
         </div>
 
@@ -4600,7 +4599,7 @@
   // ===== XSOUL KEY GENERATOR =====
   let selectedDuration = null;
   let isTestMode = false;
-  
+
   // Rank discounts (synced with Rank page)
   const rankDiscounts = {
     'Free': 0,
@@ -4611,349 +4610,265 @@
     'Diamond': 17.33,
     'PremiumMax': 44.67
   };
-  
-  // Base price: 10 credits per day
+
   const BASE_PRICE_PER_DAY = 10;
-  const BASE_PRICE_PER_HOUR = 10 / 24; // ~0.42 credits per hour
-  
-  // Load user rank when keys tab is opened
-  window.loadKeyGeneratorInfo = () => {
-    if (!user) return;
-    
-    // Get user rank
-    db.ref(`users/${user.uid}/rank`).once('value').then(snap => {
-      const rank = snap.val() || 'Free';
-      const discount = rankDiscounts[rank] || 0;
-      
-      document.getElementById('currentRankDisplay').textContent = rank;
-      document.getElementById('rankDiscountDisplay').textContent = discount + '%';
-      
-      updateButtonPrices();
-      updatePriceDisplay();
-    }).catch(err => {
-      console.error('Error loading rank:', err);
-      document.getElementById('currentRankDisplay').textContent = 'Error';
-      document.getElementById('rankDiscountDisplay').textContent = '0%';
+  const BASE_PRICE_PER_HOUR = 10 / 24;
+
+  // Helpers ---------------------------------------------------------------
+  function _getAuthUser() {
+    try { return (window.auth && window.auth.currentUser) || null; } catch(e) { return null; }
+  }
+  async function _getRank(uid) {
+    try {
+      const snap = await window.fbGet(window.fbRef(window.db, `users/${uid}/rank`));
+      return snap.exists() ? (snap.val() || 'Free') : 'Free';
+    } catch(e) { console.error('rank load failed', e); return 'Free'; }
+  }
+  function _readCustomDuration() {
+    const daysEl = document.getElementById('customDurationDays');
+    const hoursEl = document.getElementById('customDurationHours');
+    const d = daysEl ? parseInt(daysEl.value) : 0;
+    const h = hoursEl ? parseInt(hoursEl.value) : 0;
+    return {
+      days: isNaN(d) || d < 0 ? 0 : d,
+      hours: isNaN(h) || h < 0 ? 0 : h
+    };
+  }
+  function _highlightSelected(days) {
+    document.querySelectorAll('[id^="dur-"]').forEach(btn => {
+      if (!btn.id.match(/^dur-\d+$/)) return;
+      btn.style.background = 'var(--card)';
+      btn.style.borderColor = 'var(--border)';
+      btn.style.color = 'var(--text)';
     });
+    if (days != null) {
+      const el = document.getElementById(`dur-${days}`);
+      if (el) {
+        el.style.background = 'var(--accent)';
+        el.style.borderColor = 'var(--accent)';
+        el.style.color = '#fff';
+      }
+    }
+  }
+
+  // Public API ------------------------------------------------------------
+  window.loadKeyGeneratorInfo = async () => {
+    const user = _getAuthUser();
+    if (!user) {
+      const rEl = document.getElementById('currentRankDisplay');
+      const dEl = document.getElementById('rankDiscountDisplay');
+      if (rEl) rEl.textContent = '-';
+      if (dEl) dEl.textContent = '0%';
+      updatePriceDisplay();
+      return;
+    }
+    const rank = await _getRank(user.uid);
+    const discount = rankDiscounts[rank] || 0;
+    const rEl = document.getElementById('currentRankDisplay');
+    const dEl = document.getElementById('rankDiscountDisplay');
+    if (rEl) rEl.textContent = rank;
+    if (dEl) dEl.textContent = discount + '%';
+    updateButtonPrices(rank, discount);
+    updatePriceDisplay();
   };
-  
-  // Select duration preset
+
   window.selectDuration = (days) => {
     selectedDuration = days;
     isTestMode = false;
-    document.getElementById('testKeyOption').checked = false;
-    
-    // Update button styles
-    document.querySelectorAll('[id^="dur-"]').forEach(btn => {
-      btn.style.background = '';
-      btn.style.borderColor = '';
-    });
-    document.getElementById(`dur-${days}`).style.background = 'var(--accent)';
-    document.getElementById(`dur-${days}`).style.borderColor = 'var(--accent)';
-    
-    // Clear custom input
-    document.getElementById('customDuration').value = '';
-    
-    // Update button prices with discount
-    updateButtonPrices();
-    
+    const t = document.getElementById('testKeyOption'); if (t) t.checked = false;
+    _highlightSelected(days);
+    const cd = document.getElementById('customDurationDays'); if (cd) cd.value = '';
+    const ch = document.getElementById('customDurationHours'); if (ch) ch.value = '';
     updatePriceDisplay();
   };
-  
-  // Update button prices with user's rank discount
-  window.updateButtonPrices = () => {
-    if (!user) return;
-    
-    db.ref(`users/${user.uid}/rank`).once('value').then(snap => {
-      const rank = snap.val() || 'Free';
-      const discount = rankDiscounts[rank] || 0;
-      
-      const durations = [1, 3, 5, 7, 15, 30];
-      durations.forEach(days => {
-        const basePrice = days * BASE_PRICE_PER_DAY;
-        const discountedPrice = Math.round(basePrice * (1 - discount / 100));
-        const priceEl = document.getElementById(`dur-${days}-price`);
-        if (priceEl) {
-          const priceText = discount > 0 
-            ? `${discountedPrice} เครดิต (ลด ${discount}%)` 
-            : `${basePrice} เครดิต`;
-          priceEl.textContent = priceText;
-        }
-      });
-    }).catch(err => {
-      console.error('Error loading rank for button prices:', err);
+
+  window.updateButtonPrices = async (rankArg, discountArg) => {
+    let rank = rankArg, discount = discountArg;
+    if (rank == null) {
+      const user = _getAuthUser();
+      if (!user) return;
+      rank = await _getRank(user.uid);
+      discount = rankDiscounts[rank] || 0;
+    }
+    [1,3,5,7,15,30].forEach(days => {
+      const basePrice = days * BASE_PRICE_PER_DAY;
+      const finalPrice = Math.round(basePrice * (1 - discount/100));
+      const el = document.getElementById(`dur-${days}-price`);
+      if (el) el.textContent = discount > 0
+        ? `${finalPrice} เครดิต (ลด ${discount}%)`
+        : `${basePrice} เครดิต`;
     });
   };
-  
-  // Toggle test mode
+
   window.toggleTestKey = () => {
-    isTestMode = document.getElementById('testKeyOption').checked;
-    
+    const t = document.getElementById('testKeyOption');
+    isTestMode = !!(t && t.checked);
     if (isTestMode) {
-      // Clear duration selection
       selectedDuration = null;
-      document.querySelectorAll('[id^="dur-"]').forEach(btn => {
-        btn.style.background = '';
-        btn.style.borderColor = '';
-      });
-      document.getElementById('customDuration').value = '';
+      _highlightSelected(null);
+      const cd = document.getElementById('customDurationDays'); if (cd) cd.value = '';
+      const ch = document.getElementById('customDurationHours'); if (ch) ch.value = '';
     }
-    
     updatePriceDisplay();
   };
-  
-  // Update price display
-  window.updatePriceDisplay = () => {
+
+  window.updatePriceDisplay = async () => {
+    const priceEl = document.getElementById('keyPriceDisplay');
+    const breakEl = document.getElementById('priceBreakdown');
+    if (!priceEl || !breakEl) return;
+
+    const user = _getAuthUser();
     if (!user) {
-      document.getElementById('keyPriceDisplay').textContent = 'กรุณาเข้าสู่ระบบ';
-      document.getElementById('priceBreakdown').textContent = '-';
+      priceEl.textContent = 'กรุณาเข้าสู่ระบบ';
+      breakEl.textContent = '-';
       return;
     }
-    
-    let price = 0;
-    let breakdown = '';
-    
+
+    const rank = await _getRank(user.uid);
+    const discount = rankDiscounts[rank] || 0;
+
     if (isTestMode) {
-      price = 1; // Test mode: 1 credit for 1 hour
-      breakdown = 'ทดลอง: 1 เครดิต (1 ชม.) - ไม่มีส่วนลด';
-    } else if (selectedDuration) {
-      // Calculate price based on selected duration
-      db.ref(`users/${user.uid}/rank`).once('value').then(snap => {
-        const rank = snap.val() || 'Free';
-        const discount = rankDiscounts[rank] || 0;
-        
-        const basePrice = selectedDuration * BASE_PRICE_PER_DAY;
-        const discountedPrice = basePrice * (1 - discount / 100);
-        price = Math.round(discountedPrice);
-        
-        breakdown = `ราคาพื้นฐาน: ${selectedDuration} วัน × ${BASE_PRICE_PER_DAY} = ${basePrice} เครดิต`;
-        if (discount > 0) {
-          const discountAmount = basePrice - price;
-          breakdown += ` | ส่วนลด ${discount}% (${discountAmount} เครดิต) | ราคาสุทธิ: ${price} เครดิต`;
-        } else {
-          breakdown += ` | ราคาสุทธิ: ${price} เครดิต`;
-        }
-        
-        document.getElementById('keyPriceDisplay').textContent = price + ' เครดิต';
-        document.getElementById('priceBreakdown').textContent = breakdown;
-      });
+      priceEl.textContent = '1 เครดิต';
+      breakEl.textContent = 'ทดลอง: 1 เครดิต (1 ชม.) - ไม่มีส่วนลด';
       return;
+    }
+
+    let days = 0, hours = 0, label = '';
+    if (selectedDuration) {
+      days = selectedDuration;
+      label = `${days} วัน`;
     } else {
-      // Check custom duration
-      const customValue = document.getElementById('customDuration').value;
-      const unit = document.getElementById('durationUnit').value;
-      
-      if (customValue && parseInt(customValue) > 0) {
-        const value = parseInt(customValue);
-        
-        db.ref(`users/${user.uid}/rank`).once('value').then(snap => {
-          const rank = snap.val() || 'Free';
-          const discount = rankDiscounts[rank] || 0;
-          
-          let basePrice;
-          if (unit === 'days') {
-            basePrice = value * BASE_PRICE_PER_DAY;
-          } else {
-            basePrice = value * BASE_PRICE_PER_HOUR;
-          }
-          
-          const discountedPrice = basePrice * (1 - discount / 100);
-          price = Math.round(discountedPrice);
-          
-          const unitText = unit === 'days' ? 'วัน' : 'ชม.';
-          const unitPrice = unit === 'days' ? BASE_PRICE_PER_DAY : BASE_PRICE_PER_HOUR.toFixed(2);
-          
-          breakdown = `ราคาพื้นฐาน: ${value} ${unitText} × ${unitPrice} = ${basePrice.toFixed(2)} เครดิต`;
-          if (discount > 0) {
-            const discountAmount = (basePrice - discountedPrice).toFixed(2);
-            breakdown += ` | ส่วนลด ${discount}% (${discountAmount} เครดิต) | ราคาสุทธิ: ${price} เครดิต`;
-          } else {
-            breakdown += ` | ราคาสุทธิ: ${price} เครดิต`;
-          }
-          
-          document.getElementById('keyPriceDisplay').textContent = price + ' เครดิต';
-          document.getElementById('priceBreakdown').textContent = breakdown;
-        });
-        return;
-      }
+      const c = _readCustomDuration();
+      days = c.days; hours = c.hours;
+      if (days > 0 && hours > 0) label = `${days} วัน ${hours} ชม.`;
+      else if (days > 0) label = `${days} วัน`;
+      else if (hours > 0) label = `${hours} ชม.`;
     }
-    
-    document.getElementById('keyPriceDisplay').textContent = price + ' เครดิต';
-    document.getElementById('priceBreakdown').textContent = breakdown || 'กรุณาเลือกระยะเวลา';
-  };
-  
-  // Listen for custom duration changes
-  document.addEventListener('DOMContentLoaded', () => {
-    const customInput = document.getElementById('customDuration');
-    const unitSelect = document.getElementById('durationUnit');
-    
-    if (customInput) {
-      customInput.addEventListener('input', () => {
-        if (customInput.value) {
-          selectedDuration = null;
-          isTestMode = false;
-          document.getElementById('testKeyOption').checked = false;
-          document.querySelectorAll('[id^="dur-"]').forEach(btn => {
-            btn.style.background = '';
-            btn.style.borderColor = '';
-          });
-          updatePriceDisplay();
-        }
-      });
-    }
-    
-    if (unitSelect) {
-      unitSelect.addEventListener('change', updatePriceDisplay);
-    }
-  });
-  
-  window.generateXsoulKey = () => {
-    if (!user) {
-      alert('กรุณาเข้าสู่ระบบก่อน');
+
+    if (days === 0 && hours === 0) {
+      priceEl.textContent = '0 เครดิต';
+      breakEl.textContent = 'กรุณาเลือกระยะเวลา';
       return;
     }
-    
-    let durationDays = 0;
-    let durationHours = 0;
-    
+
+    const basePrice = days * BASE_PRICE_PER_DAY + hours * BASE_PRICE_PER_HOUR;
+    const finalPrice = Math.max(1, Math.round(basePrice * (1 - discount/100)));
+    priceEl.textContent = finalPrice + ' เครดิต';
+    let bd = `ราคาพื้นฐาน: ${label} = ${basePrice.toFixed(2)} เครดิต`;
+    if (discount > 0) {
+      bd += ` | ส่วนลด ${discount}% | สุทธิ: ${finalPrice} เครดิต`;
+    } else {
+      bd += ` | สุทธิ: ${finalPrice} เครดิต`;
+    }
+    breakEl.textContent = bd;
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const daysInput = document.getElementById('customDurationDays');
+    const hoursInput = document.getElementById('customDurationHours');
+    const onCustomInput = () => {
+      selectedDuration = null;
+      isTestMode = false;
+      const t = document.getElementById('testKeyOption'); if (t) t.checked = false;
+      _highlightSelected(null);
+      updatePriceDisplay();
+    };
+    if (daysInput) daysInput.addEventListener('input', onCustomInput);
+    if (hoursInput) hoursInput.addEventListener('input', onCustomInput);
+  });
+
+  window.generateXsoulKey = async () => {
+    const user = _getAuthUser();
+    if (!user) { alert('กรุณาเข้าสู่ระบบก่อน'); return; }
+
+    let durationDays = 0, durationHours = 0;
     if (isTestMode) {
       durationHours = 1;
     } else if (selectedDuration) {
       durationDays = selectedDuration;
     } else {
-      const customValue = document.getElementById('customDuration').value;
-      const unit = document.getElementById('durationUnit').value;
-      
-      if (!customValue || parseInt(customValue) <= 0) {
-        alert('กรุณาเลือกระยะเวลา');
+      const c = _readCustomDuration();
+      durationDays = c.days; durationHours = c.hours;
+      if (durationDays === 0 && durationHours === 0) {
+        alert('กรุณาเลือกระยะเวลา'); return;
+      }
+    }
+
+    const durationMs = (durationDays * 24 + durationHours) * 60 * 60 * 1000;
+
+    try {
+      const rank = await _getRank(user.uid);
+      const discount = rankDiscounts[rank] || 0;
+      const basePrice = durationDays * BASE_PRICE_PER_DAY + durationHours * BASE_PRICE_PER_HOUR;
+      const finalPrice = isTestMode ? 1 : Math.max(1, Math.round(basePrice * (1 - discount/100)));
+
+      const creditSnap = await window.fbGet(window.fbRef(window.db, `users/${user.uid}/credits`));
+      const currentCredits = creditSnap.exists() ? (creditSnap.val() || 0) : 0;
+      if (currentCredits < finalPrice) {
+        alert(`เครดิตไม่เพียงพอ ต้องการ ${finalPrice} เครดิต มี ${currentCredits} เครดิต`);
         return;
       }
-      
-      const value = parseInt(customValue);
-      if (unit === 'days') {
-        durationDays = value;
-      } else {
-        durationHours = value;
-      }
-    }
-    
-    // Calculate final duration in milliseconds
-    let durationMs;
-    if (durationHours > 0) {
-      durationMs = durationHours * 60 * 60 * 1000;
-    } else {
-      durationMs = durationDays * 24 * 60 * 60 * 1000;
-    }
-    
-    // Get user rank and calculate price
-    db.ref(`users/${user.uid}/rank`).once('value').then(snap => {
-      const rank = snap.val() || 'Free';
-      const discount = rankDiscounts[rank] || 0;
-      
-      let basePrice;
-      if (durationHours > 0) {
-        basePrice = durationHours * BASE_PRICE_PER_HOUR;
-      } else {
-        basePrice = durationDays * BASE_PRICE_PER_DAY;
-      }
-      
-      const discountedPrice = basePrice * (1 - discount / 100);
-      const finalPrice = Math.round(discountedPrice);
-      
-      // Check if user has enough credits
-      db.ref(`users/${user.uid}/credits`).once('value').then(creditSnap => {
-        const currentCredits = creditSnap.val() || 0;
-        
-        if (currentCredits < finalPrice) {
-          alert(`เครดิตไม่เพียงพอ ต้องการ ${finalPrice} เครดิต มี ${currentCredits} เครดิต`);
-          return;
-        }
-        
-        // Deduct credits
-        db.ref(`users/${user.uid}/credits`).set(currentCredits - finalPrice).then(() => {
-          // Generate key
-          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-          let random = '';
-          for (let i = 0; i < 16; i++) {
-            random += chars.charAt(Math.floor(Math.random() * chars.length));
-          }
-          const key = 'XSoul-' + random;
-          const expiry = Date.now() + durationMs;
-          const expiryDate = new Date(expiry).toLocaleString('th-TH', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
 
-          const keyData = {
-            key: key,
-            expiry: expiry,
-            expiryDate: expiryDate,
-            days: durationDays,
-            hours: durationHours,
-            createdAt: Date.now(),
-            createdBy: user.email,
-            userId: user.uid,
-            price: finalPrice,
-            rank: rank
-          };
+      await window.fbSet(window.fbRef(window.db, `users/${user.uid}/credits`), currentCredits - finalPrice);
 
-          // Also save into userKeys/{uid}/{key} so the Keys list picks it up
-          const keyListData = Object.assign({}, keyData, {
-            expiresAt: expiry,
-            duration: durationDays || (durationHours / 24),
-            used: false,
-            usedBy: null,
-            usedAt: null,
-            active: true,
-            username: (user.displayName || user.email || '')
-          });
-          db.ref('userKeys/' + user.uid + '/' + key).set(keyListData).then(() => {
-            if (typeof loadUserKeys === 'function') loadUserKeys();
-          }).catch(e => console.error('userKeys save failed:', e));
-
-          // Store in Firebase (legacy paths)
-          db.ref('xsoulKeys/' + key).set(keyData).then(() => {
-            console.log('Key saved to Firebase:', key);
-            
-            // Also store in user's key history
-            db.ref(`users/${user.uid}/xsoulKeys/${key}`).set(keyData);
-          }).catch(err => {
-            console.error('Failed to save key:', err);
-          });
-
-          // Encode as JSON for use in Xsoul Menu
-          const encodedKey = JSON.stringify(keyData);
-
-          document.getElementById('xsoulGeneratedKey').value = encodedKey;
-          
-          let durationText = durationHours > 0 ? `${durationHours} ชม.` : `${durationDays} วัน`;
-          document.getElementById('xsoulKeyInfo').textContent = `หมดอายุ: ${expiryDate} (${durationText}) - ใช้ ${finalPrice} เครดิต`;
-
-          // Auto-copy to clipboard
-          copyXsoulKey();
-          
-          // Reset selection
-          selectedDuration = null;
-          isTestMode = false;
-          document.getElementById('testKeyOption').checked = false;
-          document.getElementById('customDuration').value = '';
-          document.querySelectorAll('[id^="dur-"]').forEach(btn => {
-            btn.style.background = '';
-            btn.style.borderColor = '';
-          });
-          updatePriceDisplay();
-          
-          // Refresh account info to show updated credits
-          loadAccountInfo();
-        }).catch(err => {
-          console.error('Failed to deduct credits:', err);
-          alert('เกิดข้อผิดพลาดในการหักเครดิต');
-        });
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let random = '';
+      for (let i = 0; i < 16; i++) random += chars.charAt(Math.floor(Math.random() * chars.length));
+      const key = 'XSoul-' + random;
+      const expiry = Date.now() + durationMs;
+      const expiryDate = new Date(expiry).toLocaleString('th-TH', {
+        year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'
       });
-    });
+
+      const keyData = {
+        key, expiry, expiryDate,
+        days: durationDays, hours: durationHours,
+        createdAt: Date.now(),
+        createdBy: user.email || '',
+        userId: user.uid,
+        price: finalPrice,
+        rank
+      };
+      const keyListData = Object.assign({}, keyData, {
+        expiresAt: expiry,
+        duration: durationDays + (durationHours / 24),
+        used: false, usedBy: null, usedAt: null, active: true,
+        username: (user.displayName || user.email || '')
+      });
+
+      try { await window.fbSet(window.fbRef(window.db, `userKeys/${user.uid}/${key}`), keyListData); }
+      catch(e) { console.error('userKeys save failed', e); }
+      try { await window.fbSet(window.fbRef(window.db, `xsoulKeys/${key}`), keyData); }
+      catch(e) { console.error('xsoulKeys save failed', e); }
+      try { await window.fbSet(window.fbRef(window.db, `users/${user.uid}/xsoulKeys/${key}`), keyData); }
+      catch(e) {}
+
+      const encodedKey = JSON.stringify(keyData);
+      const outEl = document.getElementById('xsoulGeneratedKey');
+      if (outEl) outEl.value = encodedKey;
+
+      let durationText = '';
+      if (durationDays > 0 && durationHours > 0) durationText = `${durationDays} วัน ${durationHours} ชม.`;
+      else if (durationDays > 0) durationText = `${durationDays} วัน`;
+      else durationText = `${durationHours} ชม.`;
+      const infoEl = document.getElementById('xsoulKeyInfo');
+      if (infoEl) infoEl.textContent = `หมดอายุ: ${expiryDate} (${durationText}) - ใช้ ${finalPrice} เครดิต`;
+
+      try { if (typeof copyXsoulKey === 'function') copyXsoulKey(); } catch(e) {}
+      try { if (typeof loadUserKeys === 'function') loadUserKeys(); } catch(e) {}
+      try { if (typeof loadAccountInfo === 'function') loadAccountInfo(); } catch(e) {}
+
+      selectedDuration = null;
+      isTestMode = false;
+      const t = document.getElementById('testKeyOption'); if (t) t.checked = false;
+      const cd = document.getElementById('customDurationDays'); if (cd) cd.value = '';
+      const ch = document.getElementById('customDurationHours'); if (ch) ch.value = '';
+      _highlightSelected(null);
+      updatePriceDisplay();
+    } catch (err) {
+      console.error('Key generation error:', err);
+      alert('เกิดข้อผิดพลาดในการสร้างคีย์: ' + (err && err.message ? err.message : err));
+    }
   };
 
   window.copyXsoulKey = () => {
@@ -7604,8 +7519,9 @@
     }
 
     // Validate a selection exists (button, custom input, or test mode)
-    const hasCustom = document.getElementById('customDuration') &&
-                      parseInt(document.getElementById('customDuration').value) > 0;
+    const cDays = parseInt((document.getElementById('customDurationDays')||{}).value) || 0;
+    const cHours = parseInt((document.getElementById('customDurationHours')||{}).value) || 0;
+    const hasCustom = (cDays + cHours) > 0;
     if (!selectedDuration && !isTestMode && !hasCustom) {
       status.textContent = 'กรุณาเลือกระยะเวลา';
       status.style.color = 'var(--error)';
