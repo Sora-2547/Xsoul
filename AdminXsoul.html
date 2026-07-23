@@ -95,8 +95,7 @@
     .delete-btn { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid #ff6b6b; }
     .delete-btn:hover { background: #ff6b6b; color: #fff; }
     .modal {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      width: 100%; height: 100%;
+      display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,0.8); z-index: 1000;
       justify-content: center; align-items: center;
     }
@@ -140,7 +139,7 @@
     .topup-info { font-size: 13px; line-height: 1.7; }
     .topup-info .amount { color: #4caf50; font-size: 18px; font-weight: 700; }
     .topup-info .meta { color: #aaa; font-size: 12px; }
-    .image-viewer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index: 2000; cursor: zoom-out; }
+    .image-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index: 2000; cursor: zoom-out; }
     .image-viewer.active { display: flex; }
     .image-viewer img { max-width: 95vw; max-height: 95vh; border-radius: 8px; }
     /* Bell */
@@ -288,6 +287,7 @@
         </tbody>
       </table>
     </div>
+  </div>
 
   <!-- Slips Modal -->
   <div class="modal" id="slipsModal">
@@ -525,14 +525,7 @@
           <div class="form-group"><label>Ban Reason</label><textarea id="editBanReason">${escapeHtml(u.banReason || '')}</textarea></div>
         `;
         $('editModal').classList.add('active');
-        // fallback: บังคับ inline style ตรง ๆ เผื่อมี CSS อื่นมา override class .modal.active
-        $('editModal').style.setProperty('display', 'flex', 'important');
-        $('editModal').style.setProperty('z-index', '99999', 'important');
-        const rect = $('editModal').getBoundingClientRect();
-        const cs = getComputedStyle($('editModal'));
-        console.log('[editUser] เปิด modal สำเร็จ | display=', cs.display, '| visibility=', cs.visibility,
-          '| opacity=', cs.opacity, '| rect=', JSON.stringify(rect));
-
+        console.log('[editUser] เปิด modal สำเร็จ');
       } catch (e) {
         console.error('[editUser] เกิด error ตอนสร้างฟอร์ม', e);
         alert('❌ เปิดฟอร์มแก้ไขไม่สำเร็จ: ' + e.message);
@@ -541,8 +534,6 @@
 
     function closeEditModal() {
       $('editModal').classList.remove('active');
-      $('editModal').style.removeProperty('display');
-      $('editModal').style.removeProperty('z-index');
       currentEditingUser = null;
     }
 
