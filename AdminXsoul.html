@@ -495,29 +495,40 @@
     }
 
     function editUser(uid) {
+      console.log('[editUser] คลิก Edit ด้วย uid =', uid);
       currentEditingUser = allUsers.find(u => u.uid === uid);
-      if (!currentEditingUser) return;
-      const u = currentEditingUser;
-      $('editForm').innerHTML = `
-        <div class="form-group"><label>UID</label><input type="text" value="${escapeHtml(u.uid)}" disabled></div>
-        <div class="form-group"><label>Username</label><input type="text" id="editUsername" value="${escapeHtml(u.username)}"></div>
-        <div class="form-group"><label>Email</label><input type="email" id="editEmail" value="${escapeHtml(u.email)}"></div>
-        <div class="form-group"><label>Credits</label><input type="number" id="editCredits" value="${u.credits}"></div>
-        <div class="form-group"><label>Rank</label>
-          <select id="editRank">
-            <option value="Free" ${u.rank==='Free'?'selected':''}>Free</option>
-            <option value="Bronze" ${u.rank==='Bronze'?'selected':''}>Bronze</option>
-            <option value="Silver" ${u.rank==='Silver'?'selected':''}>Silver</option>
-            <option value="Gold" ${u.rank==='Gold'?'selected':''}>Gold</option>
-            <option value="Platinum" ${u.rank==='Platinum'?'selected':''}>Platinum</option>
-            <option value="Diamond" ${u.rank==='Diamond'?'selected':''}>Diamond</option>
-            <option value="Premium" ${u.rank==='Premium'?'selected':''}>Premium (P-MAX)</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Referrer</label><input type="text" id="editReferrer" value="${escapeHtml(u.referrer || '')}"></div>
-        <div class="form-group"><label>Ban Reason</label><textarea id="editBanReason">${escapeHtml(u.banReason || '')}</textarea></div>
-      `;
-      $('editModal').classList.add('active');
+      if (!currentEditingUser) {
+        console.error('[editUser] หา user ที่ uid นี้ใน allUsers ไม่เจอ! allUsers.length =', allUsers.length);
+        alert('❌ ไม่พบผู้ใช้นี้ในรายการ (uid: ' + uid + ')\nลองกด Refresh หน้าใหม่ แล้วลองอีกครั้ง');
+        return;
+      }
+      try {
+        const u = currentEditingUser;
+        $('editForm').innerHTML = `
+          <div class="form-group"><label>UID</label><input type="text" value="${escapeHtml(u.uid)}" disabled></div>
+          <div class="form-group"><label>Username</label><input type="text" id="editUsername" value="${escapeHtml(u.username)}"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="editEmail" value="${escapeHtml(u.email)}"></div>
+          <div class="form-group"><label>Credits</label><input type="number" id="editCredits" value="${u.credits}"></div>
+          <div class="form-group"><label>Rank</label>
+            <select id="editRank">
+              <option value="Free" ${u.rank==='Free'?'selected':''}>Free</option>
+              <option value="Bronze" ${u.rank==='Bronze'?'selected':''}>Bronze</option>
+              <option value="Silver" ${u.rank==='Silver'?'selected':''}>Silver</option>
+              <option value="Gold" ${u.rank==='Gold'?'selected':''}>Gold</option>
+              <option value="Platinum" ${u.rank==='Platinum'?'selected':''}>Platinum</option>
+              <option value="Diamond" ${u.rank==='Diamond'?'selected':''}>Diamond</option>
+              <option value="Premium" ${u.rank==='Premium'?'selected':''}>Premium (P-MAX)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Referrer</label><input type="text" id="editReferrer" value="${escapeHtml(u.referrer || '')}"></div>
+          <div class="form-group"><label>Ban Reason</label><textarea id="editBanReason">${escapeHtml(u.banReason || '')}</textarea></div>
+        `;
+        $('editModal').classList.add('active');
+        console.log('[editUser] เปิด modal สำเร็จ');
+      } catch (e) {
+        console.error('[editUser] เกิด error ตอนสร้างฟอร์ม', e);
+        alert('❌ เปิดฟอร์มแก้ไขไม่สำเร็จ: ' + e.message);
+      }
     }
 
     function closeEditModal() {
