@@ -2714,7 +2714,18 @@
         <div style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;padding:12px;margin-bottom:16px;">
           <div style="font-size:0.8rem;color:var(--accent);margin-bottom:4px;">💎 ส่วนลดตามแรงค์ของคุณ</div>
           <div style="font-size:0.75rem;color:var(--muted);">
-            <span id="currentRankDisplay">-</span> - ส่วนลด <span id="rankDiscountDisplay">0%</span>
+            แรงค์: <span id="currentRankDisplay">-</span> | ส่วนลด: <span id="rankDiscountDisplay">0%</span>
+          </div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,212,255,0.2);">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px;">
+              <span>Free: 0%</span>
+              <span>Bronze: 5%</span>
+              <span>Silver: 10%</span>
+              <span>Gold: 15%</span>
+              <span>Platinum: 20%</span>
+              <span>Diamond: 25%</span>
+              <span>Premium: 30%</span>
+            </div>
           </div>
         </div>
         
@@ -2722,12 +2733,12 @@
         <div style="margin-bottom:16px;">
           <label style="display:block;color:var(--muted);font-size:0.85rem;margin-bottom:8px;">เลือกระยะเวลา:</label>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;">
-            <button class="btn btn-primary" onclick="selectDuration(1)" style="padding:10px;font-size:0.85rem;" id="dur-1">1 วัน</button>
-            <button class="btn btn-primary" onclick="selectDuration(3)" style="padding:10px;font-size:0.85rem;" id="dur-3">3 วัน</button>
-            <button class="btn btn-primary" onclick="selectDuration(5)" style="padding:10px;font-size:0.85rem;" id="dur-5">5 วัน</button>
-            <button class="btn btn-primary" onclick="selectDuration(7)" style="padding:10px;font-size:0.85rem;" id="dur-7">7 วัน</button>
-            <button class="btn btn-primary" onclick="selectDuration(15)" style="padding:10px;font-size:0.85rem;" id="dur-15">15 วัน</button>
-            <button class="btn btn-primary" onclick="selectDuration(30)" style="padding:10px;font-size:0.85rem;" id="dur-30">30 วัน</button>
+            <button class="btn btn-primary" onclick="selectDuration(1)" style="padding:10px;font-size:0.85rem;" id="dur-1">1 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">10 เครดิต</span></button>
+            <button class="btn btn-primary" onclick="selectDuration(3)" style="padding:10px;font-size:0.85rem;" id="dur-3">3 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">30 เครดิต</span></button>
+            <button class="btn btn-primary" onclick="selectDuration(5)" style="padding:10px;font-size:0.85rem;" id="dur-5">5 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">50 เครดิต</span></button>
+            <button class="btn btn-primary" onclick="selectDuration(7)" style="padding:10px;font-size:0.85rem;" id="dur-7">7 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">70 เครดิต</span></button>
+            <button class="btn btn-primary" onclick="selectDuration(15)" style="padding:10px;font-size:0.85rem;" id="dur-15">15 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">150 เครดิต</span></button>
+            <button class="btn btn-primary" onclick="selectDuration(30)" style="padding:10px;font-size:0.85rem;" id="dur-30">30 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">300 เครดิต</span></button>
           </div>
         </div>
         
@@ -2758,6 +2769,9 @@
             <span style="font-size:1.1rem;font-weight:700;color:#4caf50;" id="keyPriceDisplay">0 เครดิต</span>
           </div>
           <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;" id="priceBreakdown">-</div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid rgba(76,175,80,0.2);">
+            <div>ราคาพื้นฐาน: 10 เครดิต/วัน | ทดลอง: 1 เครดิต (1 ชม.)</div>
+          </div>
         </div>
         
         <!-- Generate button -->
@@ -4636,6 +4650,7 @@
       document.getElementById('currentRankDisplay').textContent = rank;
       document.getElementById('rankDiscountDisplay').textContent = discount + '%';
       
+      updateButtonPrices();
       updatePriceDisplay();
     });
   };
@@ -4657,7 +4672,33 @@
     // Clear custom input
     document.getElementById('customDuration').value = '';
     
+    // Update button prices with discount
+    updateButtonPrices();
+    
     updatePriceDisplay();
+  };
+  
+  // Update button prices with user's rank discount
+  window.updateButtonPrices = () => {
+    if (!user) return;
+    
+    db.ref(`users/${user.uid}/rank`).once('value').then(snap => {
+      const rank = snap.val() || 'Free';
+      const discount = rankDiscounts[rank] || 0;
+      
+      const durations = [1, 3, 5, 7, 15, 30];
+      durations.forEach(days => {
+        const basePrice = days * BASE_PRICE_PER_DAY;
+        const discountedPrice = Math.round(basePrice * (1 - discount / 100));
+        const btn = document.getElementById(`dur-${days}`);
+        if (btn) {
+          const priceText = discount > 0 
+            ? `${discountedPrice} เครดิต (ลด ${discount}%)` 
+            : `${basePrice} เครดิต`;
+          btn.innerHTML = `${days} วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">${priceText}</span>`;
+        }
+      });
+    });
   };
   
   // Toggle test mode
@@ -4679,14 +4720,18 @@
   
   // Update price display
   window.updatePriceDisplay = () => {
-    if (!user) return;
+    if (!user) {
+      document.getElementById('keyPriceDisplay').textContent = 'กรุณาเข้าสู่ระบบ';
+      document.getElementById('priceBreakdown').textContent = '-';
+      return;
+    }
     
     let price = 0;
     let breakdown = '';
     
     if (isTestMode) {
       price = 1; // Test mode: 1 credit for 1 hour
-      breakdown = 'ทดลอง: 1 เครดิต (1 ชม.)';
+      breakdown = 'ทดลอง: 1 เครดิต (1 ชม.) - ไม่มีส่วนลด';
     } else if (selectedDuration) {
       // Calculate price based on selected duration
       db.ref(`users/${user.uid}/rank`).once('value').then(snap => {
@@ -4697,11 +4742,12 @@
         const discountedPrice = basePrice * (1 - discount / 100);
         price = Math.round(discountedPrice);
         
-        breakdown = `${selectedDuration} วัน × ${BASE_PRICE_PER_DAY} = ${basePrice} เครดิต`;
+        breakdown = `ราคาพื้นฐาน: ${selectedDuration} วัน × ${BASE_PRICE_PER_DAY} = ${basePrice} เครดิต`;
         if (discount > 0) {
-          breakdown += ` - ส่วนลด ${discount}% = ${price} เครดิต`;
+          const discountAmount = basePrice - price;
+          breakdown += ` | ส่วนลด ${discount}% (${discountAmount} เครดิต) | ราคาสุทธิ: ${price} เครดิต`;
         } else {
-          breakdown += ` = ${price} เครดิต`;
+          breakdown += ` | ราคาสุทธิ: ${price} เครดิต`;
         }
         
         document.getElementById('keyPriceDisplay').textContent = price + ' เครดิต';
@@ -4733,11 +4779,12 @@
           const unitText = unit === 'days' ? 'วัน' : 'ชม.';
           const unitPrice = unit === 'days' ? BASE_PRICE_PER_DAY : BASE_PRICE_PER_HOUR.toFixed(2);
           
-          breakdown = `${value} ${unitText} × ${unitPrice} = ${basePrice.toFixed(2)} เครดิต`;
+          breakdown = `ราคาพื้นฐาน: ${value} ${unitText} × ${unitPrice} = ${basePrice.toFixed(2)} เครดิต`;
           if (discount > 0) {
-            breakdown += ` - ส่วนลด ${discount}% = ${price} เครดิต`;
+            const discountAmount = (basePrice - discountedPrice).toFixed(2);
+            breakdown += ` | ส่วนลด ${discount}% (${discountAmount} เครดิต) | ราคาสุทธิ: ${price} เครดิต`;
           } else {
-            breakdown += ` = ${price} เครดิต`;
+            breakdown += ` | ราคาสุทธิ: ${price} เครดิต`;
           }
           
           document.getElementById('keyPriceDisplay').textContent = price + ' เครดิต';
@@ -4748,7 +4795,7 @@
     }
     
     document.getElementById('keyPriceDisplay').textContent = price + ' เครดิต';
-    document.getElementById('priceBreakdown').textContent = breakdown;
+    document.getElementById('priceBreakdown').textContent = breakdown || 'กรุณาเลือกระยะเวลา';
   };
   
   // Listen for custom duration changes
