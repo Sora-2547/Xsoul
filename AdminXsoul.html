@@ -518,22 +518,44 @@
     }
 
     async function saveUserChanges() {
-      if (!currentEditingUser) return;
-      const updates = {
-        username: $('editUsername').value.trim(),
-        email: $('editEmail').value.trim(),
-        credits: parseInt($('editCredits').value, 10) || 0,
-        rank: $('editRank').value,
-        referrer: $('editReferrer').value.trim(),
-        banReason: $('editBanReason').value
-      };
+      if (!currentEditingUser) { alert('❌ ไม่พบผู้ใช้ที่กำลังแก้ไข'); return; }
+      const uid = currentEditingUser.uid;
+      const rawCredits = $('editCredits').value;
+      const credits = rawCredits === '' ? 0 : Math.max(0, Math.floor(Number(rawCredits) || 0));
+      // สร้าง object โดยตัด undefined ทิ้ง (Firebase จะ throw ถ้ามี undefined)
+      const updates = {};
+      const put = (k, v) => { if (v !== undefined && v !== null) updates[k] = v; };
+      put('username', ($('editUsername').value || '').trim());
+      put('email',    ($('editEmail').value    || '').trim());
+      put('credits',  credits);
+      put('rank',     $('editRank').value);
+      put('referrer', ($('editReferrer').value || '').trim());
+      put('banReason',($('editBanReason').value|| ''));
+      console.log('[saveUserChanges] path=users/'+uid, updates);
       try {
-        await db.ref(`users/${currentEditingUser.uid}`).update(updates);
+        await db.ref('users/' + uid).update(updates);
+        // sync mapping usernames / emails (best-effort — ล้มไม่ถือว่า fail หลัก)
+        try {
+          const prevU = (currentEditingUser.username || '').toLowerCase();
+          const newU  = updates.username ? updates.username.toLowerCase() : '';
+          if (newU && newU !== prevU) {
+            await db.ref('usernames/' + newU).set({ uid });
+            if (prevU) await db.ref('usernames/' + prevU).remove().catch(()=>{});
+          }
+          const prevE = (currentEditingUser.email || '').toLowerCase();
+          const newE  = updates.email ? updates.email.toLowerCase().replace(/\./g,',') : '';
+          const prevEk= prevE ? prevE.replace(/\./g,',') : '';
+          if (newE && newE !== prevEk) {
+            await db.ref('emails/' + newE).set({ uid });
+            if (prevEk) await db.ref('emails/' + prevEk).remove().catch(()=>{});
+          }
+        } catch (e) { console.warn('sync mapping ล้มเหลว (ไม่กระทบข้อมูลหลัก):', e); }
         alert('✅ บันทึกสำเร็จ');
         closeEditModal();
         loadUsers();
       } catch (err) {
-        alert('❌ บันทึกไม่สำเร็จ: ' + err.message);
+        console.error('[saveUserChanges] FAILED', err);
+        alert('❌ บันทึกไม่สำเร็จ\n' + (err && err.code ? '['+err.code+'] ' : '') + (err && err.message ? err.message : err));
       }
     }
 
@@ -569,17 +591,33 @@
     // ===== Slips / Top-up history =====
     // ค้นหาจาก path ที่ใช้จริงใน index.html: users/{uid}/topupRequests, users/{uid}/topupHistory
     async function fetchUserTopups(uid) {
-      const paths = [`users/${uid}/topupRequests`, `users/${uid}/topupHistory`, `topups/${uid}`, `slips/${uid}`, `users/${uid}/topups`, `users/${uid}/slips`];
-      for (const p of paths) {
+      const paths = [
+        `users/${uid}/topupRequests`,
+        `users/${uid}/topupHistory`,
+        `users/${uid}/topups`,
+        `users/${uid}/slips`,
+        `topups/${uid}`,
+        `slips/${uid}`
+      ];
+      const results = await Promise.all(paths.map(async (p) => {
         try {
           const snap = await db.ref(p).once('value');
           const val = snap.val();
           if (val && typeof val === 'object') {
-            return { path: p, items: Object.entries(val).map(([id, v]) => ({ id, ...v })) };
+            return Object.entries(val).map(([id, v]) => ({ id, __path: p, ...(v || {}) }));
           }
-        } catch (_) {}
-      }
-      return { path: null, items: [] };
+        } catch (e) { console.warn('[fetchUserTopups] อ่านไม่ได้:', p, e && e.message); }
+        return [];
+      }));
+      const items = results.flat();
+      // dedupe ตาม id ตัวเดียวกัน (บาง user เก็บซ้ำสอง path)
+      const seen = new Set();
+      const merged = items.filter(it => {
+        const key = it.id + '|' + (it.amount ?? '') + '|' + (it.timestamp ?? it.createdAt ?? '');
+        if (seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+      return { path: merged[0] ? merged[0].__path : null, items: merged };
     }
 
     let currentSlipsPath = null;
@@ -618,7 +656,7 @@
         const when = formatDate(it.timestamp || it.createdAt || it.date);
         const ref = it.ref || it.reference || it.txId || it.id;
         const slipHtml = isImg
-          ? `<img class="slip-thumb" src="${escapeHtml(slip)}" alt="slip" onclick="openImageViewer('${escapeHtml(slip)}')" onerror="this.outerHTML='<div class=&quot;no-slip&quot;>โหลดภาพไม่ได้</div>'">`
+          ? `<img class="slip-thumb" src="${escapeHtml(slip)}" alt="slip" data-full="${escapeHtml(slip)}" onclick="openImageViewer(this.dataset.full)" onerror="this.outerHTML='<div class=&quot;no-slip&quot;>โหลดภาพไม่ได้ (อาจเป็น Storage URL ที่ต้องล็อกอิน)</div>'">`
           : `<div class="no-slip">ไม่มีสลิป</div>`;
         return `
           <div class="topup-card">
@@ -630,7 +668,7 @@
               <div class="meta">Ref: ${escapeHtml(ref)}</div>
             </div>
             <div>
-              <button class="action-btn delete-btn" onclick="deleteSlip('${escapeHtml(it.id)}')">ลบ</button>
+              <button class="action-btn delete-btn" data-path="${escapeHtml(it.__path || currentSlipsPath || '')}/${escapeHtml(it.id)}" onclick="deleteSlipByPath(this.dataset.path)">ลบ</button>
             </div>
           </div>
         `;
@@ -640,12 +678,17 @@
 
     async function deleteSlip(id) {
       if (!currentSlipsPath || !currentSlipsUid) return;
-      if (!confirm('ยืนยันลบรายการเติมเงินนี้?')) return;
+      return deleteSlipByPath(`${currentSlipsPath}/${id}`);
+    }
+    async function deleteSlipByPath(fullPath) {
+      if (!fullPath) { alert('❌ ไม่พบ path'); return; }
+      if (!confirm('ยืนยันลบรายการเติมเงินนี้?\n' + fullPath)) return;
       try {
-        await db.ref(`${currentSlipsPath}/${id}`).remove();
-        viewSlips(currentSlipsUid); // refresh
+        await db.ref(fullPath).remove();
+        if (currentSlipsUid) viewSlips(currentSlipsUid);
       } catch (err) {
-        alert('❌ ลบไม่สำเร็จ: ' + err.message);
+        console.error('[deleteSlipByPath] FAILED', err);
+        alert('❌ ลบไม่สำเร็จ\n' + (err && err.code ? '['+err.code+'] ' : '') + (err && err.message ? err.message : err));
       }
     }
 
