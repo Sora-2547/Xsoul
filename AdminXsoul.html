@@ -382,19 +382,24 @@
       }
       // ตรวจสิทธิ์ admin จาก database
       try {
+        // บังคับ refresh id token ก่อน เผื่อ role เพิ่งถูกตั้งใหม่ ๆ จะได้ไม่เจอ token ค้าง
+        await user.getIdToken(true);
         const snap = await db.ref(`users/${user.uid}/role`).once('value');
-        if (snap.val() === 'admin') {
+        const roleVal = snap.val();
+        console.log('[auth] uid=', user.uid, 'role field ที่อ่านได้จาก DB =', JSON.stringify(roleVal), typeof roleVal);
+        if (roleVal === 'admin') {
           currentAdminUid = user.uid;
           $('currentAdmin').textContent = `เข้าสู่ระบบในชื่อ: ${user.email}`;
           showAdminPanel();
         } else {
           await auth.signOut();
-          $('loginError').textContent = '❌ บัญชีนี้ไม่มีสิทธิ์ admin';
+          $('loginError').textContent = `❌ บัญชีนี้ไม่มีสิทธิ์ admin (role ปัจจุบันใน DB = ${JSON.stringify(roleVal)}, ต้องเป็น string "admin" เป๊ะ ๆ)`;
           showLoginScreen();
         }
       } catch (err) {
         await auth.signOut();
-        $('loginError').textContent = '❌ ตรวจสิทธิ์ไม่สำเร็จ: ' + err.message;
+        console.error('[auth] ตรวจสิทธิ์ล้มเหลว', err);
+        $('loginError').textContent = '❌ ตรวจสิทธิ์ไม่สำเร็จ: [' + (err.code || 'unknown') + '] ' + err.message;
         showLoginScreen();
       }
     });
@@ -426,7 +431,10 @@
           email: u.email || 'N/A',
           credits: Number(u.credits) || 0,
           rank: u.rank || 'Free',
-          role: u.role || (u.isAdmin ? 'admin' : 'user'),
+          // สำคัญ: Firebase Rules และหน้า Login เช็คเฉพาะ field "role" (string 'admin') เท่านั้น
+          // ไม่สนใจ "isAdmin" เลย ดังนั้นห้าม fallback ไปที่ isAdmin ตรงนี้ ไม่งั้น badge จะ
+          // ขึ้น "admin" หลอก ๆ ทั้งที่ Rules จริงไม่ยอมให้ user คนนั้นเขียนอะไรเป็น admin ได้
+          role: u.role || 'user',
           status: u.status || (u.isBanned ? 'banned' : 'active'),
           createdAt: u.createdAt || 'N/A',
           lastLogin: u.lastLogin || 'N/A',
@@ -532,6 +540,21 @@
       put('referrer', ($('editReferrer').value || '').trim());
       put('banReason',($('editBanReason').value|| ''));
       console.log('[saveUserChanges] path=users/'+uid, updates);
+
+      // ตรวจซ้ำแบบสด ๆ ว่า auth ปัจจุบันยังเป็น admin จริงก่อนเขียน (กัน token/role ค้าง)
+      let iAmAdmin = false;
+      try {
+        const meSnap = await db.ref(`users/${currentAdminUid}/role`).once('value');
+        iAmAdmin = meSnap.val() === 'admin';
+        console.log('[saveUserChanges] preflight admin check =', iAmAdmin, 'role=', JSON.stringify(meSnap.val()));
+      } catch (e) {
+        console.error('[saveUserChanges] preflight check ล้มเหลว (อ่าน role ตัวเองไม่ได้)', e);
+      }
+      if (!iAmAdmin) {
+        alert('❌ บันทึกไม่สำเร็จ: บัญชีที่ล็อกอินอยู่ตอนนี้ ไม่มี role="admin" ใน Database แล้ว (หรืออ่านไม่ได้)\nกรุณาเช็ค users/' + currentAdminUid + '/role ใน Firebase Console');
+        return;
+      }
+
       try {
         await db.ref('users/' + uid).update(updates);
         // sync mapping usernames / emails (best-effort — ล้มไม่ถือว่า fail หลัก)
@@ -554,8 +577,29 @@
         closeEditModal();
         loadUsers();
       } catch (err) {
-        console.error('[saveUserChanges] FAILED', err);
-        alert('❌ บันทึกไม่สำเร็จ\n' + (err && err.code ? '['+err.code+'] ' : '') + (err && err.message ? err.message : err));
+        console.error('[saveUserChanges] FAILED (multi-path update)', err);
+        // ถ้า multi-path update โดนบล็อก ลองยิงทีละ field เพื่อชี้ตัวการที่แท้จริงให้เห็นชัด ๆ
+        const failedFields = [];
+        for (const [k, v] of Object.entries(updates)) {
+          try {
+            await db.ref(`users/${uid}/${k}`).set(v);
+          } catch (fieldErr) {
+            console.error(`[saveUserChanges] field "${k}" เขียนไม่ผ่าน:`, fieldErr);
+            failedFields.push(`${k} (${fieldErr.code || fieldErr.message})`);
+          }
+        }
+        if (failedFields.length) {
+          alert('❌ บันทึกไม่สำเร็จ\n' +
+            (err && err.code ? '['+err.code+'] ' : '') + (err && err.message ? err.message : err) +
+            '\n\nField ที่เขียนไม่ผ่านจริง ๆ คือ:\n- ' + failedFields.join('\n- ') +
+            '\n\nสาเหตุที่พบบ่อย: Rules ที่ deploy จริงใน Firebase Console ไม่ตรงกับที่คิดไว้ ' +
+            'หรือ users/' + currentAdminUid + '/role ไม่ใช่ string "admin" เป๊ะ ๆ');
+        } else {
+          // ทุก field แยกเขียนผ่านหมด แต่ multi-path update ตัวเดิมพัง — โอกาสสูงว่าค่าที่ส่งมีปัญหา (เช่น NaN/undefined)
+          alert('✅ บันทึกสำเร็จ (หลัง retry แยกทีละ field)');
+          closeEditModal();
+          loadUsers();
+        }
       }
     }
 
@@ -573,7 +617,9 @@
         });
         loadUsers();
       } catch (err) {
-        alert('❌ ' + err.message);
+        console.error('[banUser] FAILED', err);
+        alert('❌ แบน/ปลดแบนไม่สำเร็จ\n' + (err && err.code ? '['+err.code+'] ' : '') + err.message +
+          '\n\nเช็ค: users/' + currentAdminUid + '/role ต้องเป็น "admin" และ Rules ต้อง publish แล้วจริง ๆ');
       }
     }
 
