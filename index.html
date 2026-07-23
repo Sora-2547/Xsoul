@@ -962,6 +962,96 @@
     .lang-btn:hover { border-color:var(--accent); color:var(--text); }
     .lang-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 0 10px var(--glow); }
 
+        /* ===== KEYS PAGE — enhanced backgrounds ===== */
+    #section-keys .keys-panel {
+      background: linear-gradient(160deg,
+        color-mix(in oklab, var(--card) 92%, var(--accent) 8%) 0%,
+        var(--card) 60%);
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 40px -20px var(--glow), 0 2px 10px rgba(0,0,0,0.06);
+    }
+    #section-keys .keys-rank-info {
+      background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(196,113,237,0.10));
+      border: 1px solid rgba(124,92,252,0.32);
+    }
+    #section-keys .keys-dur-btn {
+      background: color-mix(in oklab, var(--card) 88%, var(--accent) 12%);
+      border: 1px solid var(--border);
+    }
+    #section-keys .keys-dur-btn:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px -8px var(--glow);
+    }
+    #section-keys .keys-dur-btn.selected,
+    #section-keys .keys-dur-btn[data-selected="1"] {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: var(--accent);
+      color: #fff;
+    }
+    #section-keys .keys-input {
+      background: color-mix(in oklab, var(--card) 92%, var(--accent) 8%);
+      border: 1px solid var(--border);
+    }
+    #section-keys .keys-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+    #section-keys .keys-trial-box {
+      background: linear-gradient(135deg, rgba(255,229,102,0.14), rgba(255,180,80,0.08));
+      border: 1px solid rgba(255,229,102,0.35);
+    }
+    #section-keys .keys-price-box {
+      background: linear-gradient(135deg, rgba(74,222,128,0.14), rgba(56,189,248,0.08));
+      border: 1px solid rgba(74,222,128,0.35);
+    }
+    #section-keys #keyPriceDisplay { color: #22c55e; }
+
+    /* Light-mode tuning for Keys page */
+    body.theme-light #section-keys .keys-panel {
+      background: linear-gradient(160deg, #ffffff 0%, #f4f2ff 100%);
+      border-color: #d7d1f2;
+      box-shadow: 0 20px 50px -28px rgba(109,65,245,0.35), 0 3px 12px rgba(30,20,80,0.06);
+    }
+    body.theme-light #section-keys .card-title,
+    body.theme-light #section-keys h1,
+    body.theme-light #section-keys h2,
+    body.theme-light #section-keys h3 { color: #1a1230; }
+    body.theme-light #section-keys .keys-rank-info {
+      background: linear-gradient(135deg, #efeaff, #f6ecff);
+      border-color: #c7bbf5;
+    }
+    body.theme-light #section-keys .keys-dur-btn {
+      background: #ffffff;
+      border-color: #d7d1f2;
+      color: #1a1230;
+      box-shadow: 0 2px 6px rgba(30,20,80,0.04);
+    }
+    body.theme-light #section-keys .keys-dur-btn:hover {
+      border-color: #6d41f5;
+      box-shadow: 0 8px 20px -10px rgba(109,65,245,0.4);
+    }
+    body.theme-light #section-keys .keys-input {
+      background: #ffffff;
+      border-color: #d7d1f2;
+      color: #1a1230;
+    }
+    body.theme-light #section-keys .keys-input::placeholder { color: #8890b0; }
+    body.theme-light #section-keys .keys-trial-box {
+      background: linear-gradient(135deg, #fff8d6, #ffeecc);
+      border-color: #f0c96a;
+    }
+    body.theme-light #section-keys .keys-trial-box span { color: #5a3a00 !important; }
+    body.theme-light #section-keys .keys-price-box {
+      background: linear-gradient(135deg, #e6fbe9, #e0f2fe);
+      border-color: #86e6a1;
+    }
+    body.theme-light #section-keys #keyPriceDisplay { color: #1a7a3a; }
+    body.theme-light #section-keys #priceBreakdown { color: #4a5075; }
+    body.theme-light #section-keys .subtitle,
+    body.theme-light #section-keys header p { color: #4a5075; }
+
     /* Light theme overrides */
     body.theme-light {
       --bg:     #eef1f8;
@@ -2160,43 +2250,43 @@
       </header>
 
       <!-- Generate Key Card -->
-      <div class="card" style="margin-bottom:28px;">
+      <div class="card keys-panel keys-generate-card" style="margin-bottom:28px;">
         <div class="card-title">🔐 <span data-i18n="key-generator">สร้างคีย์ใหม่</span></div>
 
         <!-- Rank discount info -->
-        <div style="background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.3);border-radius:10px;padding:12px;margin-bottom:16px;">
-          <div style="font-size:0.8rem;color:var(--accent);margin-bottom:4px;font-weight:600;">💎 ส่วนลดตามแรงค์ของคุณ</div>
-          <div style="font-size:0.75rem;color:var(--muted);">
-            แรงค์: <span id="currentRankDisplay">-</span> | ส่วนลด: <span id="rankDiscountDisplay">0%</span>
+        <div class="keys-rank-info" style="border-radius:12px;padding:12px;margin-bottom:16px;">
+          <div style="font-size:0.8rem;color:var(--accent);margin-bottom:4px;font-weight:700;" data-i18n="key-rank-discount-title">💎 ส่วนลดตามแรงค์ของคุณ</div>
+          <div style="font-size:0.78rem;color:var(--muted);">
+            <span data-i18n="key-rank-label">แรงค์</span>: <span id="currentRankDisplay" style="color:var(--text);font-weight:600;">-</span> | <span data-i18n="key-discount-label">ส่วนลด</span>: <span id="rankDiscountDisplay" style="color:var(--text);font-weight:600;">0%</span>
           </div>
         </div>
 
         <!-- Duration option buttons -->
         <div style="margin-bottom:14px;">
-          <label style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">เลือกระยะเวลา</label>
+          <label style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;" data-i18n="key-select-duration">เลือกระยะเวลา</label>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;">
-            <button type="button" onclick="selectDuration(1)" id="dur-1" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
-              <div style="font-weight:700;">1 วัน</div>
+            <button type="button" onclick="selectDuration(1)" id="dur-1" class="keys-dur-btn" style="padding:12px;font-size:0.85rem;text-align:left;border-radius:12px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;"><span data-i18n="key-dur-num-1">1</span> <span data-i18n="key-dur-unit-day">วัน</span></div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-1-price">10 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(3)" id="dur-3" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
-              <div style="font-weight:700;">3 วัน</div>
+            <button type="button" onclick="selectDuration(3)" id="dur-3" class="keys-dur-btn" style="padding:12px;font-size:0.85rem;text-align:left;border-radius:12px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;"><span data-i18n="key-dur-num-3">3</span> <span data-i18n="key-dur-unit-day">วัน</span></div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-3-price">30 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(5)" id="dur-5" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
-              <div style="font-weight:700;">5 วัน</div>
+            <button type="button" onclick="selectDuration(5)" id="dur-5" class="keys-dur-btn" style="padding:12px;font-size:0.85rem;text-align:left;border-radius:12px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;"><span data-i18n="key-dur-num-5">5</span> <span data-i18n="key-dur-unit-day">วัน</span></div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-5-price">50 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(7)" id="dur-7" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
-              <div style="font-weight:700;">7 วัน</div>
+            <button type="button" onclick="selectDuration(7)" id="dur-7" class="keys-dur-btn" style="padding:12px;font-size:0.85rem;text-align:left;border-radius:12px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;"><span data-i18n="key-dur-num-7">7</span> <span data-i18n="key-dur-unit-day">วัน</span></div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-7-price">70 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(15)" id="dur-15" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
-              <div style="font-weight:700;">15 วัน</div>
+            <button type="button" onclick="selectDuration(15)" id="dur-15" class="keys-dur-btn" style="padding:12px;font-size:0.85rem;text-align:left;border-radius:12px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;"><span data-i18n="key-dur-num-15">15</span> <span data-i18n="key-dur-unit-day">วัน</span></div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-15-price">150 เครดิต</div>
             </button>
-            <button type="button" onclick="selectDuration(30)" id="dur-30" style="padding:12px;font-size:0.85rem;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
-              <div style="font-weight:700;">30 วัน</div>
+            <button type="button" onclick="selectDuration(30)" id="dur-30" class="keys-dur-btn" style="padding:12px;font-size:0.85rem;text-align:left;border-radius:12px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;"><span data-i18n="key-dur-num-30">30</span> <span data-i18n="key-dur-unit-day">วัน</span></div>
               <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-30-price">300 เครดิต</div>
             </button>
           </div>
@@ -2204,30 +2294,30 @@
 
         <!-- Custom duration (days + hours combined, e.g. 2 วัน 3 ชม.) -->
         <div style="margin-bottom:14px;">
-          <label style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;">หรือระบุเอง (ผสมได้ เช่น 2 วัน 3 ชม.):</label>
+          <label style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;" data-i18n="key-custom-duration-label">หรือระบุเอง (ผสมได้ เช่น 2 วัน 3 ชม.):</label>
           <div style="display:flex;gap:8px;align-items:center;">
-            <input type="number" id="customDurationDays" min="0" max="365" placeholder="0" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
-            <span style="color:var(--muted);font-size:0.85rem;">วัน</span>
-            <input type="number" id="customDurationHours" min="0" max="23" placeholder="0" style="flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
-            <span style="color:var(--muted);font-size:0.85rem;">ชม.</span>
+            <input type="number" id="customDurationDays" min="0" max="365" placeholder="0" class="keys-input" style="flex:1;padding:10px 14px;border-radius:10px;color:var(--text);font-size:0.85rem;">
+            <span style="color:var(--muted);font-size:0.85rem;" data-i18n="key-dur-unit-day">วัน</span>
+            <input type="number" id="customDurationHours" min="0" max="23" placeholder="0" class="keys-input" style="flex:1;padding:10px 14px;border-radius:10px;color:var(--text);font-size:0.85rem;">
+            <span style="color:var(--muted);font-size:0.85rem;" data-i18n="key-dur-unit-hour">ชม.</span>
           </div>
         </div>
 
         <!-- Test option -->
-        <div style="margin-bottom:14px;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <div class="keys-trial-box" style="margin-bottom:14px;border-radius:12px;padding:12px 14px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="testKeyOption" onchange="toggleTestKey()">
-            <span style="color:var(--muted);font-size:0.85rem;">🧪 ทดลอง (1 เครดิต - 1 ชม.)</span>
+            <span style="color:var(--text);font-size:0.9rem;font-weight:600;" data-i18n="key-trial-label">🧪 ทดลองฟรี (0 เครดิต · 1 ชม.) — ใช้ได้ครั้งเดียวต่อบัญชี</span>
           </label>
         </div>
 
         <!-- Price display -->
-        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:10px;padding:12px;margin-bottom:14px;">
+        <div class="keys-price-box" style="border-radius:12px;padding:12px 14px;margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:0.85rem;color:var(--muted);">ราคา:</span>
-            <span style="font-size:1.15rem;font-weight:700;color:#4ade80;" id="keyPriceDisplay">0 เครดิต</span>
+            <span style="font-size:0.85rem;color:var(--muted);font-weight:600;" data-i18n="key-price-label">ราคา:</span>
+            <span style="font-size:1.2rem;font-weight:700;" id="keyPriceDisplay">0 <span data-i18n="key-credits-unit">เครดิต</span></span>
           </div>
-          <div style="font-size:0.72rem;color:var(--muted);margin-top:6px;" id="priceBreakdown">กรุณาเลือกระยะเวลา</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;" id="priceBreakdown" data-i18n="key-select-duration-hint">กรุณาเลือกระยะเวลา</div>
         </div>
 
         <button id="generateKeyBtn" class="submit-btn" onclick="generateNewKey()" style="width:100%;padding:12px;font-size:0.95rem;font-weight:700;margin:0;">
@@ -2237,7 +2327,7 @@
       </div>
 
       <!-- Keys List -->
-      <div class="card">
+      <div class="card keys-panel keys-list-card">
         <div class="card-title">📋 <span data-i18n="key-list">รายการคีย์ของฉัน</span></div>
         
         <div id="keysListContainer" style="display:flex;flex-direction:column;gap:12px;">
@@ -4715,9 +4805,12 @@
       const basePrice = days * BASE_PRICE_PER_DAY;
       const finalPrice = Math.round(basePrice * (1 - discount/100));
       const el = document.getElementById(`dur-${days}-price`);
+      const _l = (localStorage.getItem('xsoul_language') || 'th');
+      const _c = _l === 'en' ? 'Credits' : 'เครดิต';
+      const _off = _l === 'en' ? 'off' : 'ลด';
       if (el) el.textContent = discount > 0
-        ? `${finalPrice} เครดิต (ลด ${discount}%)`
-        : `${basePrice} เครดิต`;
+        ? `${finalPrice} ${_c} (${_off} ${discount}%)`
+        : `${basePrice} ${_c}`;
     });
   };
 
@@ -4749,8 +4842,11 @@
     const discount = _getDiscount(rank);
 
     if (isTestMode) {
-      priceEl.textContent = '1 เครดิต';
-      breakEl.textContent = 'ทดลอง: 1 เครดิต (1 ชม.) - ไม่มีส่วนลด';
+      const _lang = (localStorage.getItem('xsoul_language') || 'th');
+      priceEl.textContent = _lang === 'en' ? '0 Credits (Free)' : '0 เครดิต (ฟรี)';
+      breakEl.textContent = _lang === 'en'
+        ? 'Trial: Free (1 hour) — one time per account'
+        : 'ทดลอง: ฟรี (1 ชม.) — ใช้ได้ครั้งเดียวต่อบัญชี';
       return;
     }
 
@@ -4766,20 +4862,22 @@
       else if (hours > 0) label = `${hours} ชม.`;
     }
 
+    const _lang2 = (localStorage.getItem('xsoul_language') || 'th');
+    const _cr = _lang2 === 'en' ? 'Credits' : 'เครดิต';
     if (days === 0 && hours === 0) {
-      priceEl.textContent = '0 เครดิต';
-      breakEl.textContent = 'กรุณาเลือกระยะเวลา';
+      priceEl.textContent = '0 ' + _cr;
+      breakEl.textContent = _lang2 === 'en' ? 'Please select a duration' : 'กรุณาเลือกระยะเวลา';
       return;
     }
 
     const basePrice = days * BASE_PRICE_PER_DAY + hours * BASE_PRICE_PER_HOUR;
     const finalPrice = Math.max(1, Math.round(basePrice * (1 - discount/100)));
-    priceEl.textContent = finalPrice + ' เครดิต';
-    let bd = `ราคาพื้นฐาน: ${label} = ${basePrice.toFixed(2)} เครดิต`;
+    priceEl.textContent = finalPrice + ' ' + _cr;
+    let bd = (_lang2 === 'en' ? 'Base: ' : 'ราคาพื้นฐาน: ') + `${label} = ${basePrice.toFixed(2)} ${_cr}`;
     if (discount > 0) {
-      bd += ` | ส่วนลด ${discount}% | สุทธิ: ${finalPrice} เครดิต`;
+      bd += (_lang2 === 'en' ? ` | Discount ${discount}% | Total: ` : ` | ส่วนลด ${discount}% | สุทธิ: `) + `${finalPrice} ${_cr}`;
     } else {
-      bd += ` | สุทธิ: ${finalPrice} เครดิต`;
+      bd += (_lang2 === 'en' ? ` | Total: ` : ` | สุทธิ: `) + `${finalPrice} ${_cr}`;
     }
     breakEl.textContent = bd;
   };
@@ -4800,7 +4898,21 @@
 
   window.generateXsoulKey = async () => {
     const user = _getAuthUser();
-    if (!user) { alert('กรุณาเข้าสู่ระบบก่อน'); return; }
+    const _lang = (localStorage.getItem('xsoul_language') || 'th');
+    if (!user) { alert(_lang === 'en' ? 'Please sign in first' : 'กรุณาเข้าสู่ระบบก่อน'); return; }
+
+    // Enforce trial-key-once-per-account
+    if (isTestMode) {
+      try {
+        const claimedSnap = await window.fbGet(window.fbRef(window.db, `users/${user.uid}/trialKeyClaimed`));
+        if (claimedSnap.exists() && claimedSnap.val()) {
+          alert(_lang === 'en'
+            ? 'You have already claimed your free trial key.'
+            : 'คุณใช้สิทธิ์คีย์ทดลองฟรีไปแล้ว (จำกัด 1 ครั้งต่อบัญชี)');
+          return;
+        }
+      } catch (e) { console.warn('trial check failed', e); }
+    }
 
     let durationDays = 0, durationHours = 0;
     if (isTestMode) {
@@ -4821,7 +4933,7 @@
       const rank = await _getRank(user.uid);
       const discount = _getDiscount(rank);
       const basePrice = durationDays * BASE_PRICE_PER_DAY + durationHours * BASE_PRICE_PER_HOUR;
-      const finalPrice = isTestMode ? 1 : Math.max(1, Math.round(basePrice * (1 - discount/100)));
+      const finalPrice = isTestMode ? 0 : Math.max(1, Math.round(basePrice * (1 - discount/100)));
 
       const creditSnap = await window.fbGet(window.fbRef(window.db, `users/${user.uid}/credits`));
       const currentCredits = creditSnap.exists() ? (creditSnap.val() || 0) : 0;
@@ -4863,6 +4975,13 @@
       catch(e) { console.error('xsoulKeys save failed', e); }
       try { await window.fbSet(window.fbRef(window.db, `users/${user.uid}/xsoulKeys/${key}`), keyData); }
       catch(e) {}
+      if (isTestMode) {
+        try {
+          await window.fbSet(window.fbRef(window.db, `users/${user.uid}/trialKeyClaimed`), {
+            claimedAt: Date.now(), key
+          });
+        } catch(e) { console.warn('trial mark failed', e); }
+      }
 
       const encodedKey = JSON.stringify(keyData);
       const outEl = document.getElementById('xsoulGeneratedKey');
@@ -4984,6 +5103,19 @@
       'key-duration-7d': '7 Days',
       'key-duration-15d': '15 Days',
       'key-duration-30d': '30 Days',
+      'key-generator': 'Generate New Key',
+      'key-rank-discount-title': '💎 Your Rank Discount',
+      'key-rank-label': 'Rank',
+      'key-discount-label': 'Discount',
+      'key-select-duration': 'Select Duration',
+      'key-dur-unit-day': 'Day(s)',
+      'key-dur-unit-hour': 'Hour(s)',
+      'key-custom-duration-label': 'Or set your own (mix allowed, e.g. 2 days 3 hrs):',
+      'key-trial-label': '🧪 Free Trial (0 credits · 1 hr) — one time per account',
+      'key-price-label': 'Price:',
+      'key-credits-unit': 'Credits',
+      'key-select-duration-hint': 'Please select a duration',
+      'key-list': 'My Keys',
       'key-generate-btn': '🔑 Generate Key',
       'key-list-title': 'Your Keys',
       'key-copy-btn': '📋 Copy',
@@ -5396,6 +5528,19 @@
       'key-duration-7d': '7 วัน',
       'key-duration-15d': '15 วัน',
       'key-duration-30d': '30 วัน',
+      'key-generator': 'สร้างคีย์ใหม่',
+      'key-rank-discount-title': '💎 ส่วนลดตามแรงค์ของคุณ',
+      'key-rank-label': 'แรงค์',
+      'key-discount-label': 'ส่วนลด',
+      'key-select-duration': 'เลือกระยะเวลา',
+      'key-dur-unit-day': 'วัน',
+      'key-dur-unit-hour': 'ชม.',
+      'key-custom-duration-label': 'หรือระบุเอง (ผสมได้ เช่น 2 วัน 3 ชม.):',
+      'key-trial-label': '🧪 ทดลองฟรี (0 เครดิต · 1 ชม.) — ใช้ได้ครั้งเดียวต่อบัญชี',
+      'key-price-label': 'ราคา:',
+      'key-credits-unit': 'เครดิต',
+      'key-select-duration-hint': 'กรุณาเลือกระยะเวลา',
+      'key-list': 'รายการคีย์ของฉัน',
       'key-generate-btn': '🔑 สร้างคีย์',
       'key-list-title': 'คีย์ของคุณ',
       'key-copy-btn': '📋 คัดลอก',
