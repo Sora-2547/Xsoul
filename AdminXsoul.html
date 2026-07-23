@@ -591,13 +591,13 @@
     // ===== Slips / Top-up history =====
     // ค้นหาจาก path ที่ใช้จริงใน index.html: users/{uid}/topupRequests, users/{uid}/topupHistory
     async function fetchUserTopups(uid) {
+      // อ่านเฉพาะ path ที่ Rule อนุญาต admin/เจ้าของ (users/$uid/*) เท่านั้น
+      // ตัด topups/{uid} และ slips/{uid} ออก เพราะ Rule ไม่ได้ประกาศไว้ → deny เป็นปกติ
       const paths = [
         `users/${uid}/topupRequests`,
         `users/${uid}/topupHistory`,
         `users/${uid}/topups`,
-        `users/${uid}/slips`,
-        `topups/${uid}`,
-        `slips/${uid}`
+        `users/${uid}/slips`
       ];
       const results = await Promise.all(paths.map(async (p) => {
         try {
