@@ -2162,25 +2162,79 @@
       <!-- Generate Key Card -->
       <div class="card" style="margin-bottom:28px;">
         <div class="card-title">🔐 <span data-i18n="key-generator">สร้างคีย์ใหม่</span></div>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <label style="font-size:0.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;" data-i18n="key-duration">ระยะเวลาใช้งาน</label>
-            <select id="keyDurationSelect" style="background:#0a0d1a;border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:0.9rem;cursor:pointer;transition:all 0.2s;">
-              <option value="1" data-i18n="key-dur-1day">1 วัน</option>
-              <option value="3" data-i18n="key-dur-3day">3 วัน</option>
-              <option value="7" data-i18n="key-dur-7day">7 วัน</option>
-              <option value="15" data-i18n="key-dur-15day">15 วัน</option>
-              <option value="30" data-i18n="key-dur-30day">30 วัน</option>
-            </select>
+
+        <!-- Rank discount info -->
+        <div style="background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.3);border-radius:10px;padding:12px;margin-bottom:16px;">
+          <div style="font-size:0.8rem;color:var(--accent);margin-bottom:4px;font-weight:600;">💎 ส่วนลดตามแรงค์ของคุณ</div>
+          <div style="font-size:0.75rem;color:var(--muted);">
+            แรงค์: <span id="currentRankDisplay">-</span> | ส่วนลด: <span id="rankDiscountDisplay">0%</span>
           </div>
-          <div style="display:flex;flex-direction:column;gap:8px;justify-content:flex-end;">
-            <button id="generateKeyBtn" class="submit-btn" onclick="generateNewKey()" style="padding:11px 16px;font-size:0.9rem;margin:0;">
-              <span data-i18n="key-generate-btn">⚡ สร้างคีย์</span>
+        </div>
+
+        <!-- Duration option buttons -->
+        <div style="margin-bottom:14px;">
+          <label style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">เลือกระยะเวลา</label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;">
+            <button type="button" onclick="selectDuration(1)" id="dur-1" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;">1 วัน</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-1-price">10 เครดิต</div>
+            </button>
+            <button type="button" onclick="selectDuration(3)" id="dur-3" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;">3 วัน</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-3-price">30 เครดิต</div>
+            </button>
+            <button type="button" onclick="selectDuration(5)" id="dur-5" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;">5 วัน</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-5-price">50 เครดิต</div>
+            </button>
+            <button type="button" onclick="selectDuration(7)" id="dur-7" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;">7 วัน</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-7-price">70 เครดิต</div>
+            </button>
+            <button type="button" onclick="selectDuration(15)" id="dur-15" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;">15 วัน</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-15-price">150 เครดิต</div>
+            </button>
+            <button type="button" onclick="selectDuration(30)" id="dur-30" style="padding:12px;font-size:0.85rem;text-align:left;background:#0a0d1a;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;transition:all 0.2s;">
+              <div style="font-weight:700;">30 วัน</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="dur-30-price">300 เครดิต</div>
             </button>
           </div>
         </div>
-        <div id="keyGenerateStatus" style="font-size:0.78rem;color:var(--muted);min-height:16px;"></div>
+
+        <!-- Custom duration -->
+        <div style="margin-bottom:14px;">
+          <label style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;">หรือระบุจำนวนเอง:</label>
+          <div style="display:flex;gap:8px;">
+            <input type="number" id="customDuration" min="1" max="365" placeholder="จำนวน" style="flex:1;padding:10px 14px;background:#0a0d1a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
+            <select id="durationUnit" style="padding:10px;background:#0a0d1a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
+              <option value="days">วัน</option>
+              <option value="hours">ชม.</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Test option -->
+        <div style="margin-bottom:14px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="testKeyOption" onchange="toggleTestKey()">
+            <span style="color:var(--muted);font-size:0.85rem;">🧪 ทดลอง (1 เครดิต - 1 ชม.)</span>
+          </label>
+        </div>
+
+        <!-- Price display -->
+        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:10px;padding:12px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.85rem;color:var(--muted);">ราคา:</span>
+            <span style="font-size:1.15rem;font-weight:700;color:#4ade80;" id="keyPriceDisplay">0 เครดิต</span>
+          </div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:6px;" id="priceBreakdown">กรุณาเลือกระยะเวลา</div>
+        </div>
+
+        <button id="generateKeyBtn" class="submit-btn" onclick="generateNewKey()" style="width:100%;padding:12px;font-size:0.95rem;font-weight:700;margin:0;">
+          <span data-i18n="key-generate-btn">⚡ สร้างคีย์</span>
+        </button>
+        <div id="keyGenerateStatus" style="font-size:0.78rem;color:var(--muted);min-height:16px;margin-top:8px;text-align:center;"></div>
       </div>
 
       <!-- Keys List -->
@@ -2706,108 +2760,14 @@
 
     <!-- TAB: KEYS -->
     <div id="stab-content-keys" style="display:none;">
-      <div style="background:#0a0d1a;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-        <h3 style="color:var(--accent);margin-bottom:16px;font-size:1.1rem;">🔑 สร้าง Key สำหรับ Xsoul Menu</h3>
-        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;line-height:1.6;">เลือกระยะเวลาที่ต้องการเพื่อสร้าง Key สำหรับใช้งาน Xsoul Menu</p>
-        
-        <!-- Rank discount info -->
-        <div style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;padding:12px;margin-bottom:16px;">
-          <div style="font-size:0.8rem;color:var(--accent);margin-bottom:4px;">💎 ส่วนลดตามแรงค์ของคุณ</div>
-          <div style="font-size:0.75rem;color:var(--muted);">
-            แรงค์: <span id="currentRankDisplay">-</span> | ส่วนลด: <span id="rankDiscountDisplay">0%</span>
-          </div>
-          <div style="font-size:0.7rem;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,212,255,0.2);">
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px;">
-              <span>Free: 0%</span>
-              <span>Bronze: 0%</span>
-              <span>Silver: 1.3%</span>
-              <span>Gold: 4.23%</span>
-              <span>Platinum: 9.02%</span>
-              <span>Diamond: 17.33%</span>
-              <span>PremiumMax: 44.67%</span>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Duration options -->
-        <div style="margin-bottom:16px;">
-          <label style="display:block;color:var(--muted);font-size:0.85rem;margin-bottom:8px;">เลือกระยะเวลา:</label>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;">
-            <button class="btn btn-primary" onclick="selectDuration(1)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-1">
-              <div style="font-weight:600;">1 วัน</div>
-              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-1-price">10 เครดิต</div>
-            </button>
-            <button class="btn btn-primary" onclick="selectDuration(3)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-3">
-              <div style="font-weight:600;">3 วัน</div>
-              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-3-price">30 เครดิต</div>
-            </button>
-            <button class="btn btn-primary" onclick="selectDuration(5)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-5">
-              <div style="font-weight:600;">5 วัน</div>
-              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-5-price">50 เครดิต</div>
-            </button>
-            <button class="btn btn-primary" onclick="selectDuration(7)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-7">
-              <div style="font-weight:600;">7 วัน</div>
-              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-7-price">70 เครดิต</div>
-            </button>
-            <button class="btn btn-primary" onclick="selectDuration(15)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-15">
-              <div style="font-weight:600;">15 วัน</div>
-              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-15-price">150 เครดิต</div>
-            </button>
-            <button class="btn btn-primary" onclick="selectDuration(30)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-30">
-              <div style="font-weight:600;">30 วัน</div>
-              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-30-price">300 เครดิต</div>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Custom duration -->
-        <div style="margin-bottom:16px;">
-          <label style="display:block;color:var(--muted);font-size:0.85rem;margin-bottom:8px;">หรือระบุจำนวนวัน/ชม. เอง:</label>
-          <div style="display:flex;gap:8px;">
-            <input type="number" id="customDuration" min="1" max="365" placeholder="จำนวนวัน" style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
-            <select id="durationUnit" style="padding:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;">
-              <option value="days">วัน</option>
-              <option value="hours">ชม.</option>
-            </select>
-          </div>
-        </div>
-        
-        <!-- Test option -->
-        <div style="margin-bottom:16px;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" id="testKeyOption" onchange="toggleTestKey()">
-            <span style="color:var(--muted);font-size:0.85rem;">ทดลอง (1 เครดิต - 1 ชม.)</span>
-          </label>
-        </div>
-        
-        <!-- Price display -->
-        <div style="background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:12px;margin-bottom:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:0.85rem;color:var(--muted);">ราคา:</span>
-            <span style="font-size:1.1rem;font-weight:700;color:#4caf50;" id="keyPriceDisplay">0 เครดิต</span>
-          </div>
-          <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;" id="priceBreakdown">-</div>
-          <div style="font-size:0.7rem;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid rgba(76,175,80,0.2);">
-            <div>ราคาพื้นฐาน: 10 เครดิต/วัน | ทดลอง: 1 เครดิต (1 ชม.)</div>
-          </div>
-        </div>
-        
-        <!-- Generate button -->
-        <button class="btn btn-primary" onclick="generateXsoulKey()" style="width:100%;padding:14px;font-size:1rem;font-weight:600;margin-bottom:16px;">สร้าง Key</button>
-        
-        <!-- Generated key display -->
-        <div style="margin-bottom:12px;">
-          <label style="display:block;color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Key ที่สร้าง:</label>
-          <div style="display:flex;gap:8px;">
-            <input type="text" id="xsoulGeneratedKey" readonly placeholder="กดปุ่มสร้าง Key..." style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:0.85rem;">
-            <button class="btn btn-secondary" onclick="copyXsoulKey()" style="padding:10px 16px;">คัดลอก</button>
-          </div>
-        </div>
-        
-        <div id="xsoulKeyInfo" style="color:var(--muted);font-size:0.8rem;"></div>
+      <div style="background:#0a0d1a;border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:10px;">🔑</div>
+        <h3 style="color:var(--accent);margin-bottom:10px;font-size:1rem;">สร้าง Key ที่หน้า Keys</h3>
+        <p style="color:var(--muted);font-size:0.85rem;line-height:1.6;">
+          เลือกเมนู "Keys" จากแถบด้านข้าง เพื่อสร้างและจัดการคีย์ของคุณ
+        </p>
       </div>
-      
-      <button class="btn btn-secondary" onclick="closeUserSettings()" style="width:100%;padding:12px;" data-i18n="close-btn">ปิด</button>
+      <button class="btn btn-secondary" onclick="closeUserSettings()" style="width:100%;padding:12px;margin-top:12px;" data-i18n="close-btn">ปิด</button>
     </div><!-- end stab-content-keys -->
 
     <!-- TAB: DISPLAY -->
@@ -4940,7 +4900,21 @@
             rank: rank
           };
 
-          // Store in Firebase
+          // Also save into userKeys/{uid}/{key} so the Keys list picks it up
+          const keyListData = Object.assign({}, keyData, {
+            expiresAt: expiry,
+            duration: durationDays || (durationHours / 24),
+            used: false,
+            usedBy: null,
+            usedAt: null,
+            active: true,
+            username: (user.displayName || user.email || '')
+          });
+          db.ref('userKeys/' + user.uid + '/' + key).set(keyListData).then(() => {
+            if (typeof loadUserKeys === 'function') loadUserKeys();
+          }).catch(e => console.error('userKeys save failed:', e));
+
+          // Store in Firebase (legacy paths)
           db.ref('xsoulKeys/' + key).set(keyData).then(() => {
             console.log('Key saved to Firebase:', key);
             
@@ -7622,53 +7596,34 @@
   window.generateNewKey = async () => {
     const btn = document.getElementById('generateKeyBtn');
     const status = document.getElementById('keyGenerateStatus');
-    const duration = parseInt(document.getElementById('keyDurationSelect').value);
-    
+
     if (!auth.currentUser) {
-      status.textContent = 'Please login first';
+      status.textContent = 'กรุณาเข้าสู่ระบบก่อน';
+      status.style.color = 'var(--error)';
+      return;
+    }
+
+    // Validate a selection exists (button, custom input, or test mode)
+    const hasCustom = document.getElementById('customDuration') &&
+                      parseInt(document.getElementById('customDuration').value) > 0;
+    if (!selectedDuration && !isTestMode && !hasCustom) {
+      status.textContent = 'กรุณาเลือกระยะเวลา';
       status.style.color = 'var(--error)';
       return;
     }
 
     try {
       btn.disabled = true;
-      status.textContent = 'Generating...';
+      status.textContent = 'กำลังสร้าง...';
       status.style.color = 'var(--muted)';
-
-      // Generate random key
-      const keyStr = generateRandomKey(24);
-      const now = Date.now();
-      const expiresAt = now + (duration * 24 * 60 * 60 * 1000);
-
-      const keyData = {
-        key: keyStr,
-        createdAt: now,
-        expiresAt: expiresAt,
-        duration: duration,
-        userId: auth.currentUser.uid,
-        username: auth.currentUser.displayName || auth.currentUser.email,
-        used: false,
-        usedBy: null,
-        usedAt: null,
-        active: true
-      };
-
-      // Save to Firebase using modular SDK via window functions
-      const keyRefPath = window.fbRef(db, 'userKeys/' + auth.currentUser.uid + '/' + keyStr);
-      await window.fbSet(keyRefPath, keyData);
-
-      status.textContent = 'Key generated successfully!';
+      // Delegate to the shared, rank-discounted generator
+      await window.generateXsoulKey();
+      status.textContent = 'สร้างคีย์สำเร็จ!';
       status.style.color = 'var(--success)';
-
-      // Refresh keys list
-      setTimeout(() => {
-        loadUserKeys();
-        status.textContent = '';
-        btn.disabled = false;
-      }, 500);
+      setTimeout(() => { status.textContent = ''; btn.disabled = false; }, 1200);
     } catch (err) {
       console.error('Key generation error:', err);
-      status.textContent = 'Error: ' + err.message;
+      status.textContent = 'Error: ' + (err && err.message ? err.message : err);
       status.style.color = 'var(--error)';
       btn.disabled = false;
     }
@@ -7786,6 +7741,9 @@
   window.showSection = function(sectionId) {
     if (sectionId === 'keys' && auth.currentUser) {
       loadUserKeys();
+      if (typeof loadKeyGeneratorInfo === 'function') {
+        try { loadKeyGeneratorInfo(); } catch(e) { console.error(e); }
+      }
     }
     return origShowSection.call(this, sectionId);
   };
