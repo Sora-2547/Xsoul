@@ -524,7 +524,14 @@
           <div class="form-group"><label>Ban Reason</label><textarea id="editBanReason">${escapeHtml(u.banReason || '')}</textarea></div>
         `;
         $('editModal').classList.add('active');
-        console.log('[editUser] เปิด modal สำเร็จ');
+        // fallback: บังคับ inline style ตรง ๆ เผื่อมี CSS อื่นมา override class .modal.active
+        $('editModal').style.setProperty('display', 'flex', 'important');
+        $('editModal').style.setProperty('z-index', '99999', 'important');
+        const rect = $('editModal').getBoundingClientRect();
+        const cs = getComputedStyle($('editModal'));
+        console.log('[editUser] เปิด modal สำเร็จ | display=', cs.display, '| visibility=', cs.visibility,
+          '| opacity=', cs.opacity, '| rect=', JSON.stringify(rect));
+
       } catch (e) {
         console.error('[editUser] เกิด error ตอนสร้างฟอร์ม', e);
         alert('❌ เปิดฟอร์มแก้ไขไม่สำเร็จ: ' + e.message);
@@ -533,6 +540,8 @@
 
     function closeEditModal() {
       $('editModal').classList.remove('active');
+      $('editModal').style.removeProperty('display');
+      $('editModal').style.removeProperty('z-index');
       currentEditingUser = null;
     }
 
