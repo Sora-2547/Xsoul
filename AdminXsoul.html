@@ -200,7 +200,7 @@
           <div class="bell-dropdown" id="bellDropdown" onclick="event.stopPropagation()">
             <div class="bell-dropdown-header">
               <h3>🧾 การเติมเงินล่าสุด</h3>
-              <button onclick="markAllNotifsRead()">อ่านทั้งหมด</button>
+              <button onclick="clearAllNotifs()" style="color:#ff6b6b;font-weight:600;">🗑️ ลบทั้งหมด</button>
             </div>
             <div id="notifList"><div class="notif-empty">กำลังโหลด...</div></div>
           </div>
@@ -936,6 +936,27 @@
       renderNotifs();
     }
 
+    window.clearAllNotifs = async () => {
+      if (!allTopups.length) { alert('ไม่มีรายการให้ลบ'); return; }
+      if (!confirm('ลบการแจ้งเตือนทั้งหมด ' + allTopups.length + ' รายการ?\n(จะลบออกจากฐานข้อมูลถาวร)')) return;
+      const btn = event && event.target; if (btn) { btn.disabled = true; btn.textContent = 'กำลังลบ...'; }
+      try {
+        // ลบทั้งหมดพร้อมกันจาก paths ที่รู้จัก
+        const tasks = allTopups.map(t => t.path ? db.ref(t.path).remove().catch(e => console.warn('remove fail', t.path, e)) : null).filter(Boolean);
+        await Promise.all(tasks);
+        // เผื่อบางรายการยังค้าง: กวาด adminNotifications/topup ทั้ง node
+        try { await db.ref('adminNotifications/topup').remove(); } catch(e){}
+        allTopups = [];
+        seenIds.clear(); persistSeen();
+        renderNotifs();
+      } catch (e) {
+        console.error(e);
+        alert('เกิดข้อผิดพลาด: ' + e.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🗑️ ลบทั้งหมด'; }
+      }
+    };
+
     // ===== KEYS MANAGEMENT =====
     window.switchTab = (tab) => {
       const usersBtn = $('usersTabBtn');
@@ -995,7 +1016,7 @@
             <td>${escapeHtml(ownerName)}</td>
             <td style="font-size:12px;">${created}</td>
             <td style="font-size:12px;">${expires}</td>
-            <td>${k.duration} วัน</td>
+            <td><span class="key-countdown" data-expires="${k.expiresAt}">${formatCountdown(k.expiresAt)}</span></td>
             <td><span class="status-badge ${isExpired ? 'status-banned' : 'status-active'}">${isExpired ? '❌ หมดอายุ' : '✅ ใช้ได้'}</span></td>
             <td>${k.usedBy ? escapeHtml(k.usedBy) : '-'}</td>
             <td>
@@ -1008,6 +1029,30 @@
         tbody.innerHTML = '<tr><td colspan="8" style="color:#ff6b6b;">Error loading keys: ' + err.message + '</td></tr>';
       }
     };
+
+    function formatCountdown(expiresAt) {
+      const ms = (Number(expiresAt) || 0) - Date.now();
+      if (!expiresAt || isNaN(ms)) return '-';
+      if (ms <= 0) return 'หมดอายุ';
+      const totalSec = Math.floor(ms / 1000);
+      const days = Math.floor(totalSec / 86400);
+      const h = Math.floor((totalSec % 86400) / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      const pad = n => String(n).padStart(2, '0');
+      if (days >= 1) return days + ' วัน ' + pad(h) + ':' + pad(m) + ':' + pad(s);
+      return pad(h) + ':' + pad(m) + ':' + pad(s);
+    }
+
+    setInterval(() => {
+      document.querySelectorAll('.key-countdown').forEach(el => {
+        const exp = el.getAttribute('data-expires');
+        const txt = formatCountdown(Number(exp));
+        if (el.textContent !== txt) el.textContent = txt;
+        if (txt === 'หมดอายุ') el.style.color = '#ff6b6b';
+      });
+    }, 1000);
+
 
     window.revokeAdminKey = async (userId, keyId) => {
       if (!confirm('ยืนยันการยกเลิกคีย์นี้?')) return;
