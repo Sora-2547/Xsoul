@@ -2732,13 +2732,31 @@
         <!-- Duration options -->
         <div style="margin-bottom:16px;">
           <label style="display:block;color:var(--muted);font-size:0.85rem;margin-bottom:8px;">เลือกระยะเวลา:</label>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;">
-            <button class="btn btn-primary" onclick="selectDuration(1)" style="padding:10px;font-size:0.85rem;" id="dur-1">1 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">10 เครดิต</span></button>
-            <button class="btn btn-primary" onclick="selectDuration(3)" style="padding:10px;font-size:0.85rem;" id="dur-3">3 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">30 เครดิต</span></button>
-            <button class="btn btn-primary" onclick="selectDuration(5)" style="padding:10px;font-size:0.85rem;" id="dur-5">5 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">50 เครดิต</span></button>
-            <button class="btn btn-primary" onclick="selectDuration(7)" style="padding:10px;font-size:0.85rem;" id="dur-7">7 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">70 เครดิต</span></button>
-            <button class="btn btn-primary" onclick="selectDuration(15)" style="padding:10px;font-size:0.85rem;" id="dur-15">15 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">150 เครดิต</span></button>
-            <button class="btn btn-primary" onclick="selectDuration(30)" style="padding:10px;font-size:0.85rem;" id="dur-30">30 วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">300 เครดิต</span></button>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;">
+            <button class="btn btn-primary" onclick="selectDuration(1)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-1">
+              <div style="font-weight:600;">1 วัน</div>
+              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-1-price">10 เครดิต</div>
+            </button>
+            <button class="btn btn-primary" onclick="selectDuration(3)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-3">
+              <div style="font-weight:600;">3 วัน</div>
+              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-3-price">30 เครดิต</div>
+            </button>
+            <button class="btn btn-primary" onclick="selectDuration(5)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-5">
+              <div style="font-weight:600;">5 วัน</div>
+              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-5-price">50 เครดิต</div>
+            </button>
+            <button class="btn btn-primary" onclick="selectDuration(7)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-7">
+              <div style="font-weight:600;">7 วัน</div>
+              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-7-price">70 เครดิต</div>
+            </button>
+            <button class="btn btn-primary" onclick="selectDuration(15)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-15">
+              <div style="font-weight:600;">15 วัน</div>
+              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-15-price">150 เครดิต</div>
+            </button>
+            <button class="btn btn-primary" onclick="selectDuration(30)" style="padding:12px;font-size:0.85rem;text-align:left;" id="dur-30">
+              <div style="font-weight:600;">30 วัน</div>
+              <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="dur-30-price">300 เครดิต</div>
+            </button>
           </div>
         </div>
         
@@ -4694,12 +4712,12 @@
       durations.forEach(days => {
         const basePrice = days * BASE_PRICE_PER_DAY;
         const discountedPrice = Math.round(basePrice * (1 - discount / 100));
-        const btn = document.getElementById(`dur-${days}`);
-        if (btn) {
+        const priceEl = document.getElementById(`dur-${days}-price`);
+        if (priceEl) {
           const priceText = discount > 0 
             ? `${discountedPrice} เครดิต (ลด ${discount}%)` 
             : `${basePrice} เครดิต`;
-          btn.innerHTML = `${days} วัน<br><span style="font-size:0.7rem;color:rgba(255,255,255,0.7);">${priceText}</span>`;
+          priceEl.textContent = priceText;
         }
       });
     }).catch(err => {
