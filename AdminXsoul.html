@@ -95,7 +95,8 @@
     .delete-btn { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid #ff6b6b; }
     .delete-btn:hover { background: #ff6b6b; color: #fff; }
     .modal {
-      display: none; position: fixed; inset: 0;
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%; height: 100%;
       background: rgba(0,0,0,0.8); z-index: 1000;
       justify-content: center; align-items: center;
     }
@@ -139,7 +140,7 @@
     .topup-info { font-size: 13px; line-height: 1.7; }
     .topup-info .amount { color: #4caf50; font-size: 18px; font-weight: 700; }
     .topup-info .meta { color: #aaa; font-size: 12px; }
-    .image-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index: 2000; cursor: zoom-out; }
+    .image-viewer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index: 2000; cursor: zoom-out; }
     .image-viewer.active { display: flex; }
     .image-viewer img { max-width: 95vw; max-height: 95vh; border-radius: 8px; }
     /* Bell */
