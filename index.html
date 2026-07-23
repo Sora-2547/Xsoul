@@ -4608,8 +4608,29 @@
     'Gold': 4.23,
     'Platinum': 9.02,
     'Diamond': 17.33,
+    'Premium': 44.67,
     'PremiumMax': 44.67
   };
+  // Normalize any rank string (e.g. 'premium', 'PREMIUM MAX', 'premiummax')
+  // to a canonical key used in rankDiscounts.
+  function _normalizeRankKey(rank) {
+    if (!rank) return 'Free';
+    const k = String(rank).toLowerCase().replace(/[\s_-]+/g, '');
+    const map = {
+      free: 'Free',
+      bronze: 'Bronze',
+      silver: 'Silver',
+      gold: 'Gold',
+      platinum: 'Platinum',
+      diamond: 'Diamond',
+      premium: 'PremiumMax',
+      premiummax: 'PremiumMax'
+    };
+    return map[k] || rank;
+  }
+  function _getDiscount(rank) {
+    return rankDiscounts[_normalizeRankKey(rank)] || 0;
+  }
 
   const BASE_PRICE_PER_DAY = 10;
   const BASE_PRICE_PER_HOUR = 10 / 24;
@@ -4663,7 +4684,7 @@
       return;
     }
     const rank = await _getRank(user.uid);
-    const discount = rankDiscounts[rank] || 0;
+    const discount = _getDiscount(rank);
     const rEl = document.getElementById('currentRankDisplay');
     const dEl = document.getElementById('rankDiscountDisplay');
     if (rEl) rEl.textContent = rank;
@@ -4688,7 +4709,7 @@
       const user = _getAuthUser();
       if (!user) return;
       rank = await _getRank(user.uid);
-      discount = rankDiscounts[rank] || 0;
+      discount = _getDiscount(rank);
     }
     [1,3,5,7,15,30].forEach(days => {
       const basePrice = days * BASE_PRICE_PER_DAY;
@@ -4725,7 +4746,7 @@
     }
 
     const rank = await _getRank(user.uid);
-    const discount = rankDiscounts[rank] || 0;
+    const discount = _getDiscount(rank);
 
     if (isTestMode) {
       priceEl.textContent = '1 เครดิต';
@@ -4798,7 +4819,7 @@
 
     try {
       const rank = await _getRank(user.uid);
-      const discount = rankDiscounts[rank] || 0;
+      const discount = _getDiscount(rank);
       const basePrice = durationDays * BASE_PRICE_PER_DAY + durationHours * BASE_PRICE_PER_HOUR;
       const finalPrice = isTestMode ? 1 : Math.max(1, Math.round(basePrice * (1 - discount/100)));
 
