@@ -166,6 +166,102 @@
     .notif-item .notif-amount { color:#4caf50; font-weight:700; }
     .notif-item .notif-when { color:#888; font-size: 11px; }
     .notif-empty { padding: 30px; text-align:center; color:#888; font-size:13px; }
+
+    /* ===== Cross-browser compatibility ===== */
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: hidden; }
+    input, button, select, textarea { -webkit-appearance: none; -moz-appearance: none; appearance: none; font-family: inherit; }
+    input[type="checkbox"], input[type="radio"] { -webkit-appearance: auto; appearance: auto; }
+    button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    /* Safari backdrop-filter prefix + fallback for browsers without support */
+    .login-box, .stat-card, .modal-content, .bell-dropdown {
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+    @supports not ((backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))) {
+      .login-box { background: rgba(30,30,60,0.95); }
+      .stat-card { background: rgba(30,30,60,0.9); }
+      .modal-content { background: rgba(26,26,46,0.98); }
+      .bell-dropdown { background: rgba(20,20,40,1); }
+    }
+    /* Fix iOS 100vh issue */
+    .login-container { min-height: 100vh; min-height: -webkit-fill-available; min-height: 100dvh; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
+    /* Prevent iOS zoom-on-focus by ensuring >=16px */
+    input, select, textarea { font-size: 16px !important; }
+    /* Better table scroll on mobile */
+    .users-table { -webkit-overflow-scrolling: touch; }
+
+    /* ===== Mobile responsive ===== */
+    @media (max-width: 768px) {
+      body { font-size: 14px; }
+      .admin-panel { padding: 12px; }
+      .admin-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; }
+      .admin-header > div:last-child { width: 100%; justify-content: space-between; }
+      .admin-header h1 { font-size: 22px; }
+      .admin-header .who { font-size: 12px; word-break: break-all; }
+      .login-box { padding: 24px; margin: 16px; border-radius: 16px; }
+      .login-box h1 { font-size: 24px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+      .stat-card { padding: 14px; }
+      .stat-card h3 { font-size: 11px; }
+      .stat-card .value { font-size: 20px; }
+      .search-bar input { padding: 12px 14px; }
+      /* Card-style table on mobile */
+      .users-table { background: transparent; overflow: visible; }
+      .users-table table, .users-table thead, .users-table tbody, .users-table tr, .users-table td {
+        display: block; width: 100%;
+      }
+      .users-table table { min-width: 0; }
+      .users-table thead { display: none; }
+      .users-table tr {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        padding: 10px 12px;
+      }
+      .users-table td {
+        border: none;
+        padding: 8px 0;
+        text-align: right;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        word-break: break-word;
+      }
+      .users-table td::before {
+        content: attr(data-label);
+        color: #00d4ff;
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 600;
+        text-align: left;
+        flex-shrink: 0;
+      }
+      .users-table td[colspan] { display: block; text-align: center; }
+      .users-table td[colspan]::before { display: none; }
+      .action-btn { padding: 8px 12px; font-size: 12px; margin: 2px; }
+      .modal-content { width: 94%; padding: 20px; border-radius: 14px; max-height: 92vh; }
+      .modal-header h2 { font-size: 18px; }
+      /* Bell dropdown mobile */
+      .bell-dropdown {
+        position: fixed; top: auto; right: 8px; left: 8px;
+        width: auto; max-height: 70vh;
+      }
+      .topup-card { grid-template-columns: 90px 1fr; gap: 10px; padding: 10px; }
+      .topup-card img.slip-thumb, .topup-card .no-slip { width: 90px; height: 90px; }
+      .topup-card > *:nth-child(3) { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+      .tab-btn { flex: 1; font-size: 13px; padding: 10px 8px !important; }
+    }
+    @media (max-width: 380px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .admin-header h1 { font-size: 20px; }
+      .login-box { padding: 20px; }
+    }
+
   </style>
 </head>
 <body>
@@ -469,17 +565,19 @@
         const banned = u.isBanned || u.status === 'banned';
         return `
         <tr>
-          <td style="font-family:monospace;font-size:12px;">${escapeHtml(u.uid.substring(0,12))}…</td>
-          <td><strong>${escapeHtml(u.username)}</strong></td>
-          <td>${escapeHtml(u.email)}</td>
-          <td><span class="credit-badge">${u.credits.toLocaleString()}</span></td>
-          <td><span class="role-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${escapeHtml(u.role)}</span></td>
-          <td><span class="status-badge ${banned ? 'status-banned' : 'status-active'}">${banned ? 'Banned' : 'Active'}</span></td>
-          <td style="font-size:12px;">${escapeHtml(formatDate(u.createdAt))}</td>
-          <td>
-            <button class="action-btn edit-btn" onclick="editUser('${escapeHtml(u.uid)}')">Edit</button>
-            <button class="action-btn slip-btn" onclick="viewSlips('${escapeHtml(u.uid)}')">Slips</button>
-            <button class="action-btn delete-btn" onclick="banUser('${escapeHtml(u.uid)}')">${banned ? 'Unban' : 'Ban'}</button>
+          <td data-label="UID" style="font-family:monospace;font-size:12px;">${escapeHtml(u.uid.substring(0,12))}…</td>
+          <td data-label="Username"><strong>${escapeHtml(u.username)}</strong></td>
+          <td data-label="Email">${escapeHtml(u.email)}</td>
+          <td data-label="Credits"><span class="credit-badge">${u.credits.toLocaleString()}</span></td>
+          <td data-label="Role"><span class="role-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${escapeHtml(u.role)}</span></td>
+          <td data-label="Status"><span class="status-badge ${banned ? 'status-banned' : 'status-active'}">${banned ? 'Banned' : 'Active'}</span></td>
+          <td data-label="Created" style="font-size:12px;">${escapeHtml(formatDate(u.createdAt))}</td>
+          <td data-label="Actions">
+            <span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+              <button class="action-btn edit-btn" onclick="editUser('${escapeHtml(u.uid)}')">Edit</button>
+              <button class="action-btn slip-btn" onclick="viewSlips('${escapeHtml(u.uid)}')">Slips</button>
+              <button class="action-btn delete-btn" onclick="banUser('${escapeHtml(u.uid)}')">${banned ? 'Unban' : 'Ban'}</button>
+            </span>
           </td>
         </tr>`;
       }).join('');
@@ -1012,14 +1110,14 @@
           const ownerName = ownerUser ? ownerUser.username : (k.username || k.userId.substring(0,10)+'…');
 
           return `<tr>
-            <td style="font-family:monospace;font-size:12px;word-break:break-all;">${escapeHtml(k.key)}</td>
-            <td>${escapeHtml(ownerName)}</td>
-            <td style="font-size:12px;">${created}</td>
-            <td style="font-size:12px;">${expires}</td>
-            <td><span class="key-countdown" data-expires="${k.expiresAt}">${formatCountdown(k.expiresAt)}</span></td>
-            <td><span class="status-badge ${isExpired ? 'status-banned' : 'status-active'}">${isExpired ? '❌ หมดอายุ' : '✅ ใช้ได้'}</span></td>
-            <td>${k.usedBy ? escapeHtml(k.usedBy) : '-'}</td>
-            <td>
+            <td data-label="Key" style="font-family:monospace;font-size:12px;word-break:break-all;">${escapeHtml(k.key)}</td>
+            <td data-label="Owner">${escapeHtml(ownerName)}</td>
+            <td data-label="Created" style="font-size:12px;">${created}</td>
+            <td data-label="Expires" style="font-size:12px;">${expires}</td>
+            <td data-label="Duration"><span class="key-countdown" data-expires="${k.expiresAt}">${formatCountdown(k.expiresAt)}</span></td>
+            <td data-label="Status"><span class="status-badge ${isExpired ? 'status-banned' : 'status-active'}">${isExpired ? '❌ หมดอายุ' : '✅ ใช้ได้'}</span></td>
+            <td data-label="Used By">${k.usedBy ? escapeHtml(k.usedBy) : '-'}</td>
+            <td data-label="Actions">
               <button class="action-btn delete-btn" onclick="revokeAdminKey('${escapeHtml(k.userId)}', '${escapeHtml(k.id)}')">ยกเลิก</button>
             </td>
           </tr>`;
