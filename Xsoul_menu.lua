@@ -652,7 +652,7 @@ Position = UDim2.new(0, 0, 0, 100),
                         AnchorPoint = Vector2.new(0.5, 0.5),
                         BackgroundTransparency = 1,
                         Position = UDim2.new(0.5, 0, 0.5, 0),
-                        Size = UDim2.new(1, 0, 1, 0),
+                        Size = UDim2.new(1, -180, 1, 0),
                         ZIndex = 5,
                         Font = Enum.Font.GothamBlack,
                         Text = title,
@@ -698,9 +698,23 @@ Position = UDim2.new(0, 0, 0, 100),
                         Text = "x",
                         TextColor3 = themes.TextColor,
                         TextSize = 18,
-                        AutoButtonColor = false,
-                        Visible = false
+                        AutoButtonColor = false
                     }),
+                    utility:Create("TextLabel", {
+                        Name = "KeyTimer",
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 10, 0.5, 0),
+                        Size = UDim2.new(0, 150, 1, 0),
+                        ZIndex = 5,
+                        Font = Enum.Font.GothamMonospace,
+                        Text = "",
+                        TextColor3 = themes.TextColor,
+                        TextSize = 12,
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        TextYAlignment = Enum.TextYAlignment.Center,
+                        Visible = false
+                    })
                 })
             })
         })
@@ -810,6 +824,61 @@ Position = UDim2.new(0, 0, 0, 100),
             utility:Pop(container.Main, 5)
             container:Destroy()
         end)
+        
+        -- ===== KEY COUNTDOWN TIMER =====
+        local function formatTimeRemaining(expiryMs)
+            local nowMs = os.time() * 1000
+            local remainingMs = expiryMs - nowMs
+            
+            if remainingMs <= 0 then
+                return "EXPIRED"
+            end
+            
+            local totalSeconds = math.floor(remainingMs / 1000)
+            local days = math.floor(totalSeconds / 86400)
+            local hours = math.floor((totalSeconds % 86400) / 3600)
+            local minutes = math.floor((totalSeconds % 3600) / 60)
+            local seconds = totalSeconds % 60
+            
+            return string.format("%dD:%02d:%02d:%02d", days, hours, minutes, seconds)
+        end
+        
+        local function updateKeyTimer()
+            if currentKeyData and currentKeyData.expiresAt then
+                local timerLabel = container.Main.TopBar.KeyTimer
+                if timerLabel then
+                    local timeString = formatTimeRemaining(currentKeyData.expiresAt)
+                    if timeString == "EXPIRED" then
+                        timerLabel.Text = "⚠ KEY EXPIRED"
+                        timerLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                        -- Clear expired key
+                        local folder = workspace:FindFirstChild("XsoulKeys")
+                        if folder then
+                            local value = folder:FindFirstChild("SavedKey")
+                            if value then
+                                value:Destroy()
+                            end
+                        end
+                        currentKeyData = nil
+                    else
+                        timerLabel.Text = "🔑 " .. currentKeyData.key .. " | " .. timeString
+                        timerLabel.TextColor3 = themes.TextColor
+                        timerLabel.Visible = true
+                    end
+                end
+            end
+        end
+        
+        -- Update timer every second
+        spawn(function()
+            while container and container.Parent do
+                updateKeyTimer()
+                wait(1)
+            end
+        end)
+        
+        -- Initial timer update
+        updateKeyTimer()
         
         -- Maximize button click event
         lib.maximizeButton.Activated:Connect(function()
@@ -3013,7 +3082,84 @@ local keyValidationComplete = false
 local keyValidated = false
 
 -- ===== KEY VERIFICATION SYSTEM =====
+
+-- Global variable to store current key data for countdown timer
+local currentKeyData = nil
+
+local function loadSavedKey()
+    local success, data = pcall(function()
+        local folder = workspace:FindFirstChild("XsoulKeys")
+        if folder then
+            local value = folder:FindFirstChild("SavedKey")
+            if value and value.Value ~= "" then
+                local http = game:GetService("HttpService")
+                return http:JSONDecode(value.Value)
+            end
+        end
+        return nil
+    end)
+    if success then
+        return data
+    end
+    return nil
+end
+
+local function validateSavedKey(keyData)
+    if not keyData or not keyData.expiresAt then
+        return false, "Invalid saved key"
+    end
+    
+    local now = os.time() * 1000
+    if now > keyData.expiresAt then
+        return false, "Key expired"
+    end
+    
+    -- Verify key still exists in Firebase
+    local success, response = pcall(function()
+        local http = game:GetService("HttpService")
+        local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys/" .. 
+            http:UrlEncode(keyData.userId) .. "/" .. 
+            http:UrlEncode(keyData.keyId) .. ".json"
+        return http:GetAsync(url)
+    end)
+    
+    if success and response and response ~= "null" then
+        local http = game:GetService("HttpService")
+        local decoded = http:JSONDecode(response)
+        if decoded and decoded.key == keyData.key then
+            return true, "Valid"
+        end
+    end
+    
+    return false, "Key not found in database"
+end
+
 local function showKeyInput()
+    print("[Xsoul] Checking for saved key...")
+    
+    -- Try to load and validate saved key first
+    local savedKey = loadSavedKey()
+    if savedKey then
+        local isValid, message = validateSavedKey(savedKey)
+        if isValid then
+            print("[Xsoul] Saved key is valid, skipping input dialog")
+            currentKeyData = savedKey
+            keyValidated = true
+            keyValidationComplete = true
+            return
+        else
+            print("[Xsoul] Saved key invalid: " .. message)
+            -- Clear invalid saved key
+            local folder = workspace:FindFirstChild("XsoulKeys")
+            if folder then
+                local value = folder:FindFirstChild("SavedKey")
+                if value then
+                    value:Destroy()
+                end
+            end
+        end
+    end
+    
     print("[Xsoul] Opening Key Input Dialog...")
     
     -- Create GUI for key input
@@ -3156,19 +3302,29 @@ local function showKeyInput()
                                     return false, "Key already used"
                                 end
                                 
-                                -- Key is valid! Mark as used
-                                local playerName = game.Players.LocalPlayer.Name
-                                local markUrl = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys/" .. 
-                                    http:UrlEncode(userId) .. "/" .. 
-                                    http:UrlEncode(keyId) .. ".json"
+                                -- Key is valid! Save key data locally for persistence
+                                local keyDataToSave = {
+                                    key = inputKey,
+                                    expiresAt = keyData.expiresAt,
+                                    userId = userId,
+                                    keyId = keyId
+                                }
                                 
-                                local markData = http:JSONEncode({
-                                    used = true,
-                                    usedBy = playerName,
-                                    usedAt = os.time() * 1000
-                                })
+                                -- Save to local storage
+                                local folder = workspace:FindFirstChild("XsoulKeys")
+                                if not folder then
+                                    folder = Instance.new("Folder")
+                                    folder.Name = "XsoulKeys"
+                                    folder.Parent = workspace
+                                end
+                                local value = folder:FindFirstChild("SavedKey")
+                                if not value then
+                                    value = Instance.new("StringValue")
+                                    value.Name = "SavedKey"
+                                    value.Parent = folder
+                                end
+                                value.Value = http:JSONEncode(keyDataToSave)
                                 
-                                http:PutAsync(markUrl, markData)
                                 return true, "Valid"
                             end
                         end
@@ -3184,6 +3340,8 @@ local function showKeyInput()
             statusLabel.TextColor3 = Color3.fromRGB(76, 175, 80)
             keyValidated = true
             keyValidationComplete = true
+            -- Load the saved key data to currentKeyData for countdown timer
+            currentKeyData = loadSavedKey()
             wait(1)
             screenGui:Destroy()
         else
