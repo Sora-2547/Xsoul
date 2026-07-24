@@ -707,7 +707,7 @@ Position = UDim2.new(0, 0, 0, 100),
                         Position = UDim2.new(0, 10, 0.5, 0),
                         Size = UDim2.new(0, 150, 1, 0),
                         ZIndex = 5,
-                        Font = Enum.Font.GothamMonospace,
+                        Font = Enum.Font.Code,
                         Text = "",
                         TextColor3 = themes.TextColor,
                         TextSize = 12,
@@ -3114,18 +3114,45 @@ local function validateSavedKey(keyData)
         return false, "Key expired"
     end
     
+    -- Use exploit-compatible HTTP methods
+    local function httpGet(url)
+        if request then
+            local response = request({Url = url, Method = "GET"})
+            return response.Body
+        elseif syn and syn.request then
+            local response = syn.request({Url = url, Method = "GET"})
+            return response.Body
+        elseif http_request then
+            local response = http_request({Url = url, Method = "GET"})
+            return response.Body
+        else
+            local http = game:GetService("HttpService")
+            return http:GetAsync(url)
+        end
+    end
+    
+    local function urlEncode(str)
+        if request then
+            return str:gsub("([^%w%-%._~])", function(c)
+                return string.format("%%%02X", string.byte(c))
+            end)
+        else
+            local http = game:GetService("HttpService")
+            return http:UrlEncode(str)
+        end
+    end
+    
     -- Verify key still exists in Firebase
     local success, response = pcall(function()
-        local http = game:GetService("HttpService")
         local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys/" .. 
-            http:UrlEncode(keyData.userId) .. "/" .. 
-            http:UrlEncode(keyData.keyId) .. ".json"
-        return http:GetAsync(url)
+            urlEncode(keyData.userId) .. "/" .. 
+            urlEncode(keyData.keyId) .. ".json"
+        return httpGet(url)
     end)
     
     if success and response and response ~= "null" then
-        local http = game:GetService("HttpService")
-        local decoded = http:JSONDecode(response)
+        local httpService = game:GetService("HttpService")
+        local decoded = httpService:JSONDecode(response)
         if decoded and decoded.key == keyData.key then
             return true, "Valid"
         end
@@ -3214,7 +3241,7 @@ local function showKeyInput()
     keyInput.PlaceholderText = "Paste your key here"
     keyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
     keyInput.TextSize = 14
-    keyInput.Font = Enum.Font.GothamMonospace
+    keyInput.Font = Enum.Font.Code
     keyInput.Parent = mainFrame
     
     -- Submit button
@@ -3237,7 +3264,8 @@ local function showKeyInput()
     closeButton.Position = UDim2.new(0, 200, 0, 150)
     closeButton.BackgroundColor3 = Color3.fromRGB(255, 107, 107)
     closeButton.BorderSizePixel = 0
-    closeButton.Text = "✕ Cancel"
+    closeButton.Text = "X Cancel"
+    closeButton.RichText = true
     closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     closeButton.TextSize = 14
     closeButton.Font = Enum.Font.GothamBold
@@ -3253,6 +3281,7 @@ local function showKeyInput()
     statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
     statusLabel.TextSize = 11
     statusLabel.Font = Enum.Font.Gotham
+    statusLabel.RichText = true
     statusLabel.Parent = mainFrame
     
     -- Handle key submission
@@ -3267,17 +3296,55 @@ local function showKeyInput()
         
         statusLabel.Text = "⏳ Validating..."
         statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-        submitButton.Enabled = false
+        submitButton.Active = false
         
         -- Query Firebase to validate key
+        -- Use exploit-compatible HTTP methods
+        local function httpGet(url)
+            -- Try exploit HTTP methods first
+            if request then
+                local response = request({
+                    Url = url,
+                    Method = "GET"
+                })
+                return response.Body
+            elseif syn and syn.request then
+                local response = syn.request({
+                    Url = url,
+                    Method = "GET"
+                })
+                return response.Body
+            elseif http_request then
+                local response = http_request({
+                    Url = url,
+                    Method = "GET"
+                })
+                return response.Body
+            else
+                -- Fallback to standard HttpService
+                local http = game:GetService("HttpService")
+                return http:GetAsync(url)
+            end
+        end
+        
+        local function urlEncode(str)
+            -- Try exploit URL encoding first
+            if request then
+                -- request library doesn't have UrlEncode, use simple replacement
+                return str:gsub("([^%w%-%._~])", function(c)
+                    return string.format("%%%02X", string.byte(c))
+                end)
+            else
+                local http = game:GetService("HttpService")
+                return http:UrlEncode(str)
+            end
+        end
+        
         local success, response = pcall(function()
-            local http = game:GetService("HttpService")
-            
             -- Firebase REST API endpoint
-            -- Try to get all keys from all users to find the specific key
-            local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json?orderBy=%22key%22&equalTo=%22" .. http:UrlEncode(inputKey) .. "%22"
+            local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json?orderBy=%22key%22&equalTo=%22" .. urlEncode(inputKey) .. "%22"
             
-            local response = http:GetAsync(url)
+            local response = httpGet(url)
             print("[Xsoul] Firebase response:", response)
             
             if response == "null" or response == "{}" then
@@ -3285,7 +3352,8 @@ local function showKeyInput()
             end
             
             -- Parse the response to validate
-            local decoded = http:JSONDecode(response)
+            local httpService = game:GetService("HttpService")
+            local decoded = httpService:JSONDecode(response)
             if decoded and type(decoded) == "table" then
                 for userId, userKeysData in pairs(decoded) do
                     if userKeysData and type(userKeysData) == "table" then
@@ -3323,7 +3391,7 @@ local function showKeyInput()
                                     value.Name = "SavedKey"
                                     value.Parent = folder
                                 end
-                                value.Value = http:JSONEncode(keyDataToSave)
+                                value.Value = httpService:JSONEncode(keyDataToSave)
                                 
                                 return true, "Valid"
                             end
@@ -3347,7 +3415,7 @@ local function showKeyInput()
         else
             statusLabel.Text = "❌ " .. (response or "Invalid key")
             statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-            submitButton.Enabled = true
+            submitButton.Active = true
             keyInput.Text = ""
         end
     end
