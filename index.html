@@ -3610,8 +3610,12 @@
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
         showToast('รูปแบบอีเมลไม่ถูกต้อง', true); return;
       }
+      // NOTE: url นี้เป็นแค่ continueUrl (ปุ่ม "ดำเนินการต่อ" หลังรีเซ็ตเสร็จ)
+      // ถ้าต้องการให้ลิงก์ในอีเมล "พาไปหน้าเราโดยตรง" ต้องไปตั้ง
+      // Custom action URL ที่ Firebase Console → Authentication → Templates
       const actionCodeSettings = {
         url: 'https://sora-2547.github.io/Xsoul/reset-password',
+        handleCodeInApp: false,
       };
       await sendPasswordResetEmail(auth, targetEmail, actionCodeSettings);
       // Mask email for display: a***@domain
