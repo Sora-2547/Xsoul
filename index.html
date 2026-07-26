@@ -2667,6 +2667,182 @@
   </div>
 </div>
 
+
+<!-- ===== FORGOT PASSWORD MODAL ===== -->
+<style>
+  .fp-overlay{
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(6,8,16,.72);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    display:none;align-items:center;justify-content:center;
+    padding:20px;opacity:0;transition:opacity .25s ease;
+  }
+  .fp-overlay.active{display:flex;opacity:1;}
+  .fp-modal{
+    width:100%;max-width:420px;
+    background:linear-gradient(160deg,#1a1e2e 0%,#12141f 100%);
+    border:1px solid var(--border);
+    border-radius:20px;padding:28px 24px 24px;
+    position:relative;
+    box-shadow:0 20px 60px rgba(0,0,0,.5), 0 0 40px var(--glow);
+    transform:translateY(20px) scale(.96);
+    transition:transform .3s cubic-bezier(.2,.9,.3,1.2);
+    font-family:var(--sans);color:var(--text);
+  }
+  .fp-overlay.active .fp-modal{transform:translateY(0) scale(1);}
+  .fp-close{
+    position:absolute;top:12px;right:12px;
+    width:34px;height:34px;border-radius:10px;
+    background:transparent;border:1px solid var(--border);
+    color:var(--muted);cursor:pointer;font-size:16px;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;
+  }
+  .fp-close:hover{color:var(--text);border-color:var(--accent);background:var(--glow);}
+  .fp-icon{
+    width:52px;height:52px;border-radius:14px;margin-bottom:14px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;box-shadow:0 8px 24px var(--glow);
+  }
+  .fp-title{font-size:1.25rem;font-weight:700;margin-bottom:6px;letter-spacing:.2px;}
+  .fp-subtitle{font-size:.85rem;color:var(--muted);line-height:1.5;margin-bottom:20px;}
+  .fp-tabs{
+    display:flex;gap:6px;padding:5px;
+    background:var(--bg);border:1px solid var(--border);
+    border-radius:12px;margin-bottom:16px;
+  }
+  .fp-tab{
+    flex:1;padding:10px 12px;border-radius:8px;
+    background:transparent;border:none;color:var(--muted);
+    font-family:var(--sans);font-size:.85rem;font-weight:600;
+    cursor:pointer;transition:all .2s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .fp-tab:hover{color:var(--text);}
+  .fp-tab.active{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;box-shadow:0 4px 14px var(--glow);
+  }
+  .fp-field{position:relative;margin-bottom:14px;}
+  .fp-field-label{
+    display:block;font-size:.78rem;color:var(--muted);
+    margin-bottom:6px;font-weight:600;letter-spacing:.3px;
+  }
+  .fp-input-wrap{position:relative;}
+  .fp-input-icon{
+    position:absolute;left:14px;top:50%;transform:translateY(-50%);
+    color:var(--muted);font-size:15px;pointer-events:none;
+  }
+  .fp-input{
+    width:100%;padding:13px 14px 13px 42px;
+    background:var(--bg);border:1.5px solid var(--border);
+    border-radius:10px;color:var(--text);
+    font-family:var(--sans);font-size:.95rem;
+    transition:border-color .2s, box-shadow .2s;
+    outline:none;
+  }
+  .fp-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow);}
+  .fp-hint{font-size:.72rem;color:var(--muted);margin-top:6px;padding-left:2px;}
+  .fp-submit{
+    width:100%;padding:13px;margin-top:6px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border:none;border-radius:10px;color:#fff;
+    font-family:var(--sans);font-weight:700;font-size:.95rem;letter-spacing:.3px;
+    cursor:pointer;transition:all .2s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    box-shadow:0 6px 20px var(--glow);
+  }
+  .fp-submit:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 26px var(--glow);}
+  .fp-submit:active:not(:disabled){transform:translateY(0);}
+  .fp-submit:disabled{opacity:.6;cursor:not-allowed;}
+  .fp-spinner{
+    width:16px;height:16px;border:2px solid rgba(255,255,255,.35);
+    border-top-color:#fff;border-radius:50%;
+    animation:fpSpin .7s linear infinite;
+  }
+  @keyframes fpSpin{to{transform:rotate(360deg);}}
+  .fp-success{
+    text-align:center;padding:8px 0;
+  }
+  .fp-success-icon{
+    width:64px;height:64px;border-radius:50%;margin:0 auto 14px;
+    background:linear-gradient(135deg,var(--success),#22c55e);
+    display:flex;align-items:center;justify-content:center;
+    font-size:30px;color:#fff;
+    box-shadow:0 8px 24px rgba(74,222,128,.35);
+    animation:fpPop .4s cubic-bezier(.2,.9,.3,1.4);
+  }
+  @keyframes fpPop{0%{transform:scale(0);}100%{transform:scale(1);}}
+  .fp-success-title{font-size:1.1rem;font-weight:700;margin-bottom:6px;}
+  .fp-success-text{font-size:.85rem;color:var(--muted);line-height:1.55;margin-bottom:18px;}
+  .fp-success-email{color:var(--accent);font-family:var(--mono);font-size:.8rem;word-break:break-all;}
+  .fp-back{
+    background:transparent;border:1px solid var(--border);
+    color:var(--muted);padding:11px;border-radius:10px;
+    width:100%;cursor:pointer;font-family:var(--sans);font-size:.85rem;
+    transition:all .2s;
+  }
+  .fp-back:hover{color:var(--text);border-color:var(--accent);}
+</style>
+
+<div class="fp-overlay" id="fpOverlay" role="dialog" aria-modal="true" aria-labelledby="fpTitle">
+  <div class="fp-modal">
+    <button type="button" class="fp-close" id="fpClose" aria-label="ปิด">✕</button>
+
+    <div id="fpFormView">
+      <div class="fp-icon">🔑</div>
+      <h3 class="fp-title" id="fpTitle">ลืมรหัสผ่าน?</h3>
+      <p class="fp-subtitle">เลือกวิธียืนยันตัวตนเพื่อรับลิงก์รีเซ็ตรหัสผ่านทางอีเมล</p>
+
+      <div class="fp-tabs" role="tablist">
+        <button type="button" class="fp-tab active" data-fp-tab="email" role="tab">
+          <span>✉️</span><span>อีเมล</span>
+        </button>
+        <button type="button" class="fp-tab" data-fp-tab="username" role="tab">
+          <span>👤</span><span>ชื่อผู้ใช้</span>
+        </button>
+      </div>
+
+      <div class="fp-field" id="fpEmailField">
+        <label class="fp-field-label" for="fpEmailInput">อีเมลที่ใช้สมัคร</label>
+        <div class="fp-input-wrap">
+          <span class="fp-input-icon">✉️</span>
+          <input type="email" id="fpEmailInput" class="fp-input" placeholder="you@example.com" autocomplete="email"/>
+        </div>
+        <div class="fp-hint">เราจะส่งลิงก์รีเซ็ตไปยังอีเมลนี้</div>
+      </div>
+
+      <div class="fp-field" id="fpUsernameField" style="display:none;">
+        <label class="fp-field-label" for="fpUsernameInput">ชื่อผู้ใช้ (Username)</label>
+        <div class="fp-input-wrap">
+          <span class="fp-input-icon">👤</span>
+          <input type="text" id="fpUsernameInput" class="fp-input" placeholder="username" autocomplete="username"/>
+        </div>
+        <div class="fp-hint">ระบบจะค้นหาอีเมลที่ผูกกับชื่อผู้ใช้นี้</div>
+      </div>
+
+      <button type="button" class="fp-submit" id="fpSubmit">
+        <span id="fpSubmitLabel">ส่งลิงก์รีเซ็ตรหัสผ่าน</span>
+      </button>
+    </div>
+
+    <div id="fpSuccessView" style="display:none;">
+      <div class="fp-success">
+        <div class="fp-success-icon">✓</div>
+        <div class="fp-success-title">ส่งลิงก์เรียบร้อยแล้ว</div>
+        <div class="fp-success-text">
+          เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปที่<br/>
+          <span class="fp-success-email" id="fpSuccessEmail"></span><br/>
+          กรุณาตรวจสอบกล่องจดหมาย (รวมถึง Spam)
+        </div>
+        <button type="button" class="fp-back" id="fpDone">เข้าใจแล้ว</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <!-- ===== USER NAME SETTINGS MODAL (EMPTY) ===== -->
 <div class="user-settings-overlay" id="userSettingsModal">
   <div class="user-settings-modal" style="padding:32px; max-width:560px;">
@@ -3361,46 +3537,102 @@
 
   // ===== FORGOT PASSWORD =====
   const forgotLink = document.getElementById('forgotPasswordLink');
+  const fpOverlay = document.getElementById('fpOverlay');
+  const fpClose = document.getElementById('fpClose');
+  const fpTabs = document.querySelectorAll('.fp-tab');
+  const fpEmailField = document.getElementById('fpEmailField');
+  const fpUsernameField = document.getElementById('fpUsernameField');
+  const fpEmailInput = document.getElementById('fpEmailInput');
+  const fpUsernameInput = document.getElementById('fpUsernameInput');
+  const fpSubmit = document.getElementById('fpSubmit');
+  const fpSubmitLabel = document.getElementById('fpSubmitLabel');
+  const fpFormView = document.getElementById('fpFormView');
+  const fpSuccessView = document.getElementById('fpSuccessView');
+  const fpSuccessEmail = document.getElementById('fpSuccessEmail');
+  const fpDone = document.getElementById('fpDone');
+  let fpMode = 'email';
+
+  function fpOpen() {
+    if (!fpOverlay) return;
+    fpFormView.style.display = '';
+    fpSuccessView.style.display = 'none';
+    const prefill = (document.getElementById('authEmail').value || '').trim();
+    if (prefill) {
+      if (prefill.includes('@')) { fpSwitch('email'); fpEmailInput.value = prefill; }
+      else { fpSwitch('username'); fpUsernameInput.value = prefill; }
+    } else {
+      fpSwitch('email');
+    }
+    fpOverlay.classList.add('active');
+    setTimeout(() => {
+      (fpMode === 'email' ? fpEmailInput : fpUsernameInput).focus();
+    }, 200);
+  }
+  function fpCloseFn() {
+    if (!fpOverlay) return;
+    fpOverlay.classList.remove('active');
+  }
+  function fpSwitch(mode) {
+    fpMode = mode;
+    fpTabs.forEach(t => t.classList.toggle('active', t.dataset.fpTab === mode));
+    fpEmailField.style.display = mode === 'email' ? '' : 'none';
+    fpUsernameField.style.display = mode === 'username' ? '' : 'none';
+    setTimeout(() => {
+      (mode === 'email' ? fpEmailInput : fpUsernameInput).focus();
+    }, 50);
+  }
+  fpTabs.forEach(t => t.addEventListener('click', () => fpSwitch(t.dataset.fpTab)));
+  if (fpClose) fpClose.addEventListener('click', fpCloseFn);
+  if (fpOverlay) fpOverlay.addEventListener('click', (e) => { if (e.target === fpOverlay) fpCloseFn(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && fpOverlay && fpOverlay.classList.contains('active')) fpCloseFn();
+  });
+  if (fpDone) fpDone.addEventListener('click', fpCloseFn);
+  [fpEmailInput, fpUsernameInput].forEach(inp => {
+    if (!inp) return;
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); fpSubmit.click(); } });
+  });
+
+  async function fpDoReset() {
+    const entered = (fpMode === 'email' ? fpEmailInput.value : fpUsernameInput.value).trim();
+    if (!entered) { showToast(fpMode === 'email' ? 'กรุณากรอกอีเมล' : 'กรุณากรอกชื่อผู้ใช้', true); return; }
+    let targetEmail = entered;
+    fpSubmit.disabled = true;
+    fpSubmitLabel.innerHTML = '<span class="fp-spinner"></span> กำลังส่ง...';
+    try {
+      if (fpMode === 'username') {
+        const snap = await get(ref(db, `usernames/${entered.toLowerCase()}`));
+        if (!snap.exists()) { showToast('ไม่พบชื่อผู้ใช้นี้', true); return; }
+        const indexedEmail = getUsernameRecordEmail(snap.val());
+        if (!indexedEmail) { showToast('ไม่พบอีเมลของบัญชีนี้ กรุณาติดต่อผู้ดูแล', true); return; }
+        targetEmail = indexedEmail;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+        showToast('รูปแบบอีเมลไม่ถูกต้อง', true); return;
+      }
+      await sendPasswordResetEmail(auth, targetEmail);
+      // Mask email for display: a***@domain
+      const [local, domain] = targetEmail.split('@');
+      const masked = (local.length <= 2 ? local[0] + '*' : local.slice(0,2) + '***') + '@' + domain;
+      fpSuccessEmail.textContent = masked;
+      fpFormView.style.display = 'none';
+      fpSuccessView.style.display = '';
+    } catch (err) {
+      console.error('Reset password error:', err);
+      const code = err && err.code ? err.code : '';
+      if (code === 'auth/user-not-found') showToast('ไม่พบบัญชีที่ใช้อีเมลนี้', true);
+      else if (code === 'auth/invalid-email') showToast('รูปแบบอีเมลไม่ถูกต้อง', true);
+      else if (code === 'auth/too-many-requests') showToast('ส่งคำขอถี่เกินไป กรุณาลองใหม่ภายหลัง', true);
+      else showToast('ส่งอีเมลรีเซ็ตไม่สำเร็จ: ' + (err.message || code), true);
+    } finally {
+      fpSubmit.disabled = false;
+      fpSubmitLabel.textContent = 'ส่งลิงก์รีเซ็ตรหัสผ่าน';
+    }
+  }
+  if (fpSubmit) fpSubmit.addEventListener('click', fpDoReset);
+
   if (forgotLink) {
-    forgotLink.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const input = (document.getElementById('authEmail').value || '').trim();
-      let entered = input;
-      if (!entered) {
-        entered = (prompt('กรุณากรอกอีเมล หรือ ชื่อผู้ใช้ (username) เพื่อรับลิงก์รีเซ็ตรหัสผ่าน:') || '').trim();
-        if (!entered) return;
-      }
-      let targetEmail = entered;
-      try {
-        if (!entered.includes('@')) {
-          const snap = await get(ref(db, `usernames/${entered.toLowerCase()}`));
-          if (!snap.exists()) { showToast('ไม่พบชื่อผู้ใช้นี้', true); return; }
-          const indexedEmail = getUsernameRecordEmail(snap.val());
-          if (!indexedEmail) { showToast('ไม่พบอีเมลของบัญชีนี้ กรุณาติดต่อผู้ดูแล', true); return; }
-          targetEmail = indexedEmail;
-        }
-        // Basic email format check
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
-          showToast('รูปแบบอีเมลไม่ถูกต้อง', true); return;
-        }
-        forgotLink.style.pointerEvents = 'none';
-        forgotLink.style.opacity = '0.6';
-        await sendPasswordResetEmail(auth, targetEmail);
-        showToast('✉️ ส่งลิงก์รีเซ็ตรหัสผ่านไปที่อีเมลของคุณแล้ว กรุณาตรวจสอบกล่องจดหมาย (รวมถึง Spam)', false);
-      } catch (err) {
-        console.error('Reset password error:', err);
-        const code = err && err.code ? err.code : '';
-        if (code === 'auth/user-not-found') showToast('ไม่พบบัญชีที่ใช้อีเมลนี้', true);
-        else if (code === 'auth/invalid-email') showToast('รูปแบบอีเมลไม่ถูกต้อง', true);
-        else if (code === 'auth/too-many-requests') showToast('ส่งคำขอถี่เกินไป กรุณาลองใหม่ภายหลัง', true);
-        else showToast('ส่งอีเมลรีเซ็ตไม่สำเร็จ: ' + (err.message || code), true);
-      } finally {
-        setTimeout(() => {
-          forgotLink.style.pointerEvents = '';
-          forgotLink.style.opacity = '';
-        }, 3000);
-      }
-    });
+    forgotLink.addEventListener('click', (e) => { e.preventDefault(); fpOpen(); });
   }
 
   window.handleAuthSubmit = async () => {
