@@ -1959,6 +1959,9 @@
             </div>
             <div id="passwordStrengthText" style="font-size:0.7rem;color:var(--muted);margin-top:4px;"></div>
           </div>
+          <div id="forgotPasswordWrap" style="margin-top:8px;text-align:right;">
+            <a href="#" id="forgotPasswordLink" style="font-size:0.78rem;color:var(--accent);text-decoration:none;cursor:pointer;">ลืมรหัสผ่าน?</a>
+          </div>
         </div>
         <div class="input-field" id="confirmPasswordFields" style="display:none;">
           <label for="authConfirmPassword" data-i18n="label-confirm-pw">ยืนยันรหัสผ่าน</label>
@@ -3014,7 +3017,7 @@
     getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider,
     createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
     RecaptchaVerifier, signInWithPhoneNumber, sendEmailVerification, linkWithCredential, PhoneAuthProvider,
-    fetchSignInMethodsForEmail
+    fetchSignInMethodsForEmail, sendPasswordResetEmail
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
   import { getDatabase, ref, set, get, onValue, query, orderByChild, equalTo, runTransaction, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -3351,7 +3354,54 @@
       if (strengthBar) strengthBar.style.width = '0%';
       if (strengthText) strengthText.textContent = '';
     }
+    // Hide "forgot password" link during sign-up
+    const forgotWrap = document.getElementById('forgotPasswordWrap');
+    if (forgotWrap) forgotWrap.style.display = isSignUpMode ? 'none' : 'block';
   };
+
+  // ===== FORGOT PASSWORD =====
+  const forgotLink = document.getElementById('forgotPasswordLink');
+  if (forgotLink) {
+    forgotLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const input = (document.getElementById('authEmail').value || '').trim();
+      let entered = input;
+      if (!entered) {
+        entered = (prompt('กรุณากรอกอีเมล หรือ ชื่อผู้ใช้ (username) เพื่อรับลิงก์รีเซ็ตรหัสผ่าน:') || '').trim();
+        if (!entered) return;
+      }
+      let targetEmail = entered;
+      try {
+        if (!entered.includes('@')) {
+          const snap = await get(ref(db, `usernames/${entered.toLowerCase()}`));
+          if (!snap.exists()) { showToast('ไม่พบชื่อผู้ใช้นี้', true); return; }
+          const indexedEmail = getUsernameRecordEmail(snap.val());
+          if (!indexedEmail) { showToast('ไม่พบอีเมลของบัญชีนี้ กรุณาติดต่อผู้ดูแล', true); return; }
+          targetEmail = indexedEmail;
+        }
+        // Basic email format check
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+          showToast('รูปแบบอีเมลไม่ถูกต้อง', true); return;
+        }
+        forgotLink.style.pointerEvents = 'none';
+        forgotLink.style.opacity = '0.6';
+        await sendPasswordResetEmail(auth, targetEmail);
+        showToast('✉️ ส่งลิงก์รีเซ็ตรหัสผ่านไปที่อีเมลของคุณแล้ว กรุณาตรวจสอบกล่องจดหมาย (รวมถึง Spam)', false);
+      } catch (err) {
+        console.error('Reset password error:', err);
+        const code = err && err.code ? err.code : '';
+        if (code === 'auth/user-not-found') showToast('ไม่พบบัญชีที่ใช้อีเมลนี้', true);
+        else if (code === 'auth/invalid-email') showToast('รูปแบบอีเมลไม่ถูกต้อง', true);
+        else if (code === 'auth/too-many-requests') showToast('ส่งคำขอถี่เกินไป กรุณาลองใหม่ภายหลัง', true);
+        else showToast('ส่งอีเมลรีเซ็ตไม่สำเร็จ: ' + (err.message || code), true);
+      } finally {
+        setTimeout(() => {
+          forgotLink.style.pointerEvents = '';
+          forgotLink.style.opacity = '';
+        }, 3000);
+      }
+    });
+  }
 
   window.handleAuthSubmit = async () => {
     const loginOrEmail = document.getElementById('authEmail').value.trim();
