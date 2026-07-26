@@ -658,7 +658,7 @@ Position = UDim2.new(0, 0, 0, 100),
                         Text = title,
                         RichText = true,
                         TextColor3 = themes.TextColor,
-                        TextSize = 18,
+                        TextSize = 16,
                         TextXAlignment = Enum.TextXAlignment.Center,
                         TextYAlignment = Enum.TextYAlignment.Center
                     }),
@@ -671,7 +671,7 @@ Position = UDim2.new(0, 0, 0, 100),
                         Font = Enum.Font.GothamBlack,
                         Text = "−",
                         TextColor3 = themes.TextColor,
-                        TextSize = 20,
+                        TextSize = 18,
                         AutoButtonColor = false,
                         Visible = false
                     }),
@@ -1237,7 +1237,7 @@ Position = UDim2.new(0, 0, 0, 100),
                 ZIndex = 4,
                 Font = Enum.Font.GothamSemibold,
                 TextColor3 = themes.TextColor,
-                TextSize = 14.000,
+                TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left
             }),
             utility:Create("TextLabel", {
@@ -1393,7 +1393,7 @@ Position = UDim2.new(0, 0, 0, 100),
 
             debounce = true
             text.TextSize = 0
-            utility:Tween(button.Title, {TextSize = 16}, 0.2)
+            utility:Tween(button.Title, {TextSize = 15}, 0.2)
 
             wait(0.2)
             utility:Tween(button.Title, {TextSize = 14}, 0.2)
@@ -1971,7 +1971,7 @@ Position = UDim2.new(0, 0, 0, 100),
                             Font = Enum.Font.Gotham,
                             Text = "R:",
                             TextColor3 = themes.TextColor,
-                            TextSize = 10.000
+                            TextSize = 14
                         }),
                         utility:Create("TextBox", {
                             Name = "Textbox",
@@ -1983,7 +1983,7 @@ Position = UDim2.new(0, 0, 0, 100),
                             PlaceholderColor3 = themes.DarkContrast,
                             Text = "255",
                             TextColor3 = themes.TextColor,
-                            TextSize = 10.000
+                            TextSize = 14
                         })
                     }),
                     utility:Create("ImageLabel", {
@@ -2005,7 +2005,7 @@ Position = UDim2.new(0, 0, 0, 100),
                             Font = Enum.Font.Gotham,
                             Text = "G:",
                             TextColor3 = themes.TextColor,
-                            TextSize = 10.000
+                            TextSize = 14
                         }),
                         utility:Create("TextBox", {
                             Name = "Textbox",
@@ -2016,7 +2016,7 @@ Position = UDim2.new(0, 0, 0, 100),
                             Font = Enum.Font.Gotham,
                             Text = "255",
                             TextColor3 = themes.TextColor,
-                            TextSize = 10.000
+                            TextSize = 14
                         })
                     }),
                     utility:Create("ImageLabel", {
@@ -2038,7 +2038,7 @@ Position = UDim2.new(0, 0, 0, 100),
                             Font = Enum.Font.Gotham,
                             Text = "B:",
                             TextColor3 = themes.TextColor,
-                            TextSize = 10.000
+                            TextSize = 14
                         }),
                         utility:Create("TextBox", {
                             Name = "Textbox",
@@ -2049,7 +2049,7 @@ Position = UDim2.new(0, 0, 0, 100),
                             Font = Enum.Font.Gotham,
                             Text = "255",
                             TextColor3 = themes.TextColor,
-                            TextSize = 10.000
+                            TextSize = 14
                         })
                     }),
                 }),
@@ -3041,7 +3041,7 @@ Position = UDim2.new(0, 0, 0, 100),
                         Font = Enum.Font.Gotham,
                         Text = value,
                         TextColor3 = themes.TextColor,
-                        TextSize = 12,
+                        TextSize = 14,
                         TextXAlignment = "Left",
                         TextTransparency = 0.10000000149012
                     })
@@ -3647,7 +3647,7 @@ end)
 
 local translations = {
     Thai = {
-        ["เมนูหลัก"] = "เมนูหลัก",
+        ["Main Menu"] = "เมนูหลัก",
         ["Test1"] = "Test1",
         ["Test2"] = "Test2",
         ["Toggle"] = "Toggle",
@@ -3661,28 +3661,6 @@ local translations = {
         ["World"] = "โลก",
         ["Hello World"] = "สวัสดีโลก",
         ["Word"] = "คำ",
-        ["ผู้เล่น"] = "ผู้เล่น",
-        ["ความไวการเดิน"] = "ความไวการเดิน",
-        ["ความไว"] = "ความไว",
-        ["เดินเร็ว"] = "เดินเร็ว",
-        ["ความเร็ว"] = "ความเร็ว",
-        ["กระโดด"] = "กระโดด",
-        ["ความสูง"] = "ความสูง",
-        ["กระโดดสูง"] = "กระโดดสูง",
-        ["กระโดดหลายครั้ง"] = "กระโดดหลายครั้ง",
-        ["ตั้งค่า"] = "ตั้งค่า",
-        ["สีของหน้าต่าง"] = "สีของหน้าต่าง",
-        ["สีสวิตช์ปิด"] = "สีสวิตช์ปิด",
-        ["สีสวิตช์เปิด"] = "สีสวิตช์เปิด",
-        ["สีพื้นหลัง"] = "สีพื้นหลัง",
-        ["สีแถบบน"] = "สีแถบบน",
-        ["สีสไลเดอร์"] = "สีสไลเดอร์",
-        ["สีตัวหนังสือ"] = "สีตัวหนังสือ",
-        ["ฟอนต์ & ขนาด และภาษา"] = "ฟอนต์ & ขนาด และภาษา",
-        ["ขนาดตัวหนังสือ"] = "ขนาดตัวหนังสือ",
-        ["Change Font"] = "เปลี่ยนฟอนต์",
-        ["Change Language"] = "เปลี่ยนภาษา",
-        ["Main Menu"] = "เมนูหลัก",
         ["Player"] = "ผู้เล่น",
         ["Walk Sensitivity"] = "ความไวการเดิน",
         ["Sensitivity"] = "ความไว",
@@ -3703,7 +3681,32 @@ local translations = {
         ["Font & Size & Language"] = "ฟอนต์ & ขนาด และภาษา",
         ["Text Size"] = "ขนาดตัวหนังสือ",
         ["Change Font"] = "เปลี่ยนฟอนต์",
-        ["Change Language"] = "เปลี่ยนภาษา"
+        ["Change Language"] = "เปลี่ยนภาษา",
+        ["Reset"] = "คืนค่าเริ่มต้น",
+        -- Thai to Thai (no change needed)
+        ["เมนูหลัก"] = "เมนูหลัก",
+        ["ผู้เล่น"] = "ผู้เล่น",
+        ["ความไวการเดิน"] = "ความไวการเดิน",
+        ["ความไว"] = "ความไว",
+        ["เดินเร็ว"] = "เดินเร็ว",
+        ["ความเร็ว"] = "ความเร็ว",
+        ["กระโดด"] = "กระโดด",
+        ["ความสูง"] = "ความสูง",
+        ["กระโดดสูง"] = "กระโดดสูง",
+        ["กระโดดหลายครั้ง"] = "กระโดดหลายครั้ง",
+        ["ตั้งค่า"] = "ตั้งค่า",
+        ["สีของหน้าต่าง"] = "สีของหน้าต่าง",
+        ["สีสวิตช์ปิด"] = "สีสวิตช์ปิด",
+        ["สีสวิตช์เปิด"] = "สีสวิตช์เปิด",
+        ["สีพื้นหลัง"] = "สีพื้นหลัง",
+        ["สีแถบบน"] = "สีแถบบน",
+        ["สีสไลเดอร์"] = "สีสไลเดอร์",
+        ["สีตัวหนังสือ"] = "สีตัวหนังสือ",
+        ["ฟอนต์ & ขนาด และภาษา"] = "ฟอนต์ & ขนาด และภาษา",
+        ["ขนาดตัวหนังสือ"] = "ขนาดตัวหนังสือ",
+        ["เปลี่ยนฟอนต์"] = "เปลี่ยนฟอนต์",
+        ["เปลี่ยนภาษา"] = "เปลี่ยนภาษา",
+        ["คืนค่าเริ่มต้น"] = "คืนค่าเริ่มต้น"
     },
     English = {
         ["เมนูหลัก"] = "Main Menu",
@@ -3741,6 +3744,7 @@ local translations = {
         ["ขนาดตัวหนังสือ"] = "Text Size",
         ["เปลี่ยนฟอนต์"] = "Change Font",
         ["เปลี่ยนภาษา"] = "Change Language",
+        ["คืนค่าเริ่มต้น"] = "Reset",
         ["Main Menu"] = "Main Menu",
         ["Player"] = "Player",
         ["Walk Sensitivity"] = "Walk Sensitivity",
@@ -3762,25 +3766,64 @@ local translations = {
         ["Font & Size & Language"] = "Font & Size & Language",
         ["Text Size"] = "Text Size",
         ["Change Font"] = "Change Font",
-        ["Change Language"] = "Change Language"
+        ["Change Language"] = "Change Language",
+        ["Reset"] = "Reset"
     }
 }
 
 local function setLanguage(langKey)
-    for _, child in pairs(win.container.Main:GetDescendants()) do
-        if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
-            local currentText = child.Text
-            if translations[langKey][currentText] then
-                child.Text = translations[langKey][currentText]
+    -- Translate all text elements in the entire UI hierarchy
+    -- Check main container and all its descendants
+    if win.container then
+        for _, child in pairs(win.container:GetDescendants()) do
+            if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+                local currentText = child.Text
+                if translations[langKey][currentText] then
+                    child.Text = translations[langKey][currentText]
+                end
             end
         end
     end
-    -- Also check the pages container for button texts
+    
+    -- Check all pages and their containers
     for _, page in pairs(win.pages) do
-        if page.button and page.button.Title then
-            local currentText = page.button.Title.Text
-            if translations[langKey][currentText] then
-                page.button.Title.Text = translations[langKey][currentText]
+        -- Translate page button
+        if page.button then
+            for _, child in pairs(page.button:GetDescendants()) do
+                if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+                    local currentText = child.Text
+                    if translations[langKey][currentText] then
+                        child.Text = translations[langKey][currentText]
+                    end
+                end
+            end
+        end
+        
+        -- Translate page container and all sections
+        if page.container then
+            for _, child in pairs(page.container:GetDescendants()) do
+                if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+                    local currentText = child.Text
+                    if translations[langKey][currentText] then
+                        child.Text = translations[langKey][currentText]
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Specifically check for reset button in all page containers
+    for _, page in pairs(win.pages) do
+        if page.container then
+            local resetButton = page.container:FindFirstChild("ResetButton")
+            if resetButton then
+                local title = resetButton:FindFirstChild("Title")
+                if title then
+                    local currentText = title.Text
+                    if translations[langKey][currentText] then
+                        title.Text = translations[langKey][currentText]
+                    end
+                end
             end
         end
     end
@@ -3827,16 +3870,111 @@ if savedSettings.themes then
     end
 end
 
--- Set initial language (use saved if available, otherwise default to English)
-local initialLanguage = savedSettings.language or "English"
-setLanguage(initialLanguage)
+-- Language dropdown with dynamic options
+local languageDropdown
+local function updateLanguageDropdownOptions()
+    if not languageDropdown then return end
+    
+    local currentLang = savedSettings.language or "English"
+    local options = currentLang == "English" and {"Thailand", "English"} or {"ไทย", "อังกฤษ"}
+    local displayText = currentLang == "English" and "English" or "ไทย"
+    
+    -- Update the dropdown textbox to show current selection
+    languageDropdown.Search.TextBox.Text = displayText
+    
+    -- Clear existing dropdown buttons
+    for i, button in pairs(languageDropdown.List.Frame:GetChildren()) do
+        if button:IsA("ImageButton") then
+            button:Destroy()
+        end
+    end
+    
+    -- Recreate dropdown buttons with new options
+    for i, value in pairs(options) do
+        local button = utility:Create("ImageButton", {
+            Parent = languageDropdown.List.Frame,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 30),
+            ZIndex = 2,
+            Image = "rbxassetid://5028857472",
+            ImageColor3 = themes.DarkContrast,
+            ScaleType = Enum.ScaleType.Slice,
+            SliceCenter = Rect.new(2, 2, 298, 298)
+        }, {
+            utility:Create("TextLabel", {
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 10, 0, 0),
+                Size = UDim2.new(1, -10, 1, 0),
+                ZIndex = 3,
+                Font = Enum.Font.Gotham,
+                Text = value,
+                TextColor3 = themes.TextColor,
+                TextSize = 14,
+                TextXAlignment = "Left",
+                TextTransparency = 0.10000000149012
+            })
+        })
+        
+        button.MouseButton1Click:Connect(function()
+            local langKey
+            if value == "Thailand" or value == "ไทย" then
+                langKey = "Thai"
+            elseif value == "English" or value == "อังกฤษ" then
+                langKey = "English"
+            else
+                langKey = "English"
+            end
+            
+            savedSettings.language = langKey
+            saveSettings()
+            setLanguage(langKey)
+            
+            -- Update dropdown options after language change
+            updateLanguageDropdownOptions()
+            
+            -- Close dropdown
+            utility:Tween(languageDropdown, {Size = UDim2.new(1, 0, 0, 30)}, 0.3)
+            languageDropdown.Search.Button.Rotation = 0
+        end)
+    end
+    
+    -- Update canvas size
+    local entries = #options
+    if entries > 3 then
+        for i, button in pairs(languageDropdown.List.Frame:GetChildren()) do
+            if button:IsA("ImageButton") then
+                button.Size = UDim2.new(1, -6, 0, 30)
+            end
+        end
+        languageDropdown.List.Frame.CanvasSize = UDim2.new(0, 0, 0, (entries * 34) - 4)
+        languageDropdown.List.Frame.ScrollBarImageTransparency = 0
+    else
+        languageDropdown.List.Frame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        languageDropdown.List.Frame.ScrollBarImageTransparency = 1
+    end
+end
 
-setting2:Dropdown("เปลี่ยนภาษา", {"ไทย", "English"}, function(lang)
-    local langKey = lang == "ไทย" and "Thai" or "English"
+languageDropdown = setting2:Dropdown("เปลี่ยนภาษา", {"Thailand", "English"}, function(lang)
+    local langKey
+    if lang == "Thailand" or lang == "ไทย" then
+        langKey = "Thai"
+    elseif lang == "English" or lang == "อังกฤษ" then
+        langKey = "English"
+    else
+        langKey = "English"
+    end
+    
     savedSettings.language = langKey
     saveSettings()
     setLanguage(langKey)
+    
+    -- Update dropdown options after language change
+    updateLanguageDropdownOptions()
 end)
+
+-- Set initial dropdown display based on language
+updateLanguageDropdownOptions()
 
 -- Add reset button to settings page container
 local resetButton = utility:Create("ImageButton", {
@@ -3866,6 +4004,12 @@ local resetButton = utility:Create("ImageButton", {
         TextYAlignment = Enum.TextYAlignment.Center
     })
 })
+
+-- Translate reset button based on current language
+local currentLang = savedSettings.language or "English"
+if currentLang == "English" then
+    resetButton.Title.Text = "Reset"
+end
 
 resetButton.MouseButton1Click:Connect(function()
     -- Reset all settings to default
@@ -3949,6 +4093,9 @@ resetButton.MouseButton1Click:Connect(function()
     -- Reset language
     setLanguage("English")
     
+    -- Update dropdown options after reset
+    updateLanguageDropdownOptions()
+    
     -- Clear workspace storage
     pcall(function()
         local folder = workspace:FindFirstChild("XsoulSettings")
@@ -3980,6 +4127,12 @@ resetButton.MouseButton1Click:Connect(function()
     
     win:Notify("รีเซต", "คืนค่าเริ่มต้นเรียบร้อยแล้ว")
 end)
+
+-- Set initial language (use saved if available, otherwise default to English)
+-- This must be done AFTER all UI elements are created so they get translated
+local initialLanguage = savedSettings.language or "English"
+setLanguage(initialLanguage)
+updateLanguageDropdownOptions()
 
 -- Update page canvas size to include reset button
 page2:Resize()
