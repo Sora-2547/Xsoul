@@ -702,18 +702,19 @@ Position = UDim2.new(0, 0, 0, 100),
                     }),
                     utility:Create("TextLabel", {
                         Name = "KeyTimer",
-                        AnchorPoint = Vector2.new(0, 0.5),
+                        AnchorPoint = Vector2.new(1, 0.5),
                         BackgroundTransparency = 1,
-                        Position = UDim2.new(0, 10, 0.5, 0),
-                        Size = UDim2.new(0, 150, 1, 0),
+                        Position = UDim2.new(1, -100, 0.5, 0),
+                        Size = UDim2.new(0, 90, 1, 0),
                         ZIndex = 5,
                         Font = Enum.Font.Code,
                         Text = "",
                         TextColor3 = themes.TextColor,
-                        TextSize = 12,
-                        TextXAlignment = Enum.TextXAlignment.Left,
+                        TextSize = 11,
+                        TextXAlignment = Enum.TextXAlignment.Right,
                         TextYAlignment = Enum.TextYAlignment.Center,
-                        Visible = false
+                        Visible = false,
+                        RichText = true
                     })
                 })
             })
@@ -849,7 +850,7 @@ Position = UDim2.new(0, 0, 0, 100),
                 if timerLabel then
                     local timeString = formatTimeRemaining(currentKeyData.expiresAt)
                     if timeString == "EXPIRED" then
-                        timerLabel.Text = "⚠ KEY EXPIRED"
+                        timerLabel.Text = "⚠ EXPIRED"
                         timerLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
                         -- Clear expired key
                         local folder = workspace:FindFirstChild("XsoulKeys")
@@ -861,7 +862,8 @@ Position = UDim2.new(0, 0, 0, 100),
                         end
                         currentKeyData = nil
                     else
-                        timerLabel.Text = "🔑 " .. currentKeyData.key .. " | " .. timeString
+                        -- Show cleaner format: just the time
+                        timerLabel.Text = "⏱ " .. timeString
                         timerLabel.TextColor3 = themes.TextColor
                         timerLabel.Visible = true
                     end
@@ -973,12 +975,11 @@ Position = UDim2.new(0, 0, 0, 100),
             Padding = UDim.new(0, 10),
             Parent = container, 
         })
-        --[[
-
+        
+        -- Enable automatic canvas size update for better scrolling
         uilist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
             container.CanvasSize = UDim2.new(0, 0, 0, uilist.AbsoluteContentSize.Y + 10)
-        end) 
-        ]]
+        end)
 
         return setmetatable({
             library = library,
@@ -1067,7 +1068,7 @@ Position = UDim2.new(0, 0, 0, 100),
     function library:setTheme(theme, color3)
         themes[theme] = color3
 
-        -- Update tracked objects
+        -- Update tracked objects instantly
         if objects[theme] then
             for property, objs in pairs(objects[theme]) do
                 for i, object in pairs(objs) do
@@ -1080,7 +1081,7 @@ Position = UDim2.new(0, 0, 0, 100),
             end
         end
 
-        -- Special handling for TextColor - update all text elements
+        -- Special handling for TextColor - update all text elements instantly
         if theme == "TextColor" then
             for _, child in pairs(self.container:GetDescendants()) do
                 if child:IsA("TextLabel") or child:IsA("TextButton") then
@@ -1089,8 +1090,8 @@ Position = UDim2.new(0, 0, 0, 100),
             end
         end
 
-        -- Save settings after theme change
-        saveSettings()
+        -- Save settings after theme change (debounced)
+        debouncedSave()
     end
 
     function library:toggle()
@@ -1110,11 +1111,11 @@ Position = UDim2.new(0, 0, 0, 100),
             utility:Tween(container, {
                 Size = self.windowSize + UDim2.new(0, 0, 0, openHeight - self.windowSize.Y.Offset),
                 Position = self.position
-            }, 0.2)
-            wait(0.2)
+            }, 0.15)
+            wait(0.15)
 
-            utility:Tween(topbar, {Size = UDim2.new(1, 0, 0, 38)}, 0.2)
-            wait(0.2)
+            utility:Tween(topbar, {Size = UDim2.new(1, 0, 0, 38)}, 0.15)
+            wait(0.15)
 
             container.ClipsDescendants = false
             self.position = nil
@@ -1145,8 +1146,8 @@ Position = UDim2.new(0, 0, 0, 100),
                         size = size + module.AbsoluteSize.Y + padding
                     end
                     
-                    utility:Tween(section.container.Parent, {Size = UDim2.new(1, -10, 0, size)}, 0.1)
-                    utility:Tween(section.container.Title, {TextTransparency = 0}, 0.1)
+                    utility:Tween(section.container.Parent, {Size = UDim2.new(1, -10, 0, size)}, 0.08)
+                    utility:Tween(section.container.Title, {TextTransparency = 0}, 0.08)
                 end
             end
         else
@@ -1154,15 +1155,15 @@ Position = UDim2.new(0, 0, 0, 100),
             self.position = container.Position
             container.ClipsDescendants = true
 
-            utility:Tween(topbar, {Size = UDim2.new(1, 0, 1, 0)}, 0.2)
-            wait(0.2)
+            utility:Tween(topbar, {Size = UDim2.new(1, 0, 1, 0)}, 0.15)
+            wait(0.15)
 
             local closeHeight = self.isMobile and 280 or 428
             utility:Tween(container, {
                 Size = UDim2.new(0, self.windowSize.X.Offset, 0, 0),
                 Position = self.position + UDim2.new(0, 0, 0, closeHeight)
-            }, 0.2)
-            wait(0.2)
+            }, 0.15)
+            wait(0.15)
             
             self.openButton.Visible = true
             self.openButton.Title.Visible = true
@@ -1178,8 +1179,8 @@ Position = UDim2.new(0, 0, 0, 100),
             -- Collapse all sections in the focused page
             if self.focusedPage then
                 for i, section in pairs(self.focusedPage.sections) do
-                    utility:Tween(section.container.Parent, {Size = UDim2.new(1, -10, 0, 28)}, 0.1)
-                    utility:Tween(section.container.Title, {TextTransparency = 1}, 0.1)
+                    utility:Tween(section.container.Parent, {Size = UDim2.new(1, -10, 0, 28)}, 0.08)
+                    utility:Tween(section.container.Title, {TextTransparency = 1}, 0.08)
                 end
             end
         end
@@ -2787,6 +2788,12 @@ Position = UDim2.new(0, 0, 0, 100),
             size = size + section.container.Parent.AbsoluteSize.Y + padding
         end
 
+        -- Include reset button height if it exists in this page
+        local resetButton = self.container:FindFirstChild("ResetButton")
+        if resetButton then
+            size = size + resetButton.AbsoluteSize.Y + padding
+        end
+
         self.container.CanvasSize = UDim2.new(0, 0, 0, size)
         self.container.ScrollBarImageTransparency = size > self.container.AbsoluteSize.Y
 
@@ -3114,7 +3121,7 @@ local function validateSavedKey(keyData)
         return false, "Key expired"
     end
     
-    -- Use exploit-compatible HTTP methods
+    -- Verify key still exists in Firebase (to detect deleted keys)
     local function httpGet(url)
         if request then
             local response = request({Url = url, Method = "GET"})
@@ -3142,22 +3149,33 @@ local function validateSavedKey(keyData)
         end
     end
     
-    -- Verify key still exists in Firebase
     local success, response = pcall(function()
-        local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys/" .. 
-            urlEncode(keyData.userId) .. "/" .. 
-            urlEncode(keyData.keyId) .. ".json"
+        local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json"
         return httpGet(url)
     end)
     
-    if success and response and response ~= "null" then
+    if success and response and response ~= "null" and response ~= "{}" then
         local httpService = game:GetService("HttpService")
         local decoded = httpService:JSONDecode(response)
-        if decoded and decoded.key == keyData.key then
-            return true, "Valid"
+        if decoded and type(decoded) == "table" then
+            -- Check if key still exists in Firebase
+            for userId, userKeysData in pairs(decoded) do
+                if userKeysData and type(userKeysData) == "table" then
+                    for keyId, keyDataFirebase in pairs(userKeysData) do
+                        if keyDataFirebase.key:upper() == keyData.key:upper() then
+                            -- Key exists in Firebase, check if it's still valid
+                            if keyDataFirebase.expiresAt and now > keyDataFirebase.expiresAt then
+                                return false, "Key expired"
+                            end
+                            return true, "Valid"
+                        end
+                    end
+                end
+            end
         end
     end
     
+    -- Key not found in Firebase (deleted or revoked)
     return false, "Key not found in database"
 end
 
@@ -3341,35 +3359,46 @@ local function showKeyInput()
         end
         
         local success, response = pcall(function()
-            -- Firebase REST API endpoint
-            local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json?orderBy=%22key%22&equalTo=%22" .. urlEncode(inputKey) .. "%22"
+            -- Firebase REST API endpoint - fetch all keys and filter locally to avoid indexing issues
+            local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json"
             
+            print("[Xsoul] Fetching keys from Firebase...")
             local response = httpGet(url)
+            print("[Xsoul] Firebase response length:", #response)
             print("[Xsoul] Firebase response:", response)
             
-            if response == "null" or response == "{}" then
-                return false, "Key not found"
+            if response == "null" or response == "" or response == "{}" then
+                print("[Xsoul] No keys found in database")
+                return false, "No keys found"
             end
             
             -- Parse the response to validate
             local httpService = game:GetService("HttpService")
             local decoded = httpService:JSONDecode(response)
+            print("[Xsoul] Decoded response type:", type(decoded))
+            
             if decoded and type(decoded) == "table" then
+                print("[Xsoul] Searching for key:", inputKey)
                 for userId, userKeysData in pairs(decoded) do
                     if userKeysData and type(userKeysData) == "table" then
                         for keyId, keyData in pairs(userKeysData) do
-                            if keyData.key == inputKey then
+                            print("[Xsoul] Checking key:", keyData.key)
+                            if keyData.key:upper() == inputKey:upper() then
+                                print("[Xsoul] Key found! Checking validity...")
                                 -- Found the key, check if valid
                                 local now = os.time() * 1000  -- Convert to milliseconds
                                 
                                 if keyData.expiresAt and now > keyData.expiresAt then
+                                    print("[Xsoul] Key expired")
                                     return false, "Key expired"
                                 end
                                 
                                 if keyData.used == true then
+                                    print("[Xsoul] Key already used")
                                     return false, "Key already used"
                                 end
                                 
+                                print("[Xsoul] Key is valid!")
                                 -- Key is valid! Save key data locally for persistence
                                 local keyDataToSave = {
                                     key = inputKey,
@@ -3403,7 +3432,7 @@ local function showKeyInput()
             return false, "Validation failed"
         end)
         
-        if success and response == "Valid" then
+        if success and response == true then
             statusLabel.Text = "✅ Key valid! Loading..."
             statusLabel.TextColor3 = Color3.fromRGB(76, 175, 80)
             keyValidated = true
@@ -3413,7 +3442,8 @@ local function showKeyInput()
             wait(1)
             screenGui:Destroy()
         else
-            statusLabel.Text = "❌ " .. (response or "Invalid key")
+            local errorMsg = type(response) == "string" and response or "Invalid key"
+            statusLabel.Text = "❌ " .. errorMsg
             statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
             submitButton.Active = true
             keyInput.Text = ""
@@ -3808,17 +3838,17 @@ setting2:Dropdown("เปลี่ยนภาษา", {"ไทย", "English"},
     setLanguage(langKey)
 end)
 
--- Add reset button to main window container for always-visible access
+-- Add reset button to settings page container
 local resetButton = utility:Create("ImageButton", {
     Name = "ResetButton",
-    Parent = win.container.Main,
+    Parent = page2.container,
     BackgroundTransparency = 1,
     BorderSizePixel = 0,
-    Size = UDim2.new(1, -20, 0, 30),
-    Position = UDim2.new(0, 10, 1, -40),
+    Size = UDim2.new(1, -10, 0, 40),
+    Position = UDim2.new(0, 5, 1, -50),
     ZIndex = 2,
     Image = "rbxassetid://5028857472",
-    ImageColor3 = themes.TopBarColor:Lerp(Color3.new(1, 1, 1), 0.3), -- Lighter than TopBarColor
+    ImageColor3 = themes.TopBarColor:Lerp(Color3.new(1, 1, 1), 0.3),
     ScaleType = Enum.ScaleType.Slice,
     SliceCenter = Rect.new(2, 2, 298, 298)
 }, {
@@ -3829,9 +3859,11 @@ local resetButton = utility:Create("ImageButton", {
         ZIndex = 3,
         Font = Enum.Font.GothamBold,
         Text = "คืนค่าเริ่มต้น",
-        TextColor3 = Color3.fromRGB(20, 20, 20), -- Dark text color
-        TextSize = 14,
-        TextTransparency = 0
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 16,
+        TextTransparency = 0,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextYAlignment = Enum.TextYAlignment.Center
     })
 })
 
