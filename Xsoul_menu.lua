@@ -538,6 +538,156 @@ do
 
 end
 
+-- ===== KEY VERIFICATION SYSTEM =====
+
+-- Global variable to store current key data for countdown timer
+local currentKeyData = nil
+
+local function loadSavedKey()
+    local success, data = pcall(function()
+        local folder = workspace:FindFirstChild("XsoulKeys")
+        if folder then
+            local value = folder:FindFirstChild("SavedKey")
+            if value and value.Value ~= "" then
+                local http = game:GetService("HttpService")
+                return http:JSONDecode(value.Value)
+            end
+        end
+        return nil
+    end)
+    if success then
+        return data
+    end
+    return nil
+end
+
+local function validateSavedKey(keyData)
+    print("[Xsoul] validateSavedKey called with key: " .. tostring(keyData and keyData.key))
+    
+    -- Always return two values (boolean, string)
+    if not keyData or not keyData.expiresAt then
+        print("[Xsoul] Invalid key data")
+        return false, "Invalid saved key"
+    end
+    
+    local now = os.time() * 1000
+    if now > keyData.expiresAt then
+        print("[Xsoul] Key expired locally")
+        return false, "Key expired"
+    end
+    
+    -- Try to verify key in Firebase using HttpService
+    local httpService = game:GetService("HttpService")
+    local response = nil
+    local httpSuccess = false
+    
+    -- Try HttpService first (most reliable)
+    print("[Xsoul] Attempting HttpService:GetAsync")
+    httpSuccess, response = pcall(function()
+        return httpService:GetAsync("https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json")
+    end)
+    
+    if httpSuccess then
+        print("[Xsoul] HttpService request successful, response length: " .. tostring(#response))
+    else
+        print("[Xsoul] HttpService failed: " .. tostring(response))
+    end
+    
+    -- If HttpService fails, try exploit HTTP functions
+    if not httpSuccess then
+        -- Try request function
+        if type(request) == "function" then
+            print("[Xsoul] Trying request function")
+            httpSuccess, response = pcall(function()
+                local result = request({
+                    Url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json",
+                    Method = "GET"
+                })
+                return result.Body
+            end)
+        end
+        
+        -- Try syn.request
+        if not httpSuccess and syn and type(syn.request) == "function" then
+            print("[Xsoul] Trying syn.request")
+            httpSuccess, response = pcall(function()
+                local result = syn.request({
+                    Url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json",
+                    Method = "GET"
+                })
+                return result.Body
+            end)
+        end
+        
+        -- Try http_request
+        if not httpSuccess and type(http_request) == "function" then
+            print("[Xsoul] Trying http_request")
+            httpSuccess, response = pcall(function()
+                local result = http_request({
+                    Url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json",
+                    Method = "GET"
+                })
+                return result.Body
+            end)
+        end
+    end
+    
+    -- If all HTTP methods fail, return false to force re-authentication
+    if not httpSuccess then
+        print("[Xsoul] All HTTP methods failed: " .. tostring(response) .. " - requiring re-authentication")
+        return false, "Network error - please re-enter key"
+    end
+    
+    -- If response is null or empty, return false to force re-authentication
+    if response == "null" or response == "{}" or response == "" then
+        print("[Xsoul] Firebase returned empty response - requiring re-authentication")
+        return false, "Empty response - please re-enter key"
+    end
+    
+    -- Try to decode response
+    local decodeSuccess, decoded = pcall(function()
+        return httpService:JSONDecode(response)
+    end)
+    
+    -- If decode fails, return false to force re-authentication
+    if not decodeSuccess or not decoded or type(decoded) ~= "table" then
+        print("[Xsoul] Failed to decode Firebase response: " .. tostring(decoded) .. " - requiring re-authentication")
+        return false, "Decode error - please re-enter key"
+    end
+    
+    -- Check if key still exists in Firebase
+    local searchKey = keyData.key:upper()
+    print("[Xsoul] Searching for key in Firebase: " .. searchKey)
+    
+    for userId, userKeysData in pairs(decoded) do
+        if userKeysData and type(userKeysData) == "table" then
+            for keyId, keyDataFirebase in pairs(userKeysData) do
+                if keyDataFirebase and keyDataFirebase.key then
+                    local firebaseKey = keyDataFirebase.key:upper()
+                    if firebaseKey == searchKey then
+                        print("[Xsoul] Key found in Firebase!")
+                        -- Key exists in Firebase, check if it's still valid
+                        if keyDataFirebase.expiresAt and now > keyDataFirebase.expiresAt then
+                            print("[Xsoul] Key expired in Firebase")
+                            return false, "Key expired"
+                        end
+                        print("[Xsoul] Key is valid in Firebase")
+                        return true, "Valid"
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Key not found in Firebase (deleted or revoked)
+    print("[Xsoul] Key not found in Firebase database")
+    return false, "Key not found in database"
+end
+
+-- Wait for key validation before creating menu
+local keyValidationComplete = false
+local keyValidated = false
+
 -- classes
 
 local library = {} -- main
@@ -652,7 +802,7 @@ Position = UDim2.new(0, 0, 0, 100),
                         AnchorPoint = Vector2.new(0.5, 0.5),
                         BackgroundTransparency = 1,
                         Position = UDim2.new(0.5, 0, 0.5, 0),
-                        Size = UDim2.new(1, -180, 1, 0),
+                        Size = UDim2.new(1, -320, 1, 0),
                         ZIndex = 5,
                         Font = Enum.Font.GothamBlack,
                         Text = title,
@@ -702,18 +852,18 @@ Position = UDim2.new(0, 0, 0, 100),
                     }),
                     utility:Create("TextLabel", {
                         Name = "KeyTimer",
-                        AnchorPoint = Vector2.new(1, 0.5),
+                        AnchorPoint = Vector2.new(0, 0.5),
                         BackgroundTransparency = 1,
-                        Position = UDim2.new(1, -100, 0.5, 0),
-                        Size = UDim2.new(0, 90, 1, 0),
+                        Position = UDim2.new(0, 10, 0.5, 0),
+                        Size = UDim2.new(0, 150, 1, 0),
                         ZIndex = 5,
                         Font = Enum.Font.Code,
                         Text = "",
                         TextColor3 = themes.TextColor,
-                        TextSize = 11,
-                        TextXAlignment = Enum.TextXAlignment.Right,
+                        TextSize = 10,
+                        TextXAlignment = Enum.TextXAlignment.Left,
                         TextYAlignment = Enum.TextYAlignment.Center,
-                        Visible = false,
+                        Visible = true,
                         RichText = true
                     })
                 })
@@ -728,33 +878,17 @@ Position = UDim2.new(0, 0, 0, 100),
         local openButton = utility:Create("ImageButton", {
             Name = "OpenButton",
             Parent = container,
-            BackgroundTransparency = 0,
-            BackgroundColor3 = themes.TopBarColor,
+            BackgroundTransparency = 1,
             Position = UDim2.new(0.25, 0, 0.052435593, 0),
-            Size = UDim2.new(0, 50, 0, 50),
+            Size = UDim2.new(0, 70, 0, 70),
             ZIndex = 5,
-            Image = "",
+            Image = "rbxassetid://113475411283337",
+            ScaleType = Enum.ScaleType.Stretch,
             AutoButtonColor = false,
             Visible = false
         }, {
             utility:Create("UICorner", {
-                CornerRadius = UDim.new(0, 8)
-            }),
-            utility:Create("TextLabel", {
-                Name = "Title",
-                AnchorPoint = Vector2.new(0.5, 0.5),
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0.5, 0, 0.5, 0),
-                Size = UDim2.new(1, 0, 1, 0),
-                ZIndex = 6,
-                Font = Enum.Font.GothamBlack,
-                Text = "Xsoul",
-                RichText = true,
-                TextColor3 = themes.TextColor,
-                TextSize = 14,
-                TextXAlignment = Enum.TextXAlignment.Center,
-                TextYAlignment = Enum.TextYAlignment.Center,
-                Visible = true
+                CornerRadius = UDim.new(0, 12)
             })
         })
         
@@ -845,35 +979,156 @@ Position = UDim2.new(0, 0, 0, 100),
         end
         
         local function updateKeyTimer()
-            if currentKeyData and currentKeyData.expiresAt then
+            pcall(function()
                 local timerLabel = container.Main.TopBar.KeyTimer
                 if timerLabel then
-                    local timeString = formatTimeRemaining(currentKeyData.expiresAt)
-                    if timeString == "EXPIRED" then
-                        timerLabel.Text = "⚠ EXPIRED"
-                        timerLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-                        -- Clear expired key
-                        local folder = workspace:FindFirstChild("XsoulKeys")
-                        if folder then
-                            local value = folder:FindFirstChild("SavedKey")
-                            if value then
-                                value:Destroy()
+                    -- Try to load key data if not already loaded
+                    if not currentKeyData then
+                        local success, data = pcall(function()
+                            local folder = workspace:FindFirstChild("XsoulKeys")
+                            if folder then
+                                local value = folder:FindFirstChild("SavedKey")
+                                if value and value.Value ~= "" then
+                                    local http = game:GetService("HttpService")
+                                    return http:JSONDecode(value.Value)
+                                end
                             end
+                            return nil
+                        end)
+                        if success and data then
+                            currentKeyData = data
+                            print("[Xsoul] Loaded key data: " .. tostring(data.key))
                         end
-                        currentKeyData = nil
+                    end
+                    
+                    if currentKeyData and currentKeyData.expiresAt then
+                        local timeString = formatTimeRemaining(currentKeyData.expiresAt)
+                        if timeString == "EXPIRED" then
+                            timerLabel.Text = "⚠ EXPIRED"
+                            timerLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                            -- Clear expired key
+                            local folder = workspace:FindFirstChild("XsoulKeys")
+                            if folder then
+                                local value = folder:FindFirstChild("SavedKey")
+                                if value then
+                                    value:Destroy()
+                                end
+                            end
+                            currentKeyData = nil
+                            -- Close menu and show key input immediately
+                            lib.keyTimerStopped = true
+                            spawn(function()
+                                pcall(function()
+                                    if container and container.Parent then
+                                        saveSettings()
+                                        if container.Main then
+                                            utility:Pop(container.Main, 5)
+                                        end
+                                        container:Destroy()
+                                    end
+                                end)
+                                -- Call notification function directly after container is destroyed
+                                wait(0.2) -- Slightly longer delay to ensure cleanup
+                                print("[Xsoul] Calling _G.showExpiredNotification directly")
+                                local callSuccess, callError = pcall(function()
+                                    if _G.showExpiredNotification then
+                                        _G.showExpiredNotification()
+                                    else
+                                        print("[Xsoul] ERROR: _G.showExpiredNotification not defined")
+                                    end
+                                end)
+                                if not callSuccess then
+                                    print("[Xsoul] ERROR calling _G.showExpiredNotification: " .. tostring(callError))
+                                else
+                                    print("[Xsoul] _G.showExpiredNotification call completed successfully")
+                                end
+                            end)
+                        else
+                            -- Validate against Firebase every 5 seconds (using counter to reduce frequency)
+                            lib.firebaseCheckCounter = (lib.firebaseCheckCounter or 0) + 1
+                            if lib.firebaseCheckCounter >= 5 then
+                                lib.firebaseCheckCounter = 0
+                                print("[Xsoul] Checking Firebase for key: " .. tostring(currentKeyData.key))
+                                local success, result1, result2 = pcall(function()
+                                    return validateSavedKey(currentKeyData)
+                                end)
+                                
+                                -- Handle pcall results properly
+                                local isValid, message
+                                if success then
+                                    isValid = result1
+                                    message = result2
+                                else
+                                    -- pcall failed - assume key is still valid to avoid false positives
+                                    print("[Xsoul] Firebase check pcall failed: " .. tostring(result1) .. " - assuming key is still valid")
+                                    isValid = true
+                                    message = "Valid (validation error)"
+                                end
+                                
+                                print("[Xsoul] Firebase check result - success: " .. tostring(success) .. ", isValid: " .. tostring(isValid) .. ", message: " .. tostring(message))
+                                
+                                if isValid == false then
+                                    print("[Xsoul] Key invalid, closing menu: " .. tostring(message))
+                                    timerLabel.Text = "⚠ " .. message
+                                    timerLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                                    -- Clear invalid key
+                                    local folder = workspace:FindFirstChild("XsoulKeys")
+                                    if folder then
+                                        local value = folder:FindFirstChild("SavedKey")
+                                        if value then
+                                            value:Destroy()
+                                        end
+                                    end
+                                    currentKeyData = nil
+                                    -- Close menu and show key input immediately
+                                    lib.keyTimerStopped = true
+                                    print("[Xsoul] About to call showKeyInput(true)")
+                                    spawn(function()
+                                        pcall(function()
+                                            if container and container.Parent then
+                                                saveSettings()
+                                                if container.Main then
+                                                    utility:Pop(container.Main, 5)
+                                                end
+                                                container:Destroy()
+                                            end
+                                        end)
+                                        -- Call notification function directly after container is destroyed
+                                        wait(0.2) -- Slightly longer delay to ensure cleanup
+                                        print("[Xsoul] Calling _G.showExpiredNotification directly (Firebase check)")
+                                        local callSuccess, callError = pcall(function()
+                                            if _G.showExpiredNotification then
+                                                _G.showExpiredNotification()
+                                            else
+                                                print("[Xsoul] ERROR: _G.showExpiredNotification not defined")
+                                            end
+                                        end)
+                                        if not callSuccess then
+                                            print("[Xsoul] ERROR calling _G.showExpiredNotification: " .. tostring(callError))
+                                        else
+                                            print("[Xsoul] _G.showExpiredNotification call completed successfully")
+                                        end
+                                    end)
+                                    return
+                                end
+                            end
+                            -- Show key name and expiration time on two lines
+                            local keyName = currentKeyData.key or "Key"
+                            timerLabel.Text = "🔑 " .. keyName .. "\n⏱ " .. timeString
+                            timerLabel.TextColor3 = themes.TextColor
+                            timerLabel.Visible = true
+                        end
                     else
-                        -- Show cleaner format: just the time
-                        timerLabel.Text = "⏱ " .. timeString
-                        timerLabel.TextColor3 = themes.TextColor
-                        timerLabel.Visible = true
+                        -- Hide timer if no key data
+                        timerLabel.Visible = false
                     end
                 end
-            end
+            end)
         end
         
         -- Update timer every second
         spawn(function()
-            while container and container.Parent do
+            while container and container.Parent and not lib.keyTimerStopped do
                 updateKeyTimer()
                 wait(1)
             end
@@ -1120,7 +1375,6 @@ Position = UDim2.new(0, 0, 0, 100),
             container.ClipsDescendants = false
             self.position = nil
             self.openButton.Visible = false
-            self.openButton.Title.Visible = false
             self.toggleButton.Visible = true
             self.closeButton.Visible = true
             self.maximizeButton.Visible = true
@@ -1166,7 +1420,6 @@ Position = UDim2.new(0, 0, 0, 100),
             wait(0.15)
             
             self.openButton.Visible = true
-            self.openButton.Title.Visible = true
             self.toggleButton.Visible = false
             self.closeButton.Visible = false
             self.maximizeButton.Visible = false
@@ -3084,122 +3337,139 @@ Position = UDim2.new(0, 0, 0, 100),
     end
 end
 
--- Wait for key validation before creating menu
-local keyValidationComplete = false
-local keyValidated = false
-
--- ===== KEY VERIFICATION SYSTEM =====
-
--- Global variable to store current key data for countdown timer
-local currentKeyData = nil
-
-local function loadSavedKey()
-    local success, data = pcall(function()
-        local folder = workspace:FindFirstChild("XsoulKeys")
-        if folder then
-            local value = folder:FindFirstChild("SavedKey")
-            if value and value.Value ~= "" then
-                local http = game:GetService("HttpService")
-                return http:JSONDecode(value.Value)
-            end
-        end
-        return nil
+-- Define showExpiredNotification as a separate global function
+_G.showExpiredNotification = function()
+    print("[Xsoul] ===== showExpiredNotification START =====")
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "XsoulKeyExpired_" .. tick()
+    screenGui.ResetOnSpawn = false
+    screenGui.Enabled = true
+    screenGui.IgnoreGuiInset = true
+    screenGui.DisplayOrder = 9999
+    print("[Xsoul] ScreenGui created: " .. screenGui.Name)
+    
+    -- Parent to CoreGui
+    local parentSuccess = pcall(function()
+        screenGui.Parent = game:GetService("CoreGui")
     end)
-    if success then
-        return data
+    
+    if not parentSuccess then
+        print("[Xsoul] Failed to parent to CoreGui, trying PlayerGui")
+        parentSuccess = pcall(function()
+            screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+        end)
+        if not parentSuccess then
+            print("[Xsoul] CRITICAL ERROR: Cannot parent ScreenGui")
+            return false
+        end
     end
-    return nil
+    print("[Xsoul] ScreenGui parented successfully")
+    
+    -- Main frame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 350, 0, 200)
+    mainFrame.Position = UDim2.new(0.5, -175, 0.5, -100)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Visible = true
+    mainFrame.ZIndex = 1000
+    mainFrame.Parent = screenGui
+    
+    print("[Xsoul] MainFrame created")
+    
+    -- Title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "TitleLabel"
+    titleLabel.Size = UDim2.new(1, 0, 0, 50)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(60, 20, 120)
+    titleLabel.BorderSizePixel = 0
+    titleLabel.Text = "⚠ Key Expired"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 18
+    titleLabel.Font = Enum.Font.GothamBlack
+    titleLabel.ZIndex = 1001
+    titleLabel.Visible = true
+    titleLabel.Parent = mainFrame
+    print("[Xsoul] TitleLabel created, text: " .. titleLabel.Text .. ", parent: " .. tostring(titleLabel.Parent))
+    
+    -- Description
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Name = "DescLabel"
+    descLabel.Size = UDim2.new(1, -20, 0, 80)
+    descLabel.Position = UDim2.new(0, 10, 0, 60)
+    descLabel.BackgroundTransparency = 1
+    descLabel.Text = "Your key has expired\nPlease click OK to close\nPlease reopen to continue using"
+    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    descLabel.TextSize = 14
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextWrapped = true
+    descLabel.TextYAlignment = Enum.TextYAlignment.Center
+    descLabel.ZIndex = 1001
+    descLabel.Visible = true
+    descLabel.Parent = mainFrame
+    print("[Xsoul] DescLabel created, text: " .. descLabel.Text .. ", parent: " .. tostring(descLabel.Parent))
+    
+    -- Close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 140, 0, 35)
+    closeButton.Position = UDim2.new(0.5, -70, 0, 150)
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 107, 107)
+    closeButton.BorderSizePixel = 0
+    closeButton.Text = "✓ OK"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.TextSize = 14
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.ZIndex = 1001
+    closeButton.Visible = true
+    closeButton.Parent = mainFrame
+    print("[Xsoul] CloseButton created, text: " .. closeButton.Text .. ", parent: " .. tostring(closeButton.Parent))
+    
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+    
+    print("[Xsoul] ===== showExpiredNotification COMPLETE =====")
+    return true
 end
 
-local function validateSavedKey(keyData)
-    if not keyData or not keyData.expiresAt then
-        return false, "Invalid saved key"
+-- Make showKeyInput globally accessible for re-authentication scenarios
+showKeyInput = function(forceShow)
+    
+    forceShow = forceShow or false
+    print("[Xsoul] Checking for saved key... forceShow: " .. tostring(forceShow))
+    
+    -- If forced (re-authentication scenario), show simple notification instead of key input
+    if forceShow then
+        print("[Xsoul] forceShow is true, calling _G.showExpiredNotification")
+        local success = _G.showExpiredNotification()
+        print("[Xsoul] _G.showExpiredNotification returned: " .. tostring(success))
+        return
     end
     
-    local now = os.time() * 1000
-    if now > keyData.expiresAt then
-        return false, "Key expired"
-    end
-    
-    -- Verify key still exists in Firebase (to detect deleted keys)
-    local function httpGet(url)
-        if request then
-            local response = request({Url = url, Method = "GET"})
-            return response.Body
-        elseif syn and syn.request then
-            local response = syn.request({Url = url, Method = "GET"})
-            return response.Body
-        elseif http_request then
-            local response = http_request({Url = url, Method = "GET"})
-            return response.Body
-        else
-            local http = game:GetService("HttpService")
-            return http:GetAsync(url)
-        end
-    end
-    
-    local function urlEncode(str)
-        if request then
-            return str:gsub("([^%w%-%._~])", function(c)
-                return string.format("%%%02X", string.byte(c))
-            end)
-        else
-            local http = game:GetService("HttpService")
-            return http:UrlEncode(str)
-        end
-    end
-    
-    local success, response = pcall(function()
-        local url = "https://xsoul-hud-21e3d-default-rtdb.asia-southeast1.firebasedatabase.app/userKeys.json"
-        return httpGet(url)
-    end)
-    
-    if success and response and response ~= "null" and response ~= "{}" then
-        local httpService = game:GetService("HttpService")
-        local decoded = httpService:JSONDecode(response)
-        if decoded and type(decoded) == "table" then
-            -- Check if key still exists in Firebase
-            for userId, userKeysData in pairs(decoded) do
-                if userKeysData and type(userKeysData) == "table" then
-                    for keyId, keyDataFirebase in pairs(userKeysData) do
-                        if keyDataFirebase.key:upper() == keyData.key:upper() then
-                            -- Key exists in Firebase, check if it's still valid
-                            if keyDataFirebase.expiresAt and now > keyDataFirebase.expiresAt then
-                                return false, "Key expired"
-                            end
-                            return true, "Valid"
-                        end
+    -- Try to load and validate saved key first (unless forced to show input)
+    if not forceShow then
+        local savedKey = loadSavedKey()
+        if savedKey then
+            local isValid, message = validateSavedKey(savedKey)
+            -- Only skip input if key is truly valid (not network errors or assumptions)
+            if isValid and message == "Valid" then
+                print("[Xsoul] Saved key is valid, skipping input dialog")
+                currentKeyData = savedKey
+                keyValidated = true
+                keyValidationComplete = true
+                return
+            else
+                print("[Xsoul] Saved key invalid or cannot verify: " .. message)
+                -- Clear invalid saved key
+                local folder = workspace:FindFirstChild("XsoulKeys")
+                if folder then
+                    local value = folder:FindFirstChild("SavedKey")
+                    if value then
+                        value:Destroy()
                     end
-                end
-            end
-        end
-    end
-    
-    -- Key not found in Firebase (deleted or revoked)
-    return false, "Key not found in database"
-end
-
-local function showKeyInput()
-    print("[Xsoul] Checking for saved key...")
-    
-    -- Try to load and validate saved key first
-    local savedKey = loadSavedKey()
-    if savedKey then
-        local isValid, message = validateSavedKey(savedKey)
-        if isValid then
-            print("[Xsoul] Saved key is valid, skipping input dialog")
-            currentKeyData = savedKey
-            keyValidated = true
-            keyValidationComplete = true
-            return
-        else
-            print("[Xsoul] Saved key invalid: " .. message)
-            -- Clear invalid saved key
-            local folder = workspace:FindFirstChild("XsoulKeys")
-            if folder then
-                local value = folder:FindFirstChild("SavedKey")
-                if value then
-                    value:Destroy()
                 end
             end
         end
@@ -3237,26 +3507,28 @@ local function showKeyInput()
     -- Description
     local descLabel = Instance.new("TextLabel")
     descLabel.Name = "DescLabel"
-    descLabel.Size = UDim2.new(1, -20, 0, 40)
-    descLabel.Position = UDim2.new(0, 10, 0, 60)
+    descLabel.Size = UDim2.new(1, -20, 0, 35)
+    descLabel.Position = UDim2.new(0, 10, 0, 55)
     descLabel.BackgroundTransparency = 1
     descLabel.Text = "Enter your activation key to use Xsoul"
     descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     descLabel.TextSize = 12
     descLabel.Font = Enum.Font.Gotham
     descLabel.TextWrapped = true
+    descLabel.TextXAlignment = Enum.TextXAlignment.Center
     descLabel.Parent = mainFrame
     
     -- Key input textbox
     local keyInput = Instance.new("TextBox")
     keyInput.Name = "KeyInput"
     keyInput.Size = UDim2.new(1, -20, 0, 35)
-    keyInput.Position = UDim2.new(0, 10, 0, 105)
+    keyInput.Position = UDim2.new(0, 10, 0, 95)
     keyInput.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
     keyInput.BorderColor3 = Color3.fromRGB(100, 80, 150)
     keyInput.BorderSizePixel = 2
     keyInput.Text = ""
     keyInput.PlaceholderText = "Paste your key here"
+    keyInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
     keyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
     keyInput.TextSize = 14
     keyInput.Font = Enum.Font.Code
@@ -3265,8 +3537,8 @@ local function showKeyInput()
     -- Submit button
     local submitButton = Instance.new("TextButton")
     submitButton.Name = "SubmitButton"
-    submitButton.Size = UDim2.new(0, 140, 0, 35)
-    submitButton.Position = UDim2.new(0, 10, 0, 150)
+    submitButton.Size = UDim2.new(0, 130, 0, 35)
+    submitButton.Position = UDim2.new(0, 10, 0, 140)
     submitButton.BackgroundColor3 = Color3.fromRGB(0, 212, 255)
     submitButton.BorderSizePixel = 0
     submitButton.Text = "✓ Submit"
@@ -3278,8 +3550,8 @@ local function showKeyInput()
     -- Close button
     local closeButton = Instance.new("TextButton")
     closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 140, 0, 35)
-    closeButton.Position = UDim2.new(0, 200, 0, 150)
+    closeButton.Size = UDim2.new(0, 130, 0, 35)
+    closeButton.Position = UDim2.new(0, 210, 0, 140)
     closeButton.BackgroundColor3 = Color3.fromRGB(255, 107, 107)
     closeButton.BorderSizePixel = 0
     closeButton.Text = "X Cancel"
@@ -3289,18 +3561,46 @@ local function showKeyInput()
     closeButton.Font = Enum.Font.GothamBold
     closeButton.Parent = mainFrame
     
-    -- Status label
+    -- Status label (defined before link button so it can be referenced)
     local statusLabel = Instance.new("TextLabel")
     statusLabel.Name = "StatusLabel"
-    statusLabel.Size = UDim2.new(1, -20, 0, 25)
-    statusLabel.Position = UDim2.new(0, 10, 0, 195)
+    statusLabel.Size = UDim2.new(1, -20, 0, 20)
+    statusLabel.Position = UDim2.new(0, 10, 0, 180)
     statusLabel.BackgroundTransparency = 1
     statusLabel.Text = ""
     statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
     statusLabel.TextSize = 11
     statusLabel.Font = Enum.Font.Gotham
     statusLabel.RichText = true
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Center
     statusLabel.Parent = mainFrame
+    
+    -- Link button
+    local linkButton = Instance.new("TextButton")
+    linkButton.Name = "LinkButton"
+    linkButton.Size = UDim2.new(1, -20, 0, 30)
+    linkButton.Position = UDim2.new(0, 10, 0, 205)
+    linkButton.BackgroundTransparency = 1
+    linkButton.Text = "🔗 Get Key: https://sora-2547.github.io/Xsoul/"
+    linkButton.TextColor3 = Color3.fromRGB(0, 200, 255)
+    linkButton.TextSize = 11
+    linkButton.Font = Enum.Font.Gotham
+    linkButton.TextXAlignment = Enum.TextXAlignment.Center
+    linkButton.TextYAlignment = Enum.TextYAlignment.Center
+    linkButton.Parent = mainFrame
+    
+    linkButton.MouseButton1Click:Connect(function()
+        local url = "https://sora-2547.github.io/Xsoul/"
+        
+        -- Copy URL to clipboard (most reliable method)
+        if syn and syn.write_clipboard then
+            syn.write_clipboard(url)
+        else
+            setclipboard(url)
+        end
+        statusLabel.Text = "✓ URL copied! Paste in browser"
+        statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    end)
     
     -- Handle key submission
     local function validateKey()
@@ -3598,13 +3898,15 @@ spawn(function()
     }
 
     -- Use setting1's colorpickers table to update each color picker
-    for colorpicker, pickerData in pairs(setting1.colorpickers) do
-        if colorpicker and colorpicker:FindFirstChild("Button") and colorpicker:FindFirstChild("Title") then
-            local titleText = colorpicker.Title.Text
-            local themeName = themeMap[titleText]
-            if themeName and themes[themeName] then
-                -- Directly set button color for immediate update without tween
-                colorpicker.Button.ImageColor3 = themes[themeName]
+    if setting1 and setting1.colorpickers then
+        for colorpicker, pickerData in pairs(setting1.colorpickers) do
+            if colorpicker and colorpicker:FindFirstChild("Button") and colorpicker:FindFirstChild("Title") then
+                local titleText = colorpicker.Title.Text
+                local themeName = themeMap[titleText]
+                if themeName and themes[themeName] then
+                    -- Directly set button color for immediate update without tween
+                    colorpicker.Button.ImageColor3 = themes[themeName]
+                end
             end
         end
     end
@@ -4056,13 +4358,15 @@ resetButton.MouseButton1Click:Connect(function()
     }
 
     -- Use setting1's colorpickers table to update each color picker
-    for colorpicker, pickerData in pairs(setting1.colorpickers) do
-        if colorpicker and colorpicker:FindFirstChild("Button") and colorpicker:FindFirstChild("Title") then
-            local titleText = colorpicker.Title.Text
-            local themeName = themeMap[titleText]
-            if themeName and themes[themeName] then
-                -- Directly set button color for immediate update without tween
-                colorpicker.Button.ImageColor3 = themes[themeName]
+    if setting1 and setting1.colorpickers then
+        for colorpicker, pickerData in pairs(setting1.colorpickers) do
+            if colorpicker and colorpicker:FindFirstChild("Button") and colorpicker:FindFirstChild("Title") then
+                local titleText = colorpicker.Title.Text
+                local themeName = themeMap[titleText]
+                if themeName and themes[themeName] then
+                    -- Directly set button color for immediate update without tween
+                    colorpicker.Button.ImageColor3 = themes[themeName]
+                end
             end
         end
     end
